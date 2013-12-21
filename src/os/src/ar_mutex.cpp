@@ -33,11 +33,11 @@
  * @ingroup mu
  */
 
-#include "ar_kernel.h"
+#include "os/ar_kernel.h"
 #include <string.h>
 #include <assert.h>
 
-namespace Ar;
+using namespace Ar;
 
 //------------------------------------------------------------------------------
 // Implementation
@@ -48,29 +48,29 @@ namespace Ar;
 //! @param name The name of the mutex.
 //!
 //! @retval SUCCCESS
-status_t MuTex::init(const char * name)
+status_t Mutex::init(const char * name)
 {
-	status_t status = MuSem::init(name);
-	
-	if (status == SUCCESS)
-	{
-		// Start without an owner.
-		m_owner = NULL;
-		m_ownerLockCount = 0;
-		
-#if defined(DEBUG)
-		addToCreatedList(g_muAllObjects.m_mutexes);
-#endif // DEBUG
-	}
-	
-	return status;
+    status_t status = Semaphore::init(name);
+    
+    if (status == kSuccess)
+    {
+        // Start without an owner.
+        m_owner = NULL;
+        m_ownerLockCount = 0;
+        
+#if AR_GLOBAL_OBJECT_LISTS
+        addToCreatedList(g_muAllObjects.m_mutexes);
+#endif // AR_GLOBAL_OBJECT_LISTS
+    }
+    
+    return status;
 }
 
-void MuTex::cleanup()
+void Mutex::cleanup()
 {
-#if defined(DEBUG)
-	removeFromCreatedList(g_muAllObjects.m_mutexes);
-#endif // DEBUG
+#if AR_GLOBAL_OBJECT_LISTS
+    removeFromCreatedList(g_muAllObjects.m_mutexes);
+#endif // AR_GLOBAL_OBJECT_LISTS
 }
 
 //! If the thread that already owns the mutex calls get() more than once, a
@@ -80,55 +80,55 @@ void MuTex::cleanup()
 //! get() and put() calls.
 //!
 //! @param timeout The maximum number of ticks that the caller is willing to
-//!		wait in a blocked state before the lock can be obtained. If this
-//!		value is 0, or #kNoTimeout, then this method will return immediately
-//!		if the lock cannot be obtained. Setting the timeout to
-//!		#kInfiniteTimeout will cause the thread to wait forever for a chance
-//!		to get the lock.
+//!     wait in a blocked state before the lock can be obtained. If this
+//!     value is 0, or #kNoTimeout, then this method will return immediately
+//!     if the lock cannot be obtained. Setting the timeout to
+//!     #kInfiniteTimeout will cause the thread to wait forever for a chance
+//!     to get the lock.
 //!
-//! @retval SUCCESS The mutex was obtained without error.
+//! @retval kSuccess The mutex was obtained without error.
 //! @retval ERROR_MU_TIMEOUT The specified amount of time has elapsed before the
-//!		mutex could be obtained.
+//!     mutex could be obtained.
 //! @retval ERROR_MU_OBJECT_DELETED Another thread deleted the semaphore while the
-//!		caller was blocked on it.
-status_t MuTex::get(uint32_t timeout)
+//!     caller was blocked on it.
+status_t Mutex::get(uint32_t timeout)
 {
-	// If this thread already owns the mutex, just increment the count.
-	if (MuThread::s_currentThread == m_owner)
-	{
-		m_ownerLockCount++;
-		return SUCCESS;
-	}
-	// Otherwise attempt to get the mutex.
-	else
-	{
-		status_t result = MuSem::get(timeout);
-		if (result == SUCCESS)
-		{
-			// Set the owner now that we own the lock.
-			m_owner = MuThread::s_currentThread;
-			m_ownerLockCount++;
-		}
-		
-		return result;
-	}
+    // If this thread already owns the mutex, just increment the count.
+    if (Thread::s_currentThread == m_owner)
+    {
+        m_ownerLockCount++;
+        return kSuccess;
+    }
+    // Otherwise attempt to get the mutex.
+    else
+    {
+        status_t result = Semaphore::get(timeout);
+        if (result == kSuccess)
+        {
+            // Set the owner now that we own the lock.
+            m_owner = Thread::s_currentThread;
+            m_ownerLockCount++;
+        }
+        
+        return result;
+    }
 }
 
 //! Only the owning thread is allowed to unlock the mutex. If the owning thread
 //! has called get() multiple times, it must also call put() the same number of
 //! time before the underlying semaphore is actually released. It is illegal
 //! to call put() when the mutex is not owned by the calling thread.
-void MuTex::put()
+void Mutex::put()
 {
-	assert(MuThread::s_currentThread == m_owner && m_ownerLockCount > 0);
-	
-	if (--m_ownerLockCount == 0)
-	{
-		// The lock count has reached zero, so put the semaphore and clear the owner.
-		// The owner is cleared first since putting the sem can cause us to
-		// switch threads.
-		m_owner = NULL;
-		MuSem::put();
-	}
+    assert(Thread::s_currentThread == m_owner && m_ownerLockCount > 0);
+    
+    if (--m_ownerLockCount == 0)
+    {
+        // The lock count has reached zero, so put the semaphore and clear the owner.
+        // The owner is cleared first since putting the sem can cause us to
+        // switch threads.
+        m_owner = NULL;
+        Semaphore::put();
+    }
 }
 

@@ -36,7 +36,6 @@
 
         EXTERN  __iar_program_start
         EXTERN  SystemInit
-        EXTERN  g_bootloaderTree
         PUBLIC  __vector_table
         PUBLIC  __vector_table_0x1c
         PUBLIC  __Vectors
@@ -55,7 +54,7 @@ __vector_table
         DCD     0
         DCD     0
 __vector_table_0x1c
-        DCD     g_bootloaderTree
+        DCD     0
         DCD     0
         DCD     0
         DCD     0

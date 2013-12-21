@@ -33,31 +33,31 @@
  * @ingroup mu
  */
 
-#include "ar_kernel.h"
+#include "os/ar_kernel.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
-namespace Ar;
+using namespace Ar;
 
 //------------------------------------------------------------------------------
 // Defines
 //------------------------------------------------------------------------------
 
 #ifndef MU_ENABLE_IDLE_SLEEP
-	//! Controls whether the idle thread puts the processor to sleep
-	//! until the next interrupt. Set to 1 to enable.
-	#define MU_ENABLE_IDLE_SLEEP 0
+    //! Controls whether the idle thread puts the processor to sleep
+    //! until the next interrupt. Set to 1 to enable.
+    #define MU_ENABLE_IDLE_SLEEP 0
 #endif
 
 #ifndef MU_ENABLE_SYSTEM_LOAD
-	//! When set to 1 the idle thread will compute the system load percentage.
-	#define MU_ENABLE_SYSTEM_LOAD 1
+    //! When set to 1 the idle thread will compute the system load percentage.
+    #define MU_ENABLE_SYSTEM_LOAD 1
 #endif
 
 #ifndef MU_PRINT_SYSTEM_LOAD
-	//! Controls if the system load is printed.
-	#define MU_PRINT_SYSTEM_LOAD 0
+    //! Controls if the system load is printed.
+    #define MU_PRINT_SYSTEM_LOAD 0
 #endif
 
 //! 10 ms tick.
@@ -70,12 +70,12 @@ namespace Ar;
 #define MU_THUMB_MODE_BIT (0x20)
 
 #if MU_PRINT_SYSTEM_LOAD
-	//! Size in bytes of the idle thread's stack. Needs much more stack
-	//! space in order to call printf().
-	#define MU_IDLE_THREAD_STACK_SIZE (2048)
+    //! Size in bytes of the idle thread's stack. Needs much more stack
+    //! space in order to call printf().
+    #define MU_IDLE_THREAD_STACK_SIZE (2048)
 #else // MU_PRINT_SYSTEM_LOAD
-	//! Size in bytes of the idle thread's stack.
-	#define MU_IDLE_THREAD_STACK_SIZE (256)
+    //! Size in bytes of the idle thread's stack.
+    #define MU_IDLE_THREAD_STACK_SIZE (256)
 #endif // MU_PRINT_SYSTEM_LOAD
 
 //------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ Thread * Thread::s_currentThread = NULL;
 volatile uint32_t Thread::s_irqDepth = 0;
 unsigned Thread::s_systemLoad = 0;
 
-#pragma alignvar(8)
+//#pragma alignvar(8)
 //! The stack for #s_idleThread.
 uint8_t Thread::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
 
@@ -99,12 +99,12 @@ uint8_t Thread::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
 //! threads are ready.
 Thread Thread::s_idleThread;
 
-#if defined(DEBUG)
+#if AR_GLOBAL_OBJECT_LISTS
 //! This global contains linked lists of all the various Mu object
 //! types that have been created during runtime. This makes it much
 //! easier to examine objects of interest.
 ObjectLists g_muAllObjects;
-#endif // DEBUG
+#endif // AR_GLOBAL_OBJECT_LISTS
 
 //------------------------------------------------------------------------------
 // Code
@@ -128,150 +128,148 @@ ObjectLists g_muAllObjects;
 void Thread::idle_entry(void * param)
 {
 #if MU_ENABLE_SYSTEM_LOAD
-	uint32_t start;
-	uint32_t last;
-	uint32_t ticks;
-	uint32_t skipped = 0;
-	
-	start = Thread::getTickCount();
-	last = start;
+    uint32_t start;
+    uint32_t last;
+    uint32_t ticks;
+    uint32_t skipped = 0;
+    
+    start = Thread::getTickCount();
+    last = start;
 #endif // MU_ENABLE_SYSTEM_LOAD
-	
-	while (1)
-	{
+    
+    while (1)
+    {
 #if MU_ENABLE_SYSTEM_LOAD
-		ticks = Thread::getTickCount();
-		
-		if (ticks != last)
-		{
-			uint32_t diff = ticks - last;
-			
-			if (ticks - start >= 100)
-			{
-				unsigned s = start + 100 - ticks;
-				
-				if (diff - 1 > s)
-				{
-					skipped += s;
-				}
-				else
-				{
-					skipped += diff - 1;
-				}
-				
-				s_systemLoad = skipped;
-				
-				#if MU_PRINT_SYSTEM_LOAD
-				printf("%d%% system load\n", s_systemLoad);
-				#endif // MU_PRINT_SYSTEM_LOAD
-				
-				// start over counting
-				if (diff - 1 > s)
-				{
-					skipped = diff - 1 - s;
-				}
-				else
-				{
-					skipped = 0;
-				}
-				start = ticks;
-			}
-			else
-			{
-				skipped += diff - 1;
-			}
-			
-			last = ticks;
-		}
+        ticks = Thread::getTickCount();
+        
+        if (ticks != last)
+        {
+            uint32_t diff = ticks - last;
+            
+            if (ticks - start >= 100)
+            {
+                unsigned s = start + 100 - ticks;
+                
+                if (diff - 1 > s)
+                {
+                    skipped += s;
+                }
+                else
+                {
+                    skipped += diff - 1;
+                }
+                
+                s_systemLoad = skipped;
+                
+                #if MU_PRINT_SYSTEM_LOAD
+                printf("%d%% system load\n", s_systemLoad);
+                #endif // MU_PRINT_SYSTEM_LOAD
+                
+                // start over counting
+                if (diff - 1 > s)
+                {
+                    skipped = diff - 1 - s;
+                }
+                else
+                {
+                    skipped = 0;
+                }
+                start = ticks;
+            }
+            else
+            {
+                skipped += diff - 1;
+            }
+            
+            last = ticks;
+        }
 #endif // MU_ENABLE_SYSTEM_LOAD
-		
+        
 #if MU_ENABLE_IDLE_SLEEP
-		// Hitting this bit puts the processor to sleep until the next
-		// IRQ or FIQ fires.
-		*AT91C_PMC_SCDR = AT91C_PMC_PCK;
+        // Hitting this bit puts the processor to sleep until the next
+        // IRQ or FIQ fires.
+        *AT91C_PMC_SCDR = AT91C_PMC_PCK;
 #endif // MU_ENABLE_IDLE_SLEEP
-	}
+    }
 }
 
-#pragma mark *** NamedObject ***
+//#pragma mark *** NamedObject ***
 
 //! @param name The object's name, a copy of which is made in the object itself. If
-//!		@a name is NULL, the object's name is set to the empty string.
+//!     @a name is NULL, the object's name is set to the empty string.
 //!
 //! @retval kSuccess Initialisation was successful.
 status_t NamedObject::init(const char * name)
 {
-	ObjectBase::init();
-	
-	// Copy name into the object.
-	if (name)
-	{
-		strncpy(m_name, name, sizeof(m_name));
-	}
-	else
-	{
-		m_name[0] = 0;
-	}
-	
-	return kSuccess;
+    // Copy name into the object.
+    if (name)
+    {
+        strncpy(m_name, name, sizeof(m_name));
+    }
+    else
+    {
+        m_name[0] = 0;
+    }
+    
+    return kSuccess;
 }
 
-#if defined(DEBUG)
+#if AR_GLOBAL_OBJECT_LISTS
 
 void NamedObject::addToCreatedList(NamedObject * & listHead)
 {
-	this->m_next = NULL;
+    m_nextCreated = NULL;
 
-	// handle an empty list
-	if (!listHead)
-	{
-		listHead = this;
-		return;
-	}
-	
-	// find the end of the list
-	Thread * thread = listHead;
+    // handle an empty list
+    if (!listHead)
+    {
+        listHead = this;
+        return;
+    }
+    
+    // find the end of the list
+    NamedObject * thread = listHead;
 
-	while (thread)
-	{
-		if (!thread->m_nextCreated)
-		{
-			thread->m_next = this;
-			break;
-		}
-		thread = thread->m_nextCreated;
-	}
+    while (thread)
+    {
+        if (!thread->m_nextCreated)
+        {
+            thread->m_nextCreated = this;
+            break;
+        }
+        thread = thread->m_nextCreated;
+    }
 }
 
 void NamedObject::removeFromCreatedList(NamedObject * & listHead)
 {
-	// the list must not be empty
-	assert(listHead != NULL);
+    // the list must not be empty
+    assert(listHead != NULL);
 
-	if (listHead == this)
-	{
-		// special case for removing the list head
-		listHead = this->m_nextCreated;
-	}
-	else
-	{
-		Thread * item = listHead;
-		while (item)
-		{
-			if (item->m_nextCreated == this)
-			{
-				item->m_nextCreated = this->m_nextCreated;
-				return;
-			}
+    if (listHead == this)
+    {
+        // special case for removing the list head
+        listHead = m_nextCreated;
+    }
+    else
+    {
+        NamedObject * item = listHead;
+        while (item)
+        {
+            if (item->m_nextCreated == this)
+            {
+                item->m_nextCreated = m_nextCreated;
+                return;
+            }
 
-			item = item->m_nextCreated;
-		}
-	}
+            item = item->m_nextCreated;
+        }
+    }
 }
 
-#endif // DEBUG
+#endif // AR_GLOBAL_OBJECT_LISTS
 
-#pragma mark *** Thread ***
+//#pragma mark *** Thread ***
 
 //! The thread is in suspended state when this method exits. The make it eligible for
 //! execution, call the resume() method.
@@ -279,71 +277,71 @@ void NamedObject::removeFromCreatedList(NamedObject * & listHead)
 //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
 //! @param entry Thread entry point taking one parameter and returning void.
 //! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
-//!		entry point.
+//!     entry point.
 //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
-//!		not it's top.
+//!     not it's top.
 //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
-//!		added to @a stack to get the initial top of stack address.
+//!     added to @a stack to get the initial top of stack address.
 //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
-//!		reserved for the idle thread.
+//!     reserved for the idle thread.
 //!
 //! @return kSuccess The thread was initialised without error.
-Thread * Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+status_t Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
-	// Assertions.
-	assert(priority != 0);
-	assert(stackSize >= 64);
-	
-	NamedObject::init(name);
-	
-	// init member variables
-	m_stackTop = stack + stackSize;
-	m_stackSize = stackSize;
-	m_stackPointer = m_stackTop;
-	m_priority = priority;
-	m_state = kThreadSuspended;
-	m_entry = entry;
-	m_param = param;
-	m_next = NULL;
-	m_wakeupTime = 0;
-	m_unblockStatus = 0;
+    // Assertions.
+    assert(priority != 0);
+    assert(stackSize >= 64);
+    
+    NamedObject::init(name);
+    
+    // init member variables
+    m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
+    m_stackSize = stackSize;
+    m_stackPointer = m_stackTop;
+    m_priority = priority;
+    m_state = kThreadSuspended;
+    m_entry = entry;
+    m_param = param;
+    m_next = NULL;
+    m_wakeupTime = 0;
+    m_unblockStatus = 0;
 
-	// prepare top of stack
-	prepareStack();
+    // prepare top of stack
+    prepareStack();
 
-	{
-		// disable interrupts
-		IrqStateSetAndRestore disableIrq(false);
-		
-		// add to suspended list
-		addToList(s_suspendedList);
-	}
-	
-#if defined(DEBUG)
-	addToCreatedList(g_muAllObjects.m_threads);
-#endif // DEBUG
-	
-	return kSuccess;
+    {
+        // disable interrupts
+        IrqStateSetAndRestore disableIrq(false);
+        
+        // add to suspended list
+        addToList(s_suspendedList);
+    }
+    
+#if AR_GLOBAL_OBJECT_LISTS
+    addToCreatedList(g_muAllObjects.m_threads);
+#endif // AR_GLOBAL_OBJECT_LISTS
+    
+    return kSuccess;
 }
 
 void Thread::cleanup()
 {
-	if (m_state != kThreadDone)
-	{
-		// Remove from ready list if it's on there, and switch to another thread
-		// if we're disposing of our own thread.
-		suspend();
-		
-		// Now remove from the suspended list
-		{
-			IrqStateSetAndRestore disableIrq(false);
-			removeFromList(s_suspendedList);
-		}
-	}
-	
-#if defined(DEBUG)
-	removeFromCreatedList(g_muAllObjects.m_threads);
-#endif // DEBUG
+    if (m_state != kThreadDone)
+    {
+        // Remove from ready list if it's on there, and switch to another thread
+        // if we're disposing of our own thread.
+        suspend();
+        
+        // Now remove from the suspended list
+        {
+            IrqStateSetAndRestore disableIrq(false);
+            removeFromList(s_suspendedList);
+        }
+    }
+    
+#if AR_GLOBAL_OBJECT_LISTS
+    removeFromCreatedList(g_muAllObjects.m_threads);
+#endif // AR_GLOBAL_OBJECT_LISTS
 }
 
 //! If the thread being resumed has a higher priority than that of the
@@ -360,27 +358,27 @@ void Thread::cleanup()
 //!
 void Thread::resume()
 {
-	{
-		IrqStateSetAndRestore disableIrq(false);
-	
-		if (m_state == kThreadReady)
-		{
-			return;
-		}
-		else if (m_state == kThreadSuspended)
-		{
-			removeFromList(s_suspendedList);
-			m_state = kThreadReady;
-			addToList(s_readyList);
-		}
-	}
+    {
+        IrqStateSetAndRestore disableIrq(false);
+    
+        if (m_state == kThreadReady)
+        {
+            return;
+        }
+        else if (m_state == kThreadSuspended)
+        {
+            removeFromList(s_suspendedList);
+            m_state = kThreadReady;
+            addToList(s_readyList);
+        }
+    }
 
-	// yield to scheduler if there is not a running thread or if this thread
-	// has a higher priority that the running one
-	if (s_isRunning && this->m_priority > s_currentThread->m_priority)
-	{
-		enterScheduler();
-	}
+    // yield to scheduler if there is not a running thread or if this thread
+    // has a higher priority that the running one
+    if (s_isRunning && this->m_priority > s_currentThread->m_priority)
+    {
+        enterScheduler();
+    }
 }
 
 //! If this method is called from the current thread then the scheduler is
@@ -395,27 +393,27 @@ void Thread::resume()
 //!
 void Thread::suspend()
 {
-	{
-		IrqStateSetAndRestore disableIrq(false);
-	
-		if (m_state == kThreadSuspended)
-		{
-			// Nothing needs doing if the thread is already suspended.
-			return;
-		}
-		else
-		{
-			removeFromList(s_readyList);
-			m_state = kThreadSuspended;
-			addToList(s_suspendedList);
-		}
-	}
+    {
+        IrqStateSetAndRestore disableIrq(false);
+    
+        if (m_state == kThreadSuspended)
+        {
+            // Nothing needs doing if the thread is already suspended.
+            return;
+        }
+        else
+        {
+            removeFromList(s_readyList);
+            m_state = kThreadSuspended;
+            addToList(s_suspendedList);
+        }
+    }
 
-	// are we suspending the current thread?
-	if (s_isRunning && this == s_currentThread)
-	{
-		enterScheduler();
-	}
+    // are we suspending the current thread?
+    if (s_isRunning && this == s_currentThread)
+    {
+        enterScheduler();
+    }
 }
 
 //! The scheduler is invoked after the priority is set so that the current thread can
@@ -426,18 +424,18 @@ void Thread::suspend()
 //! Does not enter the scheduler if Mu is not running.
 //!
 //! @param priority Thread priority level from 1 to 255, where lower number have
-//!		a lower priority. Priority number 0 is not allowed because it is reserved for
-//!		the idle thread.
+//!     a lower priority. Priority number 0 is not allowed because it is reserved for
+//!     the idle thread.
 void Thread::setPriority(uint8_t priority)
 {
-	assert(priority != 0);
-	
-	m_priority = priority;
+    assert(priority != 0);
+    
+    m_priority = priority;
 
-	if (s_isRunning)
-	{
-		enterScheduler();
-	}
+    if (s_isRunning)
+    {
+        enterScheduler();
+    }
 }
 
 //! The thread of the caller is put to sleep for as long as the thread
@@ -452,37 +450,37 @@ void Thread::setPriority(uint8_t priority)
 //! @retval kTimeoutError
 void join(uint32_t timeout=kInfiniteTimeout)
 {
-	// Not yet implemented!
-	assert(0);
-	return kSuccess;
+    // Not yet implemented!
+    assert(0);
+//  return kSuccess;
 }
 
 //! Does nothing if Mu is not running.
 //!
 //! @param ticks The number of operating system ticks to sleep the calling thread.
-//!		A sleep time of 0 is not allowed.
+//!     A sleep time of 0 is not allowed.
 void Thread::sleep(unsigned ticks)
 {
-	assert(ticks != 0);
-	
-	// bail if there is not a running thread to put to sleep
-	if (!s_currentThread)
-	{
-		return;
-	}
+    assert(ticks != 0);
+    
+    // bail if there is not a running thread to put to sleep
+    if (!s_currentThread)
+    {
+        return;
+    }
 
-	{
-		IrqStateSetAndRestore disableIrq(false);
-		
-		// put the current thread on the sleeping list
-		s_currentThread->m_wakeupTime = s_tickCount + ticks;
-		s_currentThread->removeFromList(s_readyList);
-		s_currentThread->m_state = kThreadSleeping;
-		s_currentThread->addToList(s_sleepingList);
-	}
-	
-	// run scheduler and switch to another thread
-	enterScheduler();
+    {
+        IrqStateSetAndRestore disableIrq(false);
+        
+        // put the current thread on the sleeping list
+        s_currentThread->m_wakeupTime = s_tickCount + ticks;
+        s_currentThread->removeFromList(s_readyList);
+        s_currentThread->m_state = kThreadSleeping;
+        s_currentThread->addToList(s_sleepingList);
+    }
+    
+    // run scheduler and switch to another thread
+    enterScheduler();
 }
 
 //! A total of 64 bytes of stack space is allocated to hold the initial
@@ -500,34 +498,34 @@ void Thread::sleep(unsigned ticks)
 //! as an easy way to tell what the high watermark of stack usage is.
 void Thread::prepareStack()
 {
-	uint32_t * top = (uint32_t *)m_stackTop;
-	
-	// first on the stack is the return address. it must be offset by 4 to match
-	// what it would be from within the tick ISR.
-	*--top = (uint32_t)thread_wrapper + 4;
-	
-	// push initial register values
-	top -= 15;	// make room for r0-r14
-	top[0] = (uint32_t)this;			// thread parameter goes into r0
-	top[13] = (uint32_t)m_stackTop;		// original sp goes into r13
-	
-	// and finally the spsr
-	uint32_t spsr = MU_INITIAL_SPSR;
-	if ((uint32_t)thread_wrapper & 1)
-	{
-		spsr |= MU_THUMB_MODE_BIT;
-	}
-	
-	*--top = spsr;
-	
-	// save new top of stack
-	m_stackPointer = top;
+    uint32_t * top = (uint32_t *)m_stackTop;
+    
+    // first on the stack is the return address. it must be offset by 4 to match
+    // what it would be from within the tick ISR.
+    *--top = (uint32_t)thread_wrapper + 4;
+    
+    // push initial register values
+    top -= 15;  // make room for r0-r14
+    top[0] = (uint32_t)this;            // thread parameter goes into r0
+    top[13] = (uint32_t)m_stackTop;     // original sp goes into r13
+    
+    // and finally the spsr
+    uint32_t spsr = MU_INITIAL_SPSR;
+    if ((uint32_t)thread_wrapper & 1)
+    {
+        spsr |= MU_THUMB_MODE_BIT;
+    }
+    
+    *--top = spsr;
+    
+    // save new top of stack
+    m_stackPointer = reinterpret_cast<uint8_t *>(top);
 
-	// fill the rest of the stack with a pattern
-	while (top > (m_stackTop - m_stackSize))
-	{
-		*--top = 0x55aa55aa;
-	}
+    // fill the rest of the stack with a pattern
+    while (reinterpret_cast<uint32_t>(top) > reinterpret_cast<uint32_t>(m_stackTop - m_stackSize))
+    {
+        *--top = 0x55aa55aa;
+    }
 }
 
 //!
@@ -535,10 +533,10 @@ void Thread::prepareStack()
 void Thread::threadEntry()
 {
     // Call the entry point.
-	if (m_entry)
-	{
-		m_entry(thread->m_param);
-	}
+//     if (m_entry)
+//     {
+//         m_entry(thread->m_param);
+//     }
 }
 
 //! The thread wrapper calls the thread entry function that was set in
@@ -552,52 +550,53 @@ void Thread::threadEntry()
 //! @param thread Pointer to the thread object which is starting up.
 void Thread::thread_wrapper(Thread * thread)
 {
-	assert(thread);
-	
+    assert(thread);
+    
     // Call the entry point.
-	thread->threadEntry();
-	
-	// Thread function has finished, so clean up and terminate the thread.
-	{
-		IrqStateSetAndRestore disableIrq(false);
-		
-		// This thread must be in the running state for this code to execute,
-		// so we know it is on the ready list.
-		thread->removeFromList(s_readyList);
-		
-		// Mark this thread as finished
-		thread->m_state = kThreadDone;
-		
-		// Switch to the scheduler to let another thread take over
-		enterScheduler();
-	}
+    thread->threadEntry();
+    
+    // Thread function has finished, so clean up and terminate the thread.
+    {
+        IrqStateSetAndRestore disableIrq(false);
+        
+        // This thread must be in the running state for this code to execute,
+        // so we know it is on the ready list.
+        thread->removeFromList(s_readyList);
+        
+        // Mark this thread as finished
+        thread->m_state = kThreadDone;
+        
+        // Switch to the scheduler to let another thread take over
+        enterScheduler();
+    }
 }
 
-#ifdef __ghs__
-//! Little asm macro to insert a swi instruction.
-asm void call_swi(void)
-{
-	swi 0
-}
-#else //__ghs__
-	#error Need to implement this for other compilers!
-#endif //__ghs__
+// #ifdef __ghs__
+// //! Little asm macro to insert a swi instruction.
+// asm void call_swi(void)
+// {
+//     swi 0
+// }
+// #else //__ghs__
+//    #error Need to implement this for other compilers!
+// #endif //__ghs__
 
 //! Uses a "swi" instruction to yield to the scheduler when in user mode. If
 //! the CPU is in IRQ mode then we can just call the scheduler() method
 //! directly and any change will take effect when the ISR exits.
 void Thread::enterScheduler()
 {
-	if (s_irqDepth == 0)
-	{
-		// In user mode we must SWI into the scheduler.
-		call_swi();
-	}
-	else
-	{
-		// We're in IRQ mode so just call the scheduler directly
-		scheduler();
-	}
+    if (s_irqDepth == 0)
+    {
+        // In user mode we must SWI into the scheduler.
+//         call_swi();
+        asm volatile ("svc #0");
+    }
+    else
+    {
+        // We're in IRQ mode so just call the scheduler directly
+        scheduler();
+    }
 }
 
 //! The system idle thread is created here. Its priority is set to 0, the lowest
@@ -612,81 +611,81 @@ void Thread::enterScheduler()
 //! @note Control will never return from this method.
 void Thread::run()
 {
-	// Assert if there is no thread ready to run.
-	assert(s_readyList);
-	
-	// Create the idle thread. Priority 1 is passed to init function to pass the
-	// assertion and then set to the correct 0 manually.
-	s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, MU_IDLE_THREAD_STACK_SIZE, 1);
-	s_idleThread.m_priority = 0;
-	s_idleThread.resume();
-	
-	// Set up system tick timer
-	initTimerInterrupt();
-	
-	// We're now ready to run
-	s_isRunning = true;
-	
-	// Swi into the scheduler. The yieldIsr() will see that s_currentThread
-	// is NULL and ignore the stack pointer it was given. After the scheduler
-	// runs, we return from the swi handler to the init thread. Interrupts
-	// are enabled in that switch to the init thread since all threads start
-	// with a CPSR that enables IRQ and FIQ.
-	enterScheduler();
+    // Assert if there is no thread ready to run.
+    assert(s_readyList);
+    
+    // Create the idle thread. Priority 1 is passed to init function to pass the
+    // assertion and then set to the correct 0 manually.
+    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, MU_IDLE_THREAD_STACK_SIZE, 1);
+    s_idleThread.m_priority = 0;
+    s_idleThread.resume();
+    
+    // Set up system tick timer
+    initTimerInterrupt();
+    
+    // We're now ready to run
+    s_isRunning = true;
+    
+    // Swi into the scheduler. The yieldIsr() will see that s_currentThread
+    // is NULL and ignore the stack pointer it was given. After the scheduler
+    // runs, we return from the swi handler to the init thread. Interrupts
+    // are enabled in that switch to the init thread since all threads start
+    // with a CPSR that enables IRQ and FIQ.
+    enterScheduler();
 
-	// should never reach here
-	_halt();
+    // should never reach here
+    _halt();
 }
 
 void Thread::initTimerInterrupt()
 {
-	unsigned overflow = clocks_get_master() / 16 / (10 * MU_TICK_QUANTA_MS);
-
-	// set the overflow value, and enable the timer and the interrupt
-	AT91C_BASE_PITC->PITC_PIMR = overflow | AT91C_SYSC_PITEN | AT91C_SYSC_PITIEN;
+//     unsigned overflow = clocks_get_master() / 16 / (10 * MU_TICK_QUANTA_MS);
+// 
+//     // set the overflow value, and enable the timer and the interrupt
+//     AT91C_BASE_PITC->PITC_PIMR = overflow | AT91C_SYSC_PITEN | AT91C_SYSC_PITIEN;
 }
 
 void Thread::periodicTimerIsr()
 {
-	// Read the PIVR register to get the number of elapsed ticks, clear PITS, and
-	// reset the periodic timer.
-	unsigned ticks = (*AT91C_PITC_PIVR & AT91C_SYSC_PICNT) >> 20;
-	incrementTickCount(ticks);
+    // Read the PIVR register to get the number of elapsed ticks, clear PITS, and
+    // reset the periodic timer.
+    unsigned ticks = 0; // (*AT91C_PITC_PIVR & AT91C_SYSC_PICNT) >> 20;
+    incrementTickCount(ticks);
 
-	// Run the scheduler. It will modify s_currentThread if switching threads.
-	scheduler();
+    // Run the scheduler. It will modify s_currentThread if switching threads.
+    scheduler();
 
-	// This case should never happen because of the idle thread.
-	if (!s_currentThread)
-	{
-		_halt();
-	}
+    // This case should never happen because of the idle thread.
+    if (!s_currentThread)
+    {
+        _halt();
+    }
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
-//!		current when the timer IRQ fired.
+//!     current when the timer IRQ fired.
 //! @return The value of the current thread's stack pointer is returned. If the scheduler
-//!		changed the current thread, this will be a different value from what was passed
-//!		in @a topOfStack.
+//!     changed the current thread, this will be a different value from what was passed
+//!     in @a topOfStack.
 uint32_t Thread::yieldIsr(uint32_t topOfStack)
 {
-	// save top of stack for the thread we interrupted
-	if (s_currentThread)
-	{
-		s_currentThread->m_stackPointer = (void *)topOfStack;
-	}
-	
-	// Run the scheduler. It will modify s_currentThread if switching threads.
-	scheduler();
+    // save top of stack for the thread we interrupted
+    if (s_currentThread)
+    {
+        s_currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
+    }
+    
+    // Run the scheduler. It will modify s_currentThread if switching threads.
+    scheduler();
 
-	// The idle thread prevents this condition.
-	if (!s_currentThread)
-	{
-		_halt();
-	}
+    // The idle thread prevents this condition.
+    if (!s_currentThread)
+    {
+        _halt();
+    }
 
-	// return the new thread's stack pointer
-	return (uint32_t)s_currentThread->m_stackPointer;
+    // return the new thread's stack pointer
+    return (uint32_t)s_currentThread->m_stackPointer;
 }
 
 //! Increments the system tick count and wakes any sleeping threads whose wakeup time
@@ -694,278 +693,278 @@ uint32_t Thread::yieldIsr(uint32_t topOfStack)
 //! is set to #kTimeoutError.
 //!
 //! @param ticks The number of ticks that have elapsed. Normally this will only be 1, 
-//!		and must be at least 1, but may be higher if interrupts are disabled for a
-//!		long time.
+//!     and must be at least 1, but may be higher if interrupts are disabled for a
+//!     long time.
 //!
 //! @todo Keep the list of sleeping threads sorted by next wakeup time.
 void Thread::incrementTickCount(unsigned ticks)
 {
-	assert(ticks > 0);
-	
-	// Increment tick count.
-	s_tickCount += ticks;
+    assert(ticks > 0);
+    
+    // Increment tick count.
+    s_tickCount += ticks;
 
-	// Scan list of sleeping threads to see if any should wake up.
-	Thread * thread = s_sleepingList;
+    // Scan list of sleeping threads to see if any should wake up.
+    Thread * thread = s_sleepingList;
 
-	while (thread)
-	{
-		Thread * next = thread->m_next;
-		
-		// Is it time to wake this thread?
-		if (s_tickCount >= thread->m_wakeupTime)
-		{
-			// State-specific actions
-			switch (thread->m_state)
-			{
-				case kThreadSleeping:
-					// The thread was just sleeping.
-					break;
-				
-				case kThreadBlocked:
-					// The thread has timed out waiting for a resource.
-					thread->m_unblockStatus = kTimeoutError;
-					break;
-				
-				default:
-					// Should not have threads in other states on this list!
-					_halt();
-			}
-			
-			// Put thread in ready state.
-			thread->removeFromList(s_sleepingList);
-			thread->m_state = kThreadReady;
-			thread->addToList(s_readyList);
-		}
-		
-		thread = next;
-	}
+    while (thread)
+    {
+        Thread * next = thread->m_next;
+        
+        // Is it time to wake this thread?
+        if (s_tickCount >= thread->m_wakeupTime)
+        {
+            // State-specific actions
+            switch (thread->m_state)
+            {
+                case kThreadSleeping:
+                    // The thread was just sleeping.
+                    break;
+                
+                case kThreadBlocked:
+                    // The thread has timed out waiting for a resource.
+                    thread->m_unblockStatus = kTimeoutError;
+                    break;
+                
+                default:
+                    // Should not have threads in other states on this list!
+                    _halt();
+            }
+            
+            // Put thread in ready state.
+            thread->removeFromList(s_sleepingList);
+            thread->m_state = kThreadReady;
+            thread->addToList(s_readyList);
+        }
+        
+        thread = next;
+    }
 }
 
 //! @todo There are many opportunities for optimising the scheduler search
 //! loop.
 void Thread::scheduler()
 {
-	// Find the next ready thread using a round-robin search algorithm.
-	Thread * next;
-	
-	// Start the search either at the current thread or at the beginning of
-	// the ready list.
-	if (s_currentThread)
-	{
-		// Handle case where current thread was suspended. Here the s_currentThread is no longer
-		// on the ready list so we can't start from its m_next.
-		if (s_currentThread->m_state != kThreadRunning)
-		{
-			s_currentThread = NULL;
-			next = s_readyList;
-		}
-		else
-		{
-			next = s_currentThread;
-		}
-	}
-	else
-	{
-		next = s_readyList;
-	}
-	
-	assert(next);
-	Thread * highest = next;
-	uint8_t priority = highest->m_priority;
+    // Find the next ready thread using a round-robin search algorithm.
+    Thread * next;
+    
+    // Start the search either at the current thread or at the beginning of
+    // the ready list.
+    if (s_currentThread)
+    {
+        // Handle case where current thread was suspended. Here the s_currentThread is no longer
+        // on the ready list so we can't start from its m_next.
+        if (s_currentThread->m_state != kThreadRunning)
+        {
+            s_currentThread = NULL;
+            next = s_readyList;
+        }
+        else
+        {
+            next = s_currentThread;
+        }
+    }
+    else
+    {
+        next = s_readyList;
+    }
+    
+    assert(next);
+    Thread * highest = next;
+    uint8_t priority = highest->m_priority;
 
-	// Search the ready list starting from the current thread. The search will loop back
-	// to the list head when it hits NULL. The first thread after the current one whose
-	// state is THREAD_READY and has the highest priority will be selected.
-	do {
-		if (next)
-		{
-			next = next->m_next;
-		}
+    // Search the ready list starting from the current thread. The search will loop back
+    // to the list head when it hits NULL. The first thread after the current one whose
+    // state is THREAD_READY and has the highest priority will be selected.
+    do {
+        if (next)
+        {
+            next = next->m_next;
+        }
 
-		// Find highest priority thread.
-		if (next && next->m_state == kThreadReady && next->m_priority > priority)
-		{
-			highest = next;
-			priority = next->m_priority;
-		}
+        // Find highest priority thread.
+        if (next && next->m_state == kThreadReady && next->m_priority > priority)
+        {
+            highest = next;
+            priority = next->m_priority;
+        }
 
-		// Handle both the case when we start with s_currentThead is 0 and when we loop
-		// from the end of the ready list to the beginning.
-		if (!next && s_currentThread)
-		{
-			next = s_readyList;
-		}
-	} while (next && next != s_currentThread);
+        // Handle both the case when we start with s_currentThead is 0 and when we loop
+        // from the end of the ready list to the beginning.
+        if (!next && s_currentThread)
+        {
+            next = s_readyList;
+        }
+    } while (next && next != s_currentThread);
 
-	// Switch to newly selected thread.
-	if (highest && highest != s_currentThread)
-	{
-		if (s_currentThread && s_currentThread->m_state == kThreadRunning)
-		{
-			s_currentThread->m_state = kThreadReady;
-		}
-		
-		highest->m_state = kThreadRunning;
-		s_currentThread = highest;
-	}
+    // Switch to newly selected thread.
+    if (highest && highest != s_currentThread)
+    {
+        if (s_currentThread && s_currentThread->m_state == kThreadRunning)
+        {
+            s_currentThread->m_state = kThreadReady;
+        }
+        
+        highest->m_state = kThreadRunning;
+        s_currentThread = highest;
+    }
 }
 
 //! The thread is added to the end of the linked list.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. Will be
-//!		NULL if the list is empty, in which case it is set to the thread instance.
+//!     NULL if the list is empty, in which case it is set to the thread instance.
 void Thread::addToList(Thread * & listHead)
 {
-	this->m_next = NULL;
+    this->m_next = NULL;
 
-	// handle an empty list
-	if (!listHead)
-	{
-		listHead = this;
-		return;
-	}
-	
-	// find the end of the list
-	Thread * thread = listHead;
+    // handle an empty list
+    if (!listHead)
+    {
+        listHead = this;
+        return;
+    }
+    
+    // find the end of the list
+    Thread * thread = listHead;
 
-	while (thread)
-	{
-		if (!thread->m_next)
-		{
-			thread->m_next = this;
-			break;
-		}
-		thread = thread->m_next;
-	}
+    while (thread)
+    {
+        if (!thread->m_next)
+        {
+            thread->m_next = this;
+            break;
+        }
+        thread = thread->m_next;
+    }
 }
 
 //! The list is not allowed to be empty.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. May
-//!		not be NULL.
+//!     not be NULL.
 void Thread::removeFromList(Thread * & listHead)
 {
-	// the list must not be empty
-	assert(listHead != NULL);
+    // the list must not be empty
+    assert(listHead != NULL);
 
-	if (listHead == this)
-	{
-		// special case for removing the list head
-		listHead = this->m_next;
-	}
-	else
-	{
-		Thread * item = listHead;
-		while (item)
-		{
-			if (item->m_next == this)
-			{
-				item->m_next = this->m_next;
-				return;
-			}
+    if (listHead == this)
+    {
+        // special case for removing the list head
+        listHead = this->m_next;
+    }
+    else
+    {
+        Thread * item = listHead;
+        while (item)
+        {
+            if (item->m_next == this)
+            {
+                item->m_next = this->m_next;
+                return;
+            }
 
-			item = item->m_next;
-		}
-	}
+            item = item->m_next;
+        }
+    }
 }
 
 //! The thread is added to the end of the linked list.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. Will be
-//!		NULL if the list is empty, in which case it is set to the thread instance.
+//!     NULL if the list is empty, in which case it is set to the thread instance.
 void Thread::addToBlockedList(Thread * & listHead)
 {
-	this->m_nextBlocked = NULL;
+    this->m_nextBlocked = NULL;
 
-	// handle an empty list
-	if (!listHead)
-	{
-		listHead = this;
-		return;
-	}
-	
-	// find the end of the list
-	Thread * thread = listHead;
+    // handle an empty list
+    if (!listHead)
+    {
+        listHead = this;
+        return;
+    }
+    
+    // find the end of the list
+    Thread * thread = listHead;
 
-	while (thread)
-	{
-		if (!thread->m_nextBlocked)
-		{
-			thread->m_nextBlocked = this;
-			break;
-		}
-		thread = thread->m_nextBlocked;
-	}
+    while (thread)
+    {
+        if (!thread->m_nextBlocked)
+        {
+            thread->m_nextBlocked = this;
+            break;
+        }
+        thread = thread->m_nextBlocked;
+    }
 }
 
 //! The list is not allowed to be empty.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. May
-//!		not be NULL.
+//!     not be NULL.
 void Thread::removeFromBlockedList(Thread * & listHead)
 {
-	// the list must not be empty
-	assert(listHead != NULL);
+    // the list must not be empty
+    assert(listHead != NULL);
 
-	if (listHead == this)
-	{
-		// special case for removing the list head
-		listHead = this->m_nextBlocked;
-	}
-	else
-	{
-		Thread * item = listHead;
-		while (item)
-		{
-			if (item->m_nextBlocked == this)
-			{
-				item->m_nextBlocked = this->m_nextBlocked;
-				return;
-			}
+    if (listHead == this)
+    {
+        // special case for removing the list head
+        listHead = this->m_nextBlocked;
+    }
+    else
+    {
+        Thread * item = listHead;
+        while (item)
+        {
+            if (item->m_nextBlocked == this)
+            {
+                item->m_nextBlocked = this->m_nextBlocked;
+                return;
+            }
 
-			item = item->m_nextBlocked;
-		}
-	}
+            item = item->m_nextBlocked;
+        }
+    }
 }
 
 //! The thread is removed from the ready list. It is placed on the blocked list
 //! referenced by the @a blockedList argument and its state is set to
 //! #THREAD_BLOCKED. If the timeout is non-infinite, the thread is also
 //! placed on the sleeping list with the wakeup time set to when the timeout
-//!	expires.
+//! expires.
 //!
 //! @param[in,out] blockedList Reference to the head of the linked list of
-//!		blocked threads.
+//!     blocked threads.
 //! @param timeout The maximum number of ticks that the thread can remain
-//!		blocked. A value of #kInfiniteTimeout means the thread can be
-//!		blocked forever. A timeout of 0 is not allowed and should be handled
-//!		by the caller.
+//!     blocked. A value of #kInfiniteTimeout means the thread can be
+//!     blocked forever. A timeout of 0 is not allowed and should be handled
+//!     by the caller.
 void Thread::block(Thread * & blockedList, uint32_t timeout)
 {
-	assert(timeout != 0);
-	
-	// Remove this thread from the ready list.
-	removeFromList(Thread::s_readyList);
-	
-	// Update its state.
-	m_state = kThreadBlocked;
-	m_unblockStatus = kSuccess;
-	
-	// Add to blocked list.
-	addToBlockedList(blockedList);
-	
-	// If a valid timeout was given, put the thread on the sleeping list.
-	if (timeout != kInfiniteTimeout)
-	{
-		m_wakeupTime = s_tickCount + timeout;
-		addToList(s_sleepingList);
-	}
-	else
-	{
-		// Signal to unblockWithStatus() that this thread is not on the sleeping list.
-		m_wakeupTime = 0;
-	}
+    assert(timeout != 0);
+    
+    // Remove this thread from the ready list.
+    removeFromList(Thread::s_readyList);
+    
+    // Update its state.
+    m_state = kThreadBlocked;
+    m_unblockStatus = kSuccess;
+    
+    // Add to blocked list.
+    addToBlockedList(blockedList);
+    
+    // If a valid timeout was given, put the thread on the sleeping list.
+    if (timeout != kInfiniteTimeout)
+    {
+        m_wakeupTime = s_tickCount + timeout;
+        addToList(s_sleepingList);
+    }
+    else
+    {
+        // Signal to unblockWithStatus() that this thread is not on the sleeping list.
+        m_wakeupTime = 0;
+    }
 }
 
 //! If the thread had a valid timeout when it was blocked, it is removed from
@@ -974,28 +973,28 @@ void Thread::block(Thread * & blockedList, uint32_t timeout)
 //! its state to #THREAD_READY and adding it back to the ready list.
 //!
 //! @param[in,out] blockedList Reference to the head of the linked list of
-//!		blocked threads.
+//!     blocked threads.
 //! @param unblockStatus Status code to return from the function that
-//!		the thread had called when it was originally blocked.
+//!     the thread had called when it was originally blocked.
 //!
 //! @todo Conditionalise the removal from #Thread::s_sleepingList to when the thread
-//!		is actually on that list.
+//!     is actually on that list.
 void Thread::unblockWithStatus(Thread * & blockedList, status_t unblockStatus)
 {
-	// Remove from the sleeping list if it was on there. Won't hurt if
-	// the thread is not on that list.
-	if (m_wakeupTime && s_sleepingList)
-	{
-		removeFromList(s_sleepingList);
-	}
-	
-	// Remove this thread from the blocked list.
-	removeFromBlockedList(blockedList);
+    // Remove from the sleeping list if it was on there. Won't hurt if
+    // the thread is not on that list.
+    if (m_wakeupTime && s_sleepingList)
+    {
+        removeFromList(s_sleepingList);
+    }
+    
+    // Remove this thread from the blocked list.
+    removeFromBlockedList(blockedList);
 
-	// Put the unblocked thread back onto the ready list.
-	m_state = kThreadReady;
-	m_unblockStatus = unblockStatus;
-	addToList(Thread::s_readyList);
+    // Put the unblocked thread back onto the ready list.
+    m_state = kThreadReady;
+    m_unblockStatus = unblockStatus;
+    addToList(Thread::s_readyList);
 }
 
 //------------------------------------------------------------------------------

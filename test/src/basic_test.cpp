@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ar_kernel.h"
+#include "os/ar_kernel.h"
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -40,8 +40,8 @@ void main_thread(int arg);
 // Variables
 //------------------------------------------------------------------------------
 
-uint8_t g_mainThreadStack[512];
-Ar:Thread g_mainThread(main_thread, g_mainThreadStack, sizeof(g_mainThreadStack));
+// uint8_t g_mainThreadStack[512];
+// Ar:Thread g_mainThread(main_thread, g_mainThreadStack, sizeof(g_mainThreadStack));
 
 //------------------------------------------------------------------------------
 // Code
@@ -56,9 +56,13 @@ void main_thread(int arg)
 
 void main(void)
 {
-    g_mainThread.resume();
-    
-    Ar::Kernel::run();
+//     g_mainThread.resume();
+//     
+//     Ar::Kernel::run();
+
+    while (1)
+    {
+    }
 }
 
 //------------------------------------------------------------------------------

@@ -172,7 +172,8 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state></state>
+          <state>CPU_MKL25Z128VLK4</state>
+          <state>DEBUG</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -301,7 +302,11 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
-          <state>$PROJ_DIR/../src</state>
+          <state>$PROJ_DIR$\..\src</state>
+          <state>$PROJ_DIR$\..\src\include</state>
+          <state>$PROJ_DIR$\..\src\include\device</state>
+          <state>$PROJ_DIR$\..\src\startup</state>
+          <state>$PROJ_DIR$\..\src\os\port\cm0plus</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -702,7 +707,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\generic.icf</state>
+          <state>$TOOLKIT_DIR$\config\linker\Freescale\MKL25Z128xxx4.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -762,7 +767,7 @@
         </option>
         <option>
           <name>IlinkProgramEntryLabel</name>
-          <state></state>
+          <state>__iar_program_start</state>
         </option>
         <option>
           <name>DoFill</name>
@@ -933,6 +938,11 @@
       <archiveVersion>0</archiveVersion>
       <data/>
     </settings>
+    <settings>
+      <name>Coder</name>
+      <archiveVersion>0</archiveVersion>
+      <data/>
+    </settings>
   </configuration>
   <configuration>
     <name>Release</name>
@@ -962,7 +972,7 @@
         <option>
           <name>Variant</name>
           <version>20</version>
-          <state>0</state>
+          <state>35</state>
         </option>
         <option>
           <name>GEndianMode</name>
@@ -971,20 +981,20 @@
         <option>
           <name>Input variant</name>
           <version>3</version>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>Input description</name>
-          <state>Full formatting.</state>
+          <state>Automatic choice of formatter.</state>
         </option>
         <option>
           <name>Output variant</name>
           <version>2</version>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>Output description</name>
-          <state>Full formatting.</state>
+          <state>Automatic choice of formatter.</state>
         </option>
         <option>
           <name>GOutputBinary</name>
@@ -997,7 +1007,7 @@
         </option>
         <option>
           <name>OGCoreOrChip</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>GRuntimeLibSelect</name>
@@ -1019,7 +1029,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>6.30.1.53141</state>
+          <state>6.70.1.5793</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -1031,7 +1041,7 @@
         </option>
         <option>
           <name>OGChipSelectEditMenu</name>
-          <state>default	None</state>
+          <state>MKL25Z128xxx4	Freescale MKL25Z128xxx4</state>
         </option>
         <option>
           <name>GenLowLevelInterface</name>
@@ -1039,7 +1049,7 @@
         </option>
         <option>
           <name>GEndianModeBE</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>OGBufferedTerminalOutput</name>
@@ -1070,12 +1080,12 @@
         <option>
           <name>GFPUCoreSlave</name>
           <version>20</version>
-          <state>0</state>
+          <state>35</state>
         </option>
         <option>
           <name>GBECoreSlave</name>
           <version>20</version>
-          <state>0</state>
+          <state>35</state>
         </option>
         <option>
           <name>OGUseCmsis</name>
@@ -1104,6 +1114,7 @@
         </option>
         <option>
           <name>CCDefines</name>
+          <state>CPU_MKL25Z128VLK4</state>
           <state>NDEBUG</state>
         </option>
         <option>
@@ -1120,15 +1131,15 @@
         </option>
         <option>
           <name>CCListCFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMnemonics</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMessages</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListAssFile</name>
@@ -1144,7 +1155,7 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state></state>
+          <state>Pa050</state>
         </option>
         <option>
           <name>CCDiagRemark</name>
@@ -1233,7 +1244,11 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
-          <state></state>
+          <state>$PROJ_DIR$\..\src</state>
+          <state>$PROJ_DIR$\..\src\include</state>
+          <state>$PROJ_DIR$\..\src\include\device</state>
+          <state>$PROJ_DIR$\..\src\startup</state>
+          <state>$PROJ_DIR$\..\src\os\port\cm0plus</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1245,7 +1260,7 @@
         </option>
         <option>
           <name>IInterwork2</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IProcessorMode2</name>
@@ -1288,7 +1303,7 @@
         </option>
         <option>
           <name>IccLang</name>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>IccCDialect</name>
@@ -1316,7 +1331,7 @@
         </option>
         <option>
           <name>IccCppInlineSemantics</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IccCmsis</name>
@@ -1634,7 +1649,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\generic.icf</state>
+          <state>$TOOLKIT_DIR$\config\linker\Freescale\MKL25Z128xxx4.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -1694,7 +1709,7 @@
         </option>
         <option>
           <name>IlinkProgramEntryLabel</name>
-          <state></state>
+          <state>__iar_program_start</state>
         </option>
         <option>
           <name>DoFill</name>
@@ -1865,26 +1880,77 @@
       <archiveVersion>0</archiveVersion>
       <data/>
     </settings>
+    <settings>
+      <name>Coder</name>
+      <archiveVersion>0</archiveVersion>
+      <data/>
+    </settings>
   </configuration>
   <group>
-    <name>os</name>
+    <name>src</name>
+    <group>
+      <name>include</name>
+      <file>
+        <name>$PROJ_DIR$\..\src\include\fsl_platform_common.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\include\fsl_platform_status.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\include\fsl_platform_types.h</name>
+      </file>
+    </group>
+    <group>
+      <name>os</name>
+      <group>
+        <name>src</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_handlers.s</name>
+          <excluded>
+            <configuration>Debug</configuration>
+            <configuration>Release</configuration>
+          </excluded>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_mutex.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_queue.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_sem.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_thread.cpp</name>
+        </file>
+      </group>
+      <file>
+        <name>$PROJ_DIR$\..\src\os\ar_kernel.h</name>
+      </file>
+    </group>
+    <group>
+      <name>startup</name>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\crt0.s</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\startup.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\startup.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\MKL25Z4\startup_MKL25Z4.s</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\MKL25Z4\system_MKL25Z4.c</name>
+      </file>
+    </group>
+  </group>
+  <group>
+    <name>test</name>
     <file>
-      <name>$PROJ_DIR$\..\src\ar_handlers.s</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\arkernel.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\armutex.cpp</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\arqueue.cpp</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\arsem.cpp</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\arthread.cpp</name>
+      <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
     </file>
   </group>
 </project>

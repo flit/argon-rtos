@@ -33,10 +33,11 @@
  * @ingroup ar
  */
 
-#if !defined(_ARPORT_H_)
-#define _ARPORT_H_
+#if !defined(_AR_PORT_H_)
+#define _AR_PORT_H_
 
-#include <types.h>
+#include "fsl_platform_common.h"
+#include "fsl_device_registers.h"
 
 namespace Ar {
 
@@ -52,20 +53,41 @@ class IrqStateSetAndRestore
 public:
     IrqStateSetAndRestore(bool enableIrqs)
     {
+        if (enableIrqs)
+        {
+            __enable_irq();
+        }
+        else
+        {
+            __disable_irq();
+        }
     }
     
     ~IrqStateSetAndRestore()
     {
+//         if (enableIrqs)
+//         {
+//             __enable_irq();
+//         }
+//         else
+//         {
+//             __disable_irq();
+//         }
     }
 
 protected:
 };
 
+inline void _halt()
+{
+    asm volatile ("bkpt #0");
+}
+
 } // namespace Ar
 
 //@}
 
-#endif // _ARPORT_H_
+#endif // _AR_PORT_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
