@@ -306,7 +306,8 @@
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
           <state>$PROJ_DIR$\..\src\startup</state>
-          <state>$PROJ_DIR$\..\src\os\port\cm0plus</state>
+          <state>$PROJ_DIR$\..\src\os\cortex_m</state>
+          <state>$PROJ_DIR$\..\src\drivers</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -385,7 +386,7 @@
         </option>
         <option>
           <name>IccStaticDestr</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccCppInlineSemantics</name>
@@ -631,7 +632,7 @@
         <debug>1</debug>
         <option>
           <name>IlinkOutputFile</name>
-          <state>cpp.out</state>
+          <state>argon_test.out</state>
         </option>
         <option>
           <name>IlinkLibIOConfig</name>
@@ -862,7 +863,7 @@
         </option>
         <option>
           <name>IlinkOptExceptionsAllow</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IlinkOptExceptionsForce</name>
@@ -1248,7 +1249,8 @@
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
           <state>$PROJ_DIR$\..\src\startup</state>
-          <state>$PROJ_DIR$\..\src\os\port\cm0plus</state>
+          <state>$PROJ_DIR$\..\src\os\cortex_m</state>
+          <state>$PROJ_DIR$\..\src\drivers</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1889,6 +1891,18 @@
   <group>
     <name>src</name>
     <group>
+      <name>drivers</name>
+      <group>
+        <name>uart</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\drivers\uart\uart0.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\drivers\uart\uart0.h</name>
+        </file>
+      </group>
+    </group>
+    <group>
       <name>include</name>
       <file>
         <name>$PROJ_DIR$\..\src\include\fsl_platform_common.h</name>
@@ -1903,14 +1917,19 @@
     <group>
       <name>os</name>
       <group>
-        <name>src</name>
+        <name>cortex_m</name>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_handlers.s</name>
-          <excluded>
-            <configuration>Debug</configuration>
-            <configuration>Release</configuration>
-          </excluded>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers.s</name>
         </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.h</name>
+        </file>
+      </group>
+      <group>
+        <name>src</name>
         <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_mutex.cpp</name>
         </file>
@@ -1951,6 +1970,12 @@
     <name>test</name>
     <file>
       <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>
     </file>
   </group>
 </project>

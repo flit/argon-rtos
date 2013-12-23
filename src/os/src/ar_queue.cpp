@@ -115,7 +115,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = Thread::s_currentThread;
+        Thread * thread = g_ar_currentThread;
         thread->block(m_sendBlockedList, timeout);
         
         // Yield to the scheduler. While other threads are executing, interrupts
@@ -149,7 +149,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         thread->unblockWithStatus(m_receiveBlockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::s_currentThread->m_priority)
+        if (thread->m_priority > g_ar_currentThread->m_priority)
         {
             Thread::enterScheduler();
         }
@@ -180,7 +180,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = Thread::s_currentThread;
+        Thread * thread = g_ar_currentThread;
         thread->block(m_receiveBlockedList, timeout);
         
         // Yield to the scheduler. While other threads are executing, interrupts
@@ -214,7 +214,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         thread->unblockWithStatus(m_sendBlockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::s_currentThread->m_priority)
+        if (thread->m_priority > g_ar_currentThread->m_priority)
         {
             Thread::enterScheduler();
         }

@@ -28,94 +28,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/ar_kernel.h"
-#include "debug_uart.h"
+#if !defined(_DEBUG_UART_H_)
+#define _DEBUG_UART_H_
+
+#include "fsl_platform_common.h"
+
+//------------------------------------------------------------------------------
+// Definitions
+//------------------------------------------------------------------------------
+
+#if !defined(DEBUG_UART_BAUD)
+#define DEBUG_UART_BAUD (38400)
+#endif
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-void main_thread(void * arg);
-void a_thread(void * arg);
-void b_thread(void * arg);
+void debug_init(void);
 
-//------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread; //(main_thread, g_mainThreadStack, sizeof(g_mainThreadStack));
-
-uint8_t g_aThreadStack[512];
-Ar::Thread g_aThread;
-
-uint8_t g_bThreadStack[512];
-Ar::Thread g_bThread;
-
-//------------------------------------------------------------------------------
-// Code
-//------------------------------------------------------------------------------
-
-void main_thread(void * arg)
-{
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
-    
-    g_aThread.init("a", a_thread, 0, g_aThreadStack, sizeof(g_aThreadStack), 60);
-    g_aThread.resume();
-
-    g_bThread.init("b", b_thread, 0, g_bThreadStack, sizeof(g_bThreadStack), 70);
-    g_bThread.resume();
-
-    while (1)
-    {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(1000);
-    }
-}
-
-void a_thread(void * arg)
-{
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
-    
-    while (1)
-    {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(2000);
-    }
-}
-
-void b_thread(void * arg)
-{
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
-    
-    while (1)
-    {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(3000);
-    }
-}
-
-void main(void)
-{
-    debug_init();
-    
-    printf("Running test...\r\n");
-    
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
-    g_mainThread.resume();
-    
-    Ar::Thread::run();
-
-    Ar::_halt();
-}
-
+#endif // _DEBUG_UART_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

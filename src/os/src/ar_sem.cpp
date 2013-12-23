@@ -111,7 +111,7 @@ status_t Semaphore::get(uint32_t timeout)
         }
 
         // Block this thread on the semaphore.
-        Thread * thread = Thread::s_currentThread;
+        Thread * thread = g_ar_currentThread;
         thread->block(m_blockedList, timeout);
 
         // Yield to the scheduler. We'll return when a call to put()
@@ -151,7 +151,7 @@ void Semaphore::put()
         thread->unblockWithStatus(m_blockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::s_currentThread->m_priority)
+        if (thread->m_priority > g_ar_currentThread->m_priority)
         {
             Thread::enterScheduler();
         }

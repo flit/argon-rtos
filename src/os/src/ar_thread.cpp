@@ -63,12 +63,6 @@ using namespace Ar;
 //! 10 ms tick.
 #define MU_TICK_QUANTA_MS (10)
 
-//! The default SPSR for a new thread. System Mode, ARM, interrupts enabled.
-#define MU_INITIAL_SPSR (0x1f)
-
-//! Thumb mode bit in the SPSR.
-#define MU_THUMB_MODE_BIT (0x20)
-
 #if MU_PRINT_SYSTEM_LOAD
     //! Size in bytes of the idle thread's stack. Needs much more stack
     //! space in order to call printf().
@@ -82,12 +76,14 @@ using namespace Ar;
 // Variables
 //------------------------------------------------------------------------------
 
+Thread * Ar::g_ar_currentThread;
+
 bool Thread::s_isRunning = false;
 Thread * Thread::s_readyList = NULL;
 Thread * Thread::s_suspendedList = NULL;
 Thread * Thread::s_sleepingList = NULL;
 volatile uint32_t Thread::s_tickCount = 0;
-Thread * Thread::s_currentThread = NULL;
+// Thread * Thread::g_ar_currentThread = NULL;
 volatile uint32_t Thread::s_irqDepth = 0;
 unsigned Thread::s_systemLoad = 0;
 
@@ -375,7 +371,7 @@ void Thread::resume()
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
-    if (s_isRunning && this->m_priority > s_currentThread->m_priority)
+    if (s_isRunning && this->m_priority > g_ar_currentThread->m_priority)
     {
         enterScheduler();
     }
@@ -410,7 +406,7 @@ void Thread::suspend()
     }
 
     // are we suspending the current thread?
-    if (s_isRunning && this == s_currentThread)
+    if (s_isRunning && this == g_ar_currentThread)
     {
         enterScheduler();
     }
@@ -464,7 +460,7 @@ void Thread::sleep(unsigned ticks)
     assert(ticks != 0);
     
     // bail if there is not a running thread to put to sleep
-    if (!s_currentThread)
+    if (!g_ar_currentThread)
     {
         return;
     }
@@ -473,59 +469,14 @@ void Thread::sleep(unsigned ticks)
         IrqStateSetAndRestore disableIrq(false);
         
         // put the current thread on the sleeping list
-        s_currentThread->m_wakeupTime = s_tickCount + ticks;
-        s_currentThread->removeFromList(s_readyList);
-        s_currentThread->m_state = kThreadSleeping;
-        s_currentThread->addToList(s_sleepingList);
+        g_ar_currentThread->m_wakeupTime = s_tickCount + ticks;
+        g_ar_currentThread->removeFromList(s_readyList);
+        g_ar_currentThread->m_state = kThreadSleeping;
+        g_ar_currentThread->addToList(s_sleepingList);
     }
     
     // run scheduler and switch to another thread
     enterScheduler();
-}
-
-//! A total of 64 bytes of stack space is allocated to hold the initial
-//! thread context. Starting at the top of the stack, the highest address,
-//! and moving down a word at a time, the following values are set.
-//!
-//! - lr: thread entry address set to Thread::thread_wrapper()
-//! - r0: thread parameter
-//! - r1-12
-//! - r13: original stack top
-//! - r14-15
-//! - spsr: #MU_INITIAL_SPSR and possibly #MU_THUMB_MODE_BIT
-//!
-//! The entire remainder of the stack is filled with the pattern 0x55aa55aa
-//! as an easy way to tell what the high watermark of stack usage is.
-void Thread::prepareStack()
-{
-    uint32_t * top = (uint32_t *)m_stackTop;
-    
-    // first on the stack is the return address. it must be offset by 4 to match
-    // what it would be from within the tick ISR.
-    *--top = (uint32_t)thread_wrapper + 4;
-    
-    // push initial register values
-    top -= 15;  // make room for r0-r14
-    top[0] = (uint32_t)this;            // thread parameter goes into r0
-    top[13] = (uint32_t)m_stackTop;     // original sp goes into r13
-    
-    // and finally the spsr
-    uint32_t spsr = MU_INITIAL_SPSR;
-    if ((uint32_t)thread_wrapper & 1)
-    {
-        spsr |= MU_THUMB_MODE_BIT;
-    }
-    
-    *--top = spsr;
-    
-    // save new top of stack
-    m_stackPointer = reinterpret_cast<uint8_t *>(top);
-
-    // fill the rest of the stack with a pattern
-    while (reinterpret_cast<uint32_t>(top) > reinterpret_cast<uint32_t>(m_stackTop - m_stackSize))
-    {
-        *--top = 0x55aa55aa;
-    }
 }
 
 //!
@@ -533,10 +484,10 @@ void Thread::prepareStack()
 void Thread::threadEntry()
 {
     // Call the entry point.
-//     if (m_entry)
-//     {
-//         m_entry(thread->m_param);
-//     }
+    if (m_entry)
+    {
+        m_entry(m_param);
+    }
 }
 
 //! The thread wrapper calls the thread entry function that was set in
@@ -571,16 +522,6 @@ void Thread::thread_wrapper(Thread * thread)
     }
 }
 
-// #ifdef __ghs__
-// //! Little asm macro to insert a swi instruction.
-// asm void call_swi(void)
-// {
-//     swi 0
-// }
-// #else //__ghs__
-//    #error Need to implement this for other compilers!
-// #endif //__ghs__
-
 //! Uses a "swi" instruction to yield to the scheduler when in user mode. If
 //! the CPU is in IRQ mode then we can just call the scheduler() method
 //! directly and any change will take effect when the ISR exits.
@@ -589,8 +530,7 @@ void Thread::enterScheduler()
     if (s_irqDepth == 0)
     {
         // In user mode we must SWI into the scheduler.
-//         call_swi();
-        asm volatile ("svc #0");
+        service_call();
     }
     else
     {
@@ -623,10 +563,12 @@ void Thread::run()
     // Set up system tick timer
     initTimerInterrupt();
     
+    initSystem();
+    
     // We're now ready to run
     s_isRunning = true;
     
-    // Swi into the scheduler. The yieldIsr() will see that s_currentThread
+    // Swi into the scheduler. The yieldIsr() will see that g_ar_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
     // runs, we return from the swi handler to the init thread. Interrupts
     // are enabled in that switch to the init thread since all threads start
@@ -637,29 +579,15 @@ void Thread::run()
     _halt();
 }
 
-void Thread::initTimerInterrupt()
-{
-//     unsigned overflow = clocks_get_master() / 16 / (10 * MU_TICK_QUANTA_MS);
-// 
-//     // set the overflow value, and enable the timer and the interrupt
-//     AT91C_BASE_PITC->PITC_PIMR = overflow | AT91C_SYSC_PITEN | AT91C_SYSC_PITIEN;
-}
-
 void Thread::periodicTimerIsr()
 {
-    // Read the PIVR register to get the number of elapsed ticks, clear PITS, and
-    // reset the periodic timer.
-    unsigned ticks = 0; // (*AT91C_PITC_PIVR & AT91C_SYSC_PICNT) >> 20;
-    incrementTickCount(ticks);
+    incrementTickCount(1);
 
-    // Run the scheduler. It will modify s_currentThread if switching threads.
+    // Run the scheduler. It will modify g_ar_currentThread if switching threads.
     scheduler();
 
     // This case should never happen because of the idle thread.
-    if (!s_currentThread)
-    {
-        _halt();
-    }
+    assert(g_ar_currentThread);
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
@@ -670,22 +598,19 @@ void Thread::periodicTimerIsr()
 uint32_t Thread::yieldIsr(uint32_t topOfStack)
 {
     // save top of stack for the thread we interrupted
-    if (s_currentThread)
+    if (g_ar_currentThread)
     {
-        s_currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
+        g_ar_currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
     
-    // Run the scheduler. It will modify s_currentThread if switching threads.
+    // Run the scheduler. It will modify g_ar_currentThread if switching threads.
     scheduler();
 
     // The idle thread prevents this condition.
-    if (!s_currentThread)
-    {
-        _halt();
-    }
+    assert(g_ar_currentThread);
 
     // return the new thread's stack pointer
-    return (uint32_t)s_currentThread->m_stackPointer;
+    return (uint32_t)g_ar_currentThread->m_stackPointer;
 }
 
 //! Increments the system tick count and wakes any sleeping threads whose wakeup time
@@ -750,18 +675,18 @@ void Thread::scheduler()
     
     // Start the search either at the current thread or at the beginning of
     // the ready list.
-    if (s_currentThread)
+    if (g_ar_currentThread)
     {
-        // Handle case where current thread was suspended. Here the s_currentThread is no longer
+        // Handle case where current thread was suspended. Here the g_ar_currentThread is no longer
         // on the ready list so we can't start from its m_next.
-        if (s_currentThread->m_state != kThreadRunning)
+        if (g_ar_currentThread->m_state != kThreadRunning)
         {
-            s_currentThread = NULL;
+            g_ar_currentThread = NULL;
             next = s_readyList;
         }
         else
         {
-            next = s_currentThread;
+            next = g_ar_currentThread;
         }
     }
     else
@@ -791,22 +716,22 @@ void Thread::scheduler()
 
         // Handle both the case when we start with s_currentThead is 0 and when we loop
         // from the end of the ready list to the beginning.
-        if (!next && s_currentThread)
+        if (!next && g_ar_currentThread)
         {
             next = s_readyList;
         }
-    } while (next && next != s_currentThread);
+    } while (next && next != g_ar_currentThread);
 
     // Switch to newly selected thread.
-    if (highest && highest != s_currentThread)
+    if (highest && highest != g_ar_currentThread)
     {
-        if (s_currentThread && s_currentThread->m_state == kThreadRunning)
+        if (g_ar_currentThread && g_ar_currentThread->m_state == kThreadRunning)
         {
-            s_currentThread->m_state = kThreadReady;
+            g_ar_currentThread->m_state = kThreadReady;
         }
         
         highest->m_state = kThreadRunning;
-        s_currentThread = highest;
+        g_ar_currentThread = highest;
     }
 }
 
@@ -995,6 +920,16 @@ void Thread::unblockWithStatus(Thread * & blockedList, status_t unblockStatus)
     m_state = kThreadReady;
     m_unblockStatus = unblockStatus;
     addToList(Thread::s_readyList);
+}
+
+void * ar_yield(void * topOfStack)
+{
+    return (void *)Thread::yieldIsr((uint32_t)topOfStack);
+}
+
+void ar_periodic_timer(void)
+{
+    Thread::periodicTimerIsr();
 }
 
 //------------------------------------------------------------------------------

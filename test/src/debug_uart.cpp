@@ -27,67 +27,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*!
- * @file arport.h
- * @brief Header for the Argon RTOS.
- * @ingroup ar
- */
 
-#if !defined(_AR_PORT_H_)
-#define _AR_PORT_H_
-
-#include "fsl_platform_common.h"
+#include "debug_uart.h"
 #include "fsl_device_registers.h"
-
-namespace Ar {
+#include "uart/uart0.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
-/*!
- *
- */
-class IrqStateSetAndRestore
+#define UART0_RX_GPIO_PIN_NUM 1  // PIN 1 in the PTA group
+#define UART0_RX_ALT_MODE 2      // ALT mode for UART0 functionality for pin 1
+
+#define UART0_TX_GPIO_PIN_NUM 2  // PIN 2 in the PTA group
+#define UART0_TX_ALT_MODE 2      // ALT mode for UART0 TX functionality for pin 2
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+extern "C" size_t __write(int handle, const unsigned char *buf, size_t size);
+
+//------------------------------------------------------------------------------
+// Code
+//------------------------------------------------------------------------------
+
+void debug_init(void)
 {
-public:
-    IrqStateSetAndRestore(bool enableIrqs)
-    {
-        if (enableIrqs)
-        {
-            __enable_irq();
-        }
-        else
-        {
-            __disable_irq();
-        }
-    }
+    SIM->SCGC5 |= ( SIM_SCGC5_PORTA_MASK
+                  | SIM_SCGC5_PORTB_MASK
+                  | SIM_SCGC5_PORTC_MASK
+                  | SIM_SCGC5_PORTD_MASK
+                  | SIM_SCGC5_PORTE_MASK );
+
+    SIM->SOPT2 |= SIM_SOPT2_PLLFLLSEL_MASK // set PLLFLLSEL to select the PLL for this clock source
+                | SIM_SOPT2_UART0SRC(1);   // select the PLLFLLCLK as UART0 clock source
+                
+    BW_PORT_PCRn_MUX(HW_PORTA, UART0_RX_GPIO_PIN_NUM, UART0_RX_ALT_MODE);   // Set UART0_RX pin to UART0_RX functionality
+    BW_PORT_PCRn_MUX(HW_PORTA, UART0_TX_GPIO_PIN_NUM, UART0_TX_ALT_MODE);   // Set UART0_TX pin to UART0_TX functionality
     
-    ~IrqStateSetAndRestore()
-    {
-//         if (enableIrqs)
-//         {
-//             __enable_irq();
-//         }
-//         else
-//         {
-//             __disable_irq();
-//         }
-    }
-
-protected:
-};
-
-inline void _halt()
-{
-    asm volatile ("bkpt #0");
+    uart0_init(GetSystemMCGPLLClock(), DEBUG_UART_BAUD);
 }
 
-} // namespace Ar
+#if __ICCARM__
 
-//@}
+size_t __write(int handle, const unsigned char *buf, size_t size)
+{
+    while (size--)
+    {
+        uart0_putchar(*buf++);
+    }
 
-#endif // _AR_PORT_H_
+    return size;
+}
+
+#endif // __ICCARM__
+
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

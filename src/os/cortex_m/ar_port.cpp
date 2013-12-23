@@ -29,91 +29,92 @@
  */
 
 #include "os/ar_kernel.h"
-#include "debug_uart.h"
+#include "ar_port.h"
+
+#include <string.h>
+
+using namespace Ar;
+
+//------------------------------------------------------------------------------
+// Definitions
+//------------------------------------------------------------------------------
+
+enum
+{
+    kSchedulerQuanta_ms = 10
+};
+
+//! Initial thread register values.
+enum
+{
+    kInitialxPSR = 0x01000000u, //!< Set T bit.
+    kInitialLR = 0xfffffffeu    //!< Lockup address.
+};
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-void main_thread(void * arg);
-void a_thread(void * arg);
-void b_thread(void * arg);
-
-//------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread; //(main_thread, g_mainThreadStack, sizeof(g_mainThreadStack));
-
-uint8_t g_aThreadStack[512];
-Ar::Thread g_aThread;
-
-uint8_t g_bThreadStack[512];
-Ar::Thread g_bThread;
+extern "C" void SysTick_Handler(void);
 
 //------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
-void main_thread(void * arg)
+void Thread::initSystem()
 {
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
+    // Init PSP.
+    __set_PSP((uint32_t)s_idleThread.m_stackPointer);
     
-    g_aThread.init("a", a_thread, 0, g_aThreadStack, sizeof(g_aThreadStack), 60);
-    g_aThread.resume();
-
-    g_bThread.init("b", b_thread, 0, g_bThreadStack, sizeof(g_bThreadStack), 70);
-    g_bThread.resume();
-
-    while (1)
-    {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(1000);
-    }
+    // Switch to PSP.
+//     CONTROL_Type c;
+//     c.w = __get_CONTROL();
+//     c.b.SPSEL = 1;
+//     __set_CONTROL(c.w);
+//     __ISB();
 }
 
-void a_thread(void * arg)
+void Thread::initTimerInterrupt()
 {
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
-    
-    while (1)
-    {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(2000);
-    }
+    uint32_t ticks = SystemCoreClock / (kSchedulerQuanta_ms * 1000);
+    SysTick_Config(ticks);
 }
 
-void b_thread(void * arg)
+//! A total of 64 bytes of stack space is required to hold the initial
+//! thread context.
+//!
+//! The entire remainder of the stack is filled with the pattern 0xcc
+//! as an easy way to tell what the high watermark of stack usage is.
+void Thread::prepareStack()
 {
-    const char * myName = Ar::Thread::getCurrent()->getName();
-    printf("Thread '%s' is running\r\n", myName);
-    
-    while (1)
+    // 8-byte align stack.
+    uint32_t sp = reinterpret_cast<uint32_t>(m_stackTop);
+    uint32_t delta = sp & 7;
+    if (delta)
     {
-        printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
-        
-        Ar::Thread::sleep(3000);
+        sp -= delta;
+        m_stackTop = reinterpret_cast<uint8_t *>(sp);
+        m_stackSize -= delta;
     }
+    
+    // Fill the stack with a pattern.
+    memset(m_stackTop - m_stackSize, 0xcc, m_stackSize);
+    
+    // Save new top of stack. Also, make sure stack is 8-byte aligned.
+    sp -= sizeof(ThreadContext);
+    m_stackPointer = reinterpret_cast<uint8_t *>(sp);
+    
+    // Set the initial context on stack.
+    ThreadContext * context = reinterpret_cast<ThreadContext *>(sp);
+    context->xpsr = kInitialxPSR;
+    context->pc = reinterpret_cast<uint32_t>(thread_wrapper);
+    context->lr = kInitialLR;
+    context->r0 = reinterpret_cast<uint32_t>(this);
 }
 
-void main(void)
+void SysTick_Handler(void)
 {
-    debug_init();
-    
-    printf("Running test...\r\n");
-    
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
-    g_mainThread.resume();
-    
-    Ar::Thread::run();
-
-    Ar::_halt();
+    ar_periodic_timer();
 }
 
 //------------------------------------------------------------------------------

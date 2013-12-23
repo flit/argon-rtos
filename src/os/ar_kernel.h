@@ -71,7 +71,18 @@
 //! there are three copies of basically the same add/remove node code!
 //@{
 
+
+extern "C" {
+void * ar_yield(void * topOfStack);
+void ar_periodic_timer(void);
+}
+
 namespace Ar {
+
+class Thread;
+
+// Global symbols outside of the namespace for easy access from assembler.
+extern Ar::Thread * g_ar_currentThread;
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -281,7 +292,7 @@ public:
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return s_currentThread; }
+    static Thread * getCurrent() { return g_ar_currentThread; }
 
     //! @brief Returns the current tick count.
     static uint32_t getTickCount() { return s_tickCount; }
@@ -289,6 +300,13 @@ public:
     //! @brief Returns the current system load average.
     static unsigned getSystemLoad() { return s_systemLoad; }
     //@}
+
+    //! @brief Handles the periodic timer tick interrupt.
+    static void periodicTimerIsr();
+
+    //! @brief Handles the software interrupt to invoke the scheduler.
+    static uint32_t yieldIsr(uint32_t topOfStack);
+    
     
 protected:
     
@@ -397,19 +415,16 @@ protected:
     //! @brief Sets up the periodic system tick timer.
     static void initTimerInterrupt();
     
+    //! @brief
+    static void initSystem();
+    
     //! @brief Bumps the system tick count and updates sleeping threads.
     static void incrementTickCount(unsigned ticks);
     
     //! @brief Selects the next thread to run.
     static void scheduler();
-
-    //! @brief Handles the periodic timer tick interrupt.
-    static void periodicTimerIsr();
-
-    //! @brief Handles the software interrupt to invoke the scheduler.
-    static uint32_t yieldIsr(uint32_t topOfStack);
     //@}
-    
+
     // Friends have access to all protected members for efficiency.
     friend class Semaphore;     //!< Needs access to protected member functions.
     friend class Mutex;     //!< Needs access to protected member functions.
@@ -638,6 +653,7 @@ extern ObjectLists g_muAllObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 
 } // namespace Ar
+
 
 //@}
 

@@ -36,6 +36,7 @@
 
         import SystemInit
         import init_data_bss
+        import __iar_program_start
         import main
         import CSTACK$$Limit
 
@@ -53,43 +54,49 @@
 Reset_Handler
 
         // Set VTOR register in SCB first thing we do.
-        ldr     r0,=__vector_table
-        ldr     r1,=SCB_BASE
-        str     r0,[r1, #SCB_VTOR_OFFSET]
-
-        // Init the rest of the registers
-        ldr     r2,=0
-        ldr     r3,=0
-        ldr     r4,=0
-        ldr     r5,=0
-        ldr     r6,=0
-        ldr     r7,=0
-        mov     r8,r7
-        mov     r9,r7
-        mov     r10,r7
-        mov     r11,r7
-        mov     r12,r7
-
-        // Initialize the stack pointer
-        ldr     r0,=CSTACK$$Limit
-        mov     r13,r0
+//         ldr     r0,=__vector_table
+//         ldr     r1,=SCB_BASE
+//         str     r0,[r1, #SCB_VTOR_OFFSET]
+// 
+//         // Init the rest of the registers
+//         ldr     r2,=0
+//         ldr     r3,=0
+//         ldr     r4,=0
+//         ldr     r5,=0
+//         ldr     r6,=0
+//         ldr     r7,=0
+//         mov     r8,r7
+//         mov     r9,r7
+//         mov     r10,r7
+//         mov     r11,r7
+//         mov     r12,r7
+// 
+//         // Initialize the stack pointer
+//         ldr     r0,=CSTACK$$Limit
+//         mov     r13,r0
 
         // Unmask interrupts
-        cpsie   i
+//         cpsie   i
 
         // Call the CMSIS system init routine
-        ldr     r0,=SystemInit
-        blx     r0
+//         ldr     r0,=SystemInit
+//         blx     r0
 
         // Init .data and .bss sections
-        ldr     r0,=init_data_bss
-        blx     r0
+//         ldr     r0,=init_data_bss
+//         ldr     r0,=init_data_bss
+//         blx     r0
+// 
+//         // Set argc and argv to NULL before calling main().
+//         ldr     r0,=0
+//         ldr     r1,=0
+//         ldr     r2,=main
+//         blx     r2
 
-        // Set argc and argv to NULL before calling main().
-        ldr     r0,=0
-        ldr     r1,=0
-        ldr     r2,=main
-        blx     r2
+        LDR     R0, =SystemInit
+        BLX     R0
+        LDR     R0, =__iar_program_start
+        BX      R0
 
 __done
         B       __done
