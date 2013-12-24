@@ -29,8 +29,8 @@
  */
 /*!
  * @file arport.h
+ * @ingroup ar_port
  * @brief Header for the Argon RTOS.
- * @ingroup ar
  */
 
 #if !defined(_AR_PORT_H_)
@@ -40,6 +40,9 @@
 #include "fsl_device_registers.h"
 
 namespace Ar {
+
+//! @addtogroup ar_port
+//! @{
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -118,9 +121,9 @@ inline void service_call()
     asm volatile ("svc #0");
 }
 
-} // namespace Ar
+//! @}
 
-//@}
+} // namespace Ar
 
 #endif // _AR_PORT_H_
 //------------------------------------------------------------------------------

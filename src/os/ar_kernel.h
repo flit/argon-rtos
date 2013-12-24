@@ -38,46 +38,21 @@
 
 #include "ar_port.h"
 
-//! @defgroup ar Argon RTOS
-//! @brief Tiny, minimal embedded kernel.
-//!
-//! The Argon RTOS provides the basic components required to have a useful embedded
-//! operating system. It is almost entirely written in C++, with some assembler
-//! for handling interrupts and context switching. The four basic objects that are
-//! provided by Argon are:
-//!     - Thread: thread class
-//!     - Semaphore: counting semaphore
-//!     - Mutex: mutually exclusive lock
-//!     - Queue: message passing queue
-//!
-//! In addition, there are several utility helper classes.
-//!
-//! The Thread class actually encompasses most of the operating system within it.
-//! The scheduler, interrupt handlers, and related utilities are all static members
-//! of Thread. See the description for Thread for details about the threading
-//! implementation.
-//!
-//! There are several steps involved in starting the RTOS running.
-//!     -   Call install_sysc_isr(). This function sets up the System Controller
-//!         interrupt handler required by the RTOS to handle the tick timer.
-//!     -   Create at least one thread and resume it. If a thread is not created
-//!         then only the idle thread will exist and the system will do nothing.
-//!     -   Finally call Thread::run() to start the scheduler. This call will
-//!         not return.
-//!
-//! @todo Refactor code to support multiple platforms.
-//!
-//! @todo Refactor the linked list management code into its own class. Right now
-//! there are three copies of basically the same add/remove node code!
-//@{
-
+//! @addtogroup ar
+//! @{
 
 extern "C" {
 void * ar_yield(void * topOfStack);
 void ar_periodic_timer(void);
 }
 
+//! @}
+
+//! @ingroup ar
 namespace Ar {
+
+//! @addtogroup ar
+//! @{
 
 class Thread;
 
@@ -96,7 +71,9 @@ extern Ar::Thread * g_ar_currentThread;
     #define AR_MAX_NAME_LENGTH (16)
 #endif
 
-//! Timeout constants.
+//! @brief Timeout constants.
+//!
+//! @ingroup ar
 enum _ar_timeouts
 {
     //! Return immediately if a resource cannot be acquired.
@@ -106,24 +83,29 @@ enum _ar_timeouts
     kInfiniteTimeout = 0xffffffffL
 };
 
-//! Ar microkernel error codes.
+//! @brief Ar microkernel error codes.
+//!
+//! @ingroup ar
 enum _ar_errors
 {
+    //! Operation was successful.
     kSuccess = 0,
     
     //! Timeout while blocked on an object.
-    kTimeoutError, // ERROR_MU_TIMEOUT
+    kTimeoutError,
     
     //! An object was deleted while a thread was blocked on it. This may be
     //! a semaphore, mutex, or queue.
-    kObjectDeletedError, // ERROR_MU_OBJECT_DELETED
+    kObjectDeletedError,
     
     //! The queue is at maximum capacity and cannot accept more elements.
-    kQueueFullError, // ERROR_MU_QUEUE_FULL,
+    kQueueFullError,
     
     //! No elements are in the queue.
-    kQueueEmptyError, // ERROR_MU_QUEUE_EMPTY
+    kQueueEmptyError,
 };
+
+//! @}
 
 //------------------------------------------------------------------------------
 // Classes
@@ -131,6 +113,8 @@ enum _ar_errors
 
 /*!
  * @brief Base class for Ar classes that have a name associated with them.
+ *
+ * @ingroup ar
  *
  * This class provides functionality required by all Ar RTOS classes. It
  * keeps a name associated with each object instance. Having one copy of
@@ -168,6 +152,8 @@ protected:
 
 /*!
  * @brief Preemptive thread class and RTOS core.
+ *
+ * @ingroup ar
  *
  * This thread class implements a preemptive threading system with priorities.
  * The highest priority thread that is ready to run will always get the processor. That
@@ -438,7 +424,9 @@ private:
 /*!
  * @brief Counting semaphore class.
  *
- * @see MuSemHolder
+ * @ingroup ar
+ *
+ * @see SemaphoreHolder
  */
 class Semaphore : public NamedObject
 {
@@ -465,6 +453,8 @@ protected:
 
 /*!
  * @brief Utility class to automatically get and put a semaphore.
+ *
+ * @ingroup ar
  *
  * This class is intended to be stack allocated. It gets and holds a semaphore
  * for the duration of the scope in which it is declared. Once it goes out of
@@ -495,6 +485,8 @@ protected:
 
 /*!
  * @brief Mutex object.
+ *
+ * @ingroup ar
  *
  * Very similar to a binary semaphore, except that a single thread can
  * lock the mutex multiple times without deadlocking. In this case, the
@@ -529,6 +521,8 @@ protected:
 
 /*!
  * @brief A blocking queue for inter-thread messaging.
+ *
+ * @ingroup ar
  */
 class Queue : public NamedObject
 {
@@ -564,6 +558,8 @@ protected:
 
 /*!
  * @brief Template class to help statically allocate a Queue.
+ *
+ * @ingroup ar
  *
  * This template class helps create a Queue instance by defining a
  * static array of queue elements. The array length is one of the template
@@ -653,9 +649,6 @@ extern ObjectLists g_muAllObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 
 } // namespace Ar
-
-
-//@}
 
 #endif // _AR_KERNEL_H_
 //------------------------------------------------------------------------------
