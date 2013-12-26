@@ -76,29 +76,32 @@ void Thread::initSystem()
 
 void Thread::initTimerInterrupt()
 {
-    uint32_t ticks = SystemCoreClock / (kSchedulerQuanta_ms * 1000);
+    uint32_t ticks = SystemCoreClock / 1000 * kSchedulerQuanta_ms;
     SysTick_Config(ticks);
+    
+    // Set priorities for the exceptions we use in the kernel.
+    NVIC_SetPriority(SVCall_IRQn, kSVCallPriority);
+    NVIC_SetPriority(PendSV_IRQn, kPendSVPriority);
+    NVIC_SetPriority(SysTick_IRQn, kSysTickPriority);
 }
 
 //! A total of 64 bytes of stack space is required to hold the initial
 //! thread context.
 //!
-//! The entire remainder of the stack is filled with the pattern 0xcc
+//! The entire remainder of the stack is filled with the pattern 0xba
 //! as an easy way to tell what the high watermark of stack usage is.
 void Thread::prepareStack()
 {
     // 8-byte align stack.
     uint32_t sp = reinterpret_cast<uint32_t>(m_stackTop);
     uint32_t delta = sp & 7;
-    if (delta)
-    {
-        sp -= delta;
-        m_stackTop = reinterpret_cast<uint8_t *>(sp);
-        m_stackSize -= delta;
-    }
+    sp -= delta;
+    m_stackTop = reinterpret_cast<uint8_t *>(sp);
+    m_stackSize = (m_stackSize - delta) & ~7;
     
     // Fill the stack with a pattern.
-    memset(m_stackTop - m_stackSize, 0xcc, m_stackSize);
+    uint32_t * stackBottom = (uint32_t *)(sp - m_stackSize);
+    memset(stackBottom, 0xba, m_stackSize);
     
     // Save new top of stack. Also, make sure stack is 8-byte aligned.
     sp -= sizeof(ThreadContext);
@@ -110,6 +113,21 @@ void Thread::prepareStack()
     context->pc = reinterpret_cast<uint32_t>(thread_wrapper);
     context->lr = kInitialLR;
     context->r0 = reinterpret_cast<uint32_t>(this);
+    context->r1 = 0x11111111;
+    context->r2 = 0x22222222;
+    context->r3 = 0x33333333;
+    context->r4 = 0x44444444;
+    context->r5 = 0x55555555;
+    context->r6 = 0x66666666;
+    context->r7 = 0x77777777;
+    context->r8 = 0x88888888;
+    context->r9 = 0x99999999;
+    context->r10 = 0xaaaaaaaa;
+    context->r11 = 0xbbbbbbbb;
+    context->r12 = 0xcccccccc;
+    
+    // Write a check value to the bottom of the stack.
+    *stackBottom = 0xdeadbeef;
 }
 
 void SysTick_Handler(void)

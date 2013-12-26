@@ -97,7 +97,7 @@
         </option>
         <option>
           <name>UseFlashLoader</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CLowLevel</name>
@@ -275,7 +275,7 @@
         <option>
           <name>CMSISDAPResetList</name>
           <version>1</version>
-          <state>10</state>
+          <state>4</state>
         </option>
         <option>
           <name>CMSISDAPHWResetDuration</name>
@@ -295,7 +295,7 @@
         </option>
         <option>
           <name>CMSISDAPInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CMSISDAPInterfaceCmdLine</name>
@@ -416,7 +416,7 @@
         </option>
         <option>
           <name>ICpuName</name>
-          <state></state>
+          <state>0</state>
         </option>
       </data>
     </settings>
@@ -510,7 +510,7 @@
         <option>
           <name>IjetResetList</name>
           <version>1</version>
-          <state>10</state>
+          <state>4</state>
         </option>
         <option>
           <name>IjetHWResetDuration</name>
@@ -538,7 +538,7 @@
         </option>
         <option>
           <name>IjetInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IjetInterfaceCmdLine</name>
@@ -1036,7 +1036,7 @@
         </option>
         <option>
           <name>CCPEMicroJtagSpeed</name>
-          <state>5000</state>
+          <state>10000</state>
         </option>
         <option>
           <name>CCJPEMicroShowSettings</name>
@@ -1091,7 +1091,7 @@
         <debug>1</debug>
         <option>
           <name>CRDIDriverDll</name>
-          <state>###Uninitialized###</state>
+          <state>Browse to your RDI driver</state>
         </option>
         <option>
           <name>CRDILogFileCheck</name>
@@ -1152,7 +1152,7 @@
         </option>
         <option>
           <name>CCSTLinkInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCSTLinkInterfaceCmdLine</name>

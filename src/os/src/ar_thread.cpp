@@ -29,7 +29,7 @@
  */
 /*!
  * @file muthread.cpp
- * @brief Source for Mu microkernel threads.
+ * @brief Source for Ar microkernel threads.
  * @ingroup mu
  */
 
@@ -96,7 +96,7 @@ uint8_t Thread::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
 Thread Thread::s_idleThread;
 
 #if AR_GLOBAL_OBJECT_LISTS
-//! This global contains linked lists of all the various Mu object
+//! This global contains linked lists of all the various Ar object
 //! types that have been created during runtime. This makes it much
 //! easier to examine objects of interest.
 ObjectLists g_muAllObjects;
@@ -347,7 +347,7 @@ void Thread::cleanup()
 //! guaranteed to be running, meaning the calling thread was the previous
 //! highest priority thread.
 //!
-//! Does not enter the scheduler if Mu is not running. Does nothing if
+//! Does not enter the scheduler if Ar is not running. Does nothing if
 //! the thread is already on the ready list.
 //!
 //! @todo Deal with all thread states properly.
@@ -382,7 +382,7 @@ void Thread::resume()
 //! Calling suspend() on another thread will not cause the scheduler to
 //! switch threads.
 //!
-//! Does not enter the scheduler if Mu is not running. Does nothing if
+//! Does not enter the scheduler if Ar is not running. Does nothing if
 //! the thread is already suspended.
 //!
 //! @todo Deal with all thread states properly.
@@ -417,7 +417,7 @@ void Thread::suspend()
 //! there is no new highest priority thread. In this case, control may switch to the
 //! next thread with the same priority, assuming there is one.
 //!
-//! Does not enter the scheduler if Mu is not running.
+//! Does not enter the scheduler if Ar is not running.
 //!
 //! @param priority Thread priority level from 1 to 255, where lower number have
 //!     a lower priority. Priority number 0 is not allowed because it is reserved for
@@ -451,7 +451,7 @@ void join(uint32_t timeout=kInfiniteTimeout)
 //  return kSuccess;
 }
 
-//! Does nothing if Mu is not running.
+//! Does nothing if Ar is not running.
 //!
 //! @param ticks The number of operating system ticks to sleep the calling thread.
 //!     A sleep time of 0 is not allowed.
@@ -581,10 +581,18 @@ void Thread::run()
 
 void Thread::periodicTimerIsr()
 {
+    // Exit immediately if the kernel isn't running.
+    if (!s_isRunning)
+    {
+        return;
+    }
+    
     incrementTickCount(1);
 
     // Run the scheduler. It will modify g_ar_currentThread if switching threads.
-    scheduler();
+//     scheduler();
+//     pending_service_call();
+    service_call();
 
     // This case should never happen because of the idle thread.
     assert(g_ar_currentThread);
@@ -620,9 +628,10 @@ uint32_t Thread::yieldIsr(uint32_t topOfStack)
 //! @param ticks The number of ticks that have elapsed. Normally this will only be 1, 
 //!     and must be at least 1, but may be higher if interrupts are disabled for a
 //!     long time.
+//! @return Flag indicating whether any threads were modified.
 //!
 //! @todo Keep the list of sleeping threads sorted by next wakeup time.
-void Thread::incrementTickCount(unsigned ticks)
+bool Thread::incrementTickCount(unsigned ticks)
 {
     assert(ticks > 0);
     
@@ -631,7 +640,8 @@ void Thread::incrementTickCount(unsigned ticks)
 
     // Scan list of sleeping threads to see if any should wake up.
     Thread * thread = s_sleepingList;
-
+    bool wasThreadWoken = false;
+    
     while (thread)
     {
         Thread * next = thread->m_next;
@@ -639,6 +649,8 @@ void Thread::incrementTickCount(unsigned ticks)
         // Is it time to wake this thread?
         if (s_tickCount >= thread->m_wakeupTime)
         {
+            wasThreadWoken = true;
+            
             // State-specific actions
             switch (thread->m_state)
             {
@@ -664,6 +676,8 @@ void Thread::incrementTickCount(unsigned ticks)
         
         thread = next;
     }
+    
+    return wasThreadWoken;
 }
 
 //! @todo There are many opportunities for optimising the scheduler search
@@ -704,6 +718,12 @@ void Thread::scheduler()
     do {
         if (next)
         {
+            uint32_t check = *(uint32_t *)((uint32_t)next->m_stackTop - next->m_stackSize);
+            if (check != 0xdeadbeef)
+            {
+                _halt();
+            }
+            
             next = next->m_next;
         }
 
@@ -929,7 +949,7 @@ void * ar_yield(void * topOfStack)
 
 void ar_periodic_timer(void)
 {
-    Thread::periodicTimerIsr();
+    return Thread::periodicTimerIsr();
 }
 
 //------------------------------------------------------------------------------

@@ -57,7 +57,7 @@ Reset_Handler
 //         ldr     r0,=__vector_table
 //         ldr     r1,=SCB_BASE
 //         str     r0,[r1, #SCB_VTOR_OFFSET]
-// 
+
 //         // Init the rest of the registers
 //         ldr     r2,=0
 //         ldr     r3,=0
@@ -79,22 +79,22 @@ Reset_Handler
 //         cpsie   i
 
         // Call the CMSIS system init routine
-//         ldr     r0,=SystemInit
-//         blx     r0
+        ldr     r0,=SystemInit
+        blx     r0
 
         // Init .data and .bss sections
-//         ldr     r0,=init_data_bss
-//         ldr     r0,=init_data_bss
-//         blx     r0
-// 
+        ldr     r0,=init_data_bss
+        ldr     r0,=init_data_bss
+        blx     r0
+
 //         // Set argc and argv to NULL before calling main().
 //         ldr     r0,=0
 //         ldr     r1,=0
 //         ldr     r2,=main
 //         blx     r2
 
-        LDR     R0, =SystemInit
-        BLX     R0
+//         LDR     R0, =SystemInit
+//         BLX     R0
         LDR     R0, =__iar_program_start
         BX      R0
 

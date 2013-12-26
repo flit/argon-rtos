@@ -48,6 +48,14 @@ namespace Ar {
 // Definitions
 //------------------------------------------------------------------------------
 
+//! @brief Priorities for kernel exceptions.
+enum _exception_priorities
+{
+    kSVCallPriority = 2,
+    kPendSVPriority = 2,
+    kSysTickPriority = 2
+};
+
 /*!
  * @brief Context for a thread saved on the stack.
  */
@@ -105,20 +113,26 @@ protected:
 // typedef IrqStateSetAndRestore<true> IrqEnableAndRestore;
 // typedef IrqStateSetAndRestore<false> IrqDisableAndRestore;
 
+//! @brief Stop the CPU because of a serious error.
 inline void _halt()
 {
-#if DEBUG
     asm volatile ("bkpt #0");
-#else // DEBUG
-    while (1)
-    {
-    }
-#endif // DEBUG
 }
 
+//! @brief Invoke the SVCall handler.
 inline void service_call()
 {
-    asm volatile ("svc #0");
+//     asm volatile ("svc #0");
+
+    // Set PendSV pending.
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+}
+
+//! @brief Set the PendSV IRQ pending.
+inline void pending_service_call()
+{
+    // Set PendSV pending.
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
 //! @}

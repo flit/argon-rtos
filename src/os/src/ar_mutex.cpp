@@ -29,7 +29,7 @@
  */
 /*!
  * @file mutex.cpp
- * @brief Source for Mu microkernel mutexes.
+ * @brief Source for Ar microkernel mutexes.
  * @ingroup mu
  */
 

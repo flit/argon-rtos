@@ -405,7 +405,7 @@ protected:
     static void initSystem();
     
     //! @brief Bumps the system tick count and updates sleeping threads.
-    static void incrementTickCount(unsigned ticks);
+    static bool incrementTickCount(unsigned ticks);
     
     //! @brief Selects the next thread to run.
     static void scheduler();

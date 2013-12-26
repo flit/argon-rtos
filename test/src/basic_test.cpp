@@ -43,13 +43,14 @@ void b_thread(void * arg);
 // Variables
 //------------------------------------------------------------------------------
 
-uint8_t g_mainThreadStack[512];
+// uint32_t dummy;
+uint8_t g_mainThreadStack[1024];
 Ar::Thread g_mainThread; //(main_thread, g_mainThreadStack, sizeof(g_mainThreadStack));
 
-uint8_t g_aThreadStack[512];
+uint8_t g_aThreadStack[1024];
 Ar::Thread g_aThread;
 
-uint8_t g_bThreadStack[512];
+uint8_t g_bThreadStack[1024];
 Ar::Thread g_bThread;
 
 //------------------------------------------------------------------------------
@@ -71,7 +72,7 @@ void main_thread(void * arg)
     {
         printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
         
-        Ar::Thread::sleep(1000);
+        Ar::Thread::sleep(100);
     }
 }
 
@@ -84,7 +85,7 @@ void a_thread(void * arg)
     {
         printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
         
-        Ar::Thread::sleep(2000);
+        Ar::Thread::sleep(200);
     }
 }
 
@@ -97,13 +98,14 @@ void b_thread(void * arg)
     {
         printf("Hello from thread '%s' (ticks=%u)!\r\n", myName, Ar::Thread::getTickCount());
         
-        Ar::Thread::sleep(3000);
+        Ar::Thread::sleep(300);
     }
 }
 
 void main(void)
 {
     debug_init();
+//     dummy = 1234;
     
     printf("Running test...\r\n");
     

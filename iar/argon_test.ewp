@@ -181,7 +181,7 @@
         </option>
         <option>
           <name>CCPreprocComments</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCPreprocLine</name>
@@ -274,7 +274,7 @@
         </option>
         <option>
           <name>CCDiagWarnAreErr</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCCompilerRuntimeInfo</name>
@@ -590,7 +590,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>5.srec</state>
+          <state>argon_test.srec</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -680,7 +680,7 @@
         </option>
         <option>
           <name>IlinkMapFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkLogFile</name>
@@ -704,11 +704,11 @@
         </option>
         <option>
           <name>IlinkIcfOverride</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$TOOLKIT_DIR$\config\linker\Freescale\MKL25Z128xxx4.icf</state>
+          <state>$PROJ_DIR$\config\16KB_RAM.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -1181,7 +1181,7 @@
         </option>
         <option>
           <name>CCDebugInfo</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IEndianMode</name>
@@ -1217,7 +1217,7 @@
         </option>
         <option>
           <name>CCDiagWarnAreErr</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCCompilerRuntimeInfo</name>
@@ -1329,7 +1329,7 @@
         </option>
         <option>
           <name>IccStaticDestr</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccCppInlineSemantics</name>
@@ -1533,7 +1533,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>5.srec</state>
+          <state>argon_test.srec</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -1575,7 +1575,7 @@
         <debug>0</debug>
         <option>
           <name>IlinkOutputFile</name>
-          <state>cpp.out</state>
+          <state>basic_test.out</state>
         </option>
         <option>
           <name>IlinkLibIOConfig</name>
@@ -1623,7 +1623,7 @@
         </option>
         <option>
           <name>IlinkMapFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkLogFile</name>
@@ -1806,7 +1806,7 @@
         </option>
         <option>
           <name>IlinkOptExceptionsAllow</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IlinkOptExceptionsForce</name>
@@ -1818,7 +1818,7 @@
         </option>
         <option>
           <name>IlinkOptMergeDuplSections</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkOptUseVfe</name>

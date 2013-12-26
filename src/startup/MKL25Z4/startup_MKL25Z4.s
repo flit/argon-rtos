@@ -120,11 +120,17 @@ Reset_Handler
         PUBWEAK NMI_Handler
         SECTION .text:CODE:REORDER(2)
 NMI_Handler
+#if DEBUG
+        bkpt    #0
+#endif
         B       .
 
         PUBWEAK HardFault_Handler
         SECTION .text:CODE:REORDER(2)
 HardFault_Handler
+#if DEBUG
+        bkpt    #0
+#endif
         B       .
 
         PUBWEAK SVC_Handler
