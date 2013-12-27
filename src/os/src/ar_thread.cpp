@@ -516,10 +516,10 @@ void Thread::thread_wrapper(Thread * thread)
         
         // Mark this thread as finished
         thread->m_state = kThreadDone;
-        
-        // Switch to the scheduler to let another thread take over
-        enterScheduler();
     }
+        
+    // Switch to the scheduler to let another thread take over
+    enterScheduler();
 }
 
 //! Uses a "swi" instruction to yield to the scheduler when in user mode. If

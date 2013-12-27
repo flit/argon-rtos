@@ -615,7 +615,7 @@ public:
     //! @param[out] resultStatus The status of the receive operation is placed here.
     //!     May be NULL, in which case no status is returned.
     //! @param timeout Maximum time in ticks to wait for a queue element.
-    T receive(status_t * resultStatus, uint32_t timeout=kInfiniteTimeout)
+    T receive(uint32_t timeout=kInfiniteTimeout, status_t * resultStatus=NULL)
     {
         T element;
         status_t status = Queue::receive((void *)&element, timeout);

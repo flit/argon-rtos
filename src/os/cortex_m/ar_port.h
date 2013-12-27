@@ -105,6 +105,9 @@ public:
     {
         __set_PRIMASK(m_savedPrimask);
     }
+    
+    void disable() { __disable_irq(); }
+    void enable() { __enable_irq(); }
 
 protected:
     uint32_t m_savedPrimask;

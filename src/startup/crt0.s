@@ -70,13 +70,6 @@ Reset_Handler
 //         mov     r10,r7
 //         mov     r11,r7
 //         mov     r12,r7
-// 
-//         // Initialize the stack pointer
-//         ldr     r0,=CSTACK$$Limit
-//         mov     r13,r0
-
-        // Unmask interrupts
-//         cpsie   i
 
         // Call the CMSIS system init routine
         ldr     r0,=SystemInit
@@ -93,8 +86,6 @@ Reset_Handler
 //         ldr     r2,=main
 //         blx     r2
 
-//         LDR     R0, =SystemInit
-//         BLX     R0
         LDR     R0, =__iar_program_start
         BX      R0
 

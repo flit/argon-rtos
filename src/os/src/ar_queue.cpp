@@ -118,10 +118,14 @@ status_t Queue::send(const void * element, uint32_t timeout)
         Thread * thread = g_ar_currentThread;
         thread->block(m_sendBlockedList, timeout);
         
+        disableIrq.enable();
+        
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
         Thread::enterScheduler();
+        
+        disableIrq.disable();
         
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -151,6 +155,8 @@ status_t Queue::send(const void * element, uint32_t timeout)
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar_currentThread->m_priority)
         {
+            disableIrq.enable();
+        
             Thread::enterScheduler();
         }
     }
@@ -183,10 +189,14 @@ status_t Queue::receive(void * element, uint32_t timeout)
         Thread * thread = g_ar_currentThread;
         thread->block(m_receiveBlockedList, timeout);
         
+        disableIrq.enable();
+        
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
         Thread::enterScheduler();
+        
+        disableIrq.disable();
         
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -216,6 +226,8 @@ status_t Queue::receive(void * element, uint32_t timeout)
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar_currentThread->m_priority)
         {
+            disableIrq.enable();
+        
             Thread::enterScheduler();
         }
     }

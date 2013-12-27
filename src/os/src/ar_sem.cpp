@@ -114,11 +114,15 @@ status_t Semaphore::get(uint32_t timeout)
         Thread * thread = g_ar_currentThread;
         thread->block(m_blockedList, timeout);
 
+        disableIrq.enable();
+        
         // Yield to the scheduler. We'll return when a call to put()
         // wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
         Thread::enterScheduler();
 
+        disableIrq.disable();
+        
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kSuccess)
@@ -153,6 +157,8 @@ void Semaphore::put()
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar_currentThread->m_priority)
         {
+            disableIrq.enable();
+        
             Thread::enterScheduler();
         }
     }
