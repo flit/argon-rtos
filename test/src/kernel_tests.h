@@ -28,87 +28,96 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(_KERNEL_TESTS_H_)
+#define _KERNEL_TESTS_H_
+
 #include "os/ar_kernel.h"
-#include "debug_uart.h"
-#include "kernel_tests.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
-#define TEST_CASE_CLASS TestSleep1
+/*!
+ * @brief Abstract kernel test class.
+ */
+class KernelTest
+{
+public:
+    KernelTest() {}
+    
+    virtual ~KernelTest() {}
+
+    virtual void init() {}
+    virtual void run()=0;
+    
+    const char * threadIdString() const;
+
+protected:
+    Ar::Thread * m_self;
+
+    void printHello();
+    void printTicks();
+    
+};
+
+class TestSleep1 : public KernelTest
+{
+public:
+    TestSleep1() : KernelTest() {}
+    
+    virtual void run();
+
+protected:
+    
+    uint8_t m_aThreadStack[512];
+    Ar::Thread m_aThread;
+
+    uint8_t m_bThreadStack[512];
+    Ar::Thread m_bThread;
+
+    void a_thread();
+    void b_thread();
+
+    static void _a_thread(void * arg);
+    static void _b_thread(void * arg);
+    
+};
+
+class TestQueue1 : public KernelTest
+{
+public:
+    TestQueue1() {}
+    
+    virtual void run();
+
+protected:
+
+    uint8_t m_producerThreadStack[512];
+    Ar::Thread m_producerThread;
+
+    uint8_t m_consumerAThreadStack[512];
+    Ar::Thread m_consumerAThread;
+
+    uint8_t m_consumerBThreadStack[512];
+    Ar::Thread m_consumerBThread;
+
+    Ar::StaticQueue<int, 5> m_q;
+
+    void producer_thread();
+    void consumer_a_thread();
+    void consumer_b_thread();
+
+    static void _producer_thread(void * arg);
+    static void _consumer_a_thread(void * arg);
+    static void _consumer_b_thread(void * arg);
+    
+};
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-void main_thread(void * arg);
-
-//------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread;
-
-TEST_CASE_CLASS g_testCase;
-
-//------------------------------------------------------------------------------
-// Code
-//------------------------------------------------------------------------------
-
-const char * KernelTest::threadIdString() const
-{
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    static char idString[32];
-    snprintf(idString, sizeof(idString), "[%s]", self->getName());
-    return idString;
-}
-
-void KernelTest::printHello()
-{
-    printf("%s running\r\n", threadIdString());
-}
-
-void KernelTest::printTicks()
-{
-    uint32_t ticks = Ar::Thread::getTickCount();
-    printf("%s ticks=%u!\r\n", threadIdString(), ticks);
-}
-
-void main_thread(void * arg)
-{
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    const char * myName = self->getName();
-    
-    printf("[%s] Main thread is running\r\n", myName);
-    
-    g_testCase.init();
-    g_testCase.run();
-    
-//     while (1)
-//     {
-//         print_thread_ticks();
-//         
-//         Ar::Thread::sleep(100);
-//     }
-}
-
-void main(void)
-{
-    debug_init();
-    
-    printf("Running test...\r\n");
-    
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
-    g_mainThread.resume();
-    
-    Ar::Thread::run();
-
-    Ar::_halt();
-}
-
+#endif // _KERNEL_TESTS_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

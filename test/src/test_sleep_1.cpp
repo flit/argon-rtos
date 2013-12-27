@@ -33,80 +33,53 @@
 #include "kernel_tests.h"
 
 //------------------------------------------------------------------------------
-// Definitions
-//------------------------------------------------------------------------------
-
-#define TEST_CASE_CLASS TestSleep1
-
-//------------------------------------------------------------------------------
-// Prototypes
-//------------------------------------------------------------------------------
-
-void main_thread(void * arg);
-
-//------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread;
-
-TEST_CASE_CLASS g_testCase;
-
-//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
-const char * KernelTest::threadIdString() const
+void TestSleep1::run()
 {
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    static char idString[32];
-    snprintf(idString, sizeof(idString), "[%s]", self->getName());
-    return idString;
+    m_aThread.init("a", _a_thread, this, m_aThreadStack, sizeof(m_aThreadStack), 60);
+    m_aThread.resume();
+
+    m_bThread.init("b", _b_thread, this, m_bThreadStack, sizeof(m_bThreadStack), 70);
+    m_bThread.resume();
+    
 }
 
-void KernelTest::printHello()
+void TestSleep1::_a_thread(void * arg)
 {
-    printf("%s running\r\n", threadIdString());
+    TestSleep1 * _this = (TestSleep1 *)arg;
+    _this->a_thread();
 }
 
-void KernelTest::printTicks()
+void TestSleep1::_b_thread(void * arg)
 {
-    uint32_t ticks = Ar::Thread::getTickCount();
-    printf("%s ticks=%u!\r\n", threadIdString(), ticks);
+    TestSleep1 * _this = (TestSleep1 *)arg;
+    _this->b_thread();
 }
 
-void main_thread(void * arg)
+void TestSleep1::a_thread()
 {
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    const char * myName = self->getName();
+    printHello();
     
-    printf("[%s] Main thread is running\r\n", myName);
-    
-    g_testCase.init();
-    g_testCase.run();
-    
-//     while (1)
-//     {
-//         print_thread_ticks();
-//         
-//         Ar::Thread::sleep(100);
-//     }
+    while (1)
+    {
+        printTicks();
+        
+        Ar::Thread::sleep(200);
+    }
 }
 
-void main(void)
+void TestSleep1::b_thread()
 {
-    debug_init();
+    printHello();
     
-    printf("Running test...\r\n");
-    
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
-    g_mainThread.resume();
-    
-    Ar::Thread::run();
-
-    Ar::_halt();
+    while (1)
+    {
+        printTicks();
+        
+        Ar::Thread::sleep(300);
+    }
 }
 
 //------------------------------------------------------------------------------

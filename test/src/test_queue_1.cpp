@@ -33,80 +33,76 @@
 #include "kernel_tests.h"
 
 //------------------------------------------------------------------------------
-// Definitions
-//------------------------------------------------------------------------------
-
-#define TEST_CASE_CLASS TestSleep1
-
-//------------------------------------------------------------------------------
-// Prototypes
-//------------------------------------------------------------------------------
-
-void main_thread(void * arg);
-
-//------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread;
-
-TEST_CASE_CLASS g_testCase;
-
-//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
-const char * KernelTest::threadIdString() const
+void TestQueue1::run()
 {
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    static char idString[32];
-    snprintf(idString, sizeof(idString), "[%s]", self->getName());
-    return idString;
+    m_q.init("q");
+
+    m_producerThread.init("producer", _producer_thread, this, m_producerThreadStack, sizeof(m_producerThreadStack), 20);
+    m_producerThread.resume();
+
+    m_consumerAThread.init("consumerA", _consumer_a_thread, this, m_consumerAThreadStack, sizeof(m_consumerAThreadStack), 30);
+    m_consumerAThread.resume();
+
+    m_consumerBThread.init("consumerB", _consumer_b_thread, this, m_consumerBThreadStack, sizeof(m_consumerBThreadStack), 31);
+    m_consumerBThread.resume();
 }
 
-void KernelTest::printHello()
+void TestQueue1::_producer_thread(void * arg)
 {
-    printf("%s running\r\n", threadIdString());
+    TestQueue1 * _this = (TestQueue1 *)arg;
+    _this->producer_thread();
 }
 
-void KernelTest::printTicks()
+void TestQueue1::_consumer_a_thread(void * arg)
 {
-    uint32_t ticks = Ar::Thread::getTickCount();
-    printf("%s ticks=%u!\r\n", threadIdString(), ticks);
+    TestQueue1 * _this = (TestQueue1 *)arg;
+    _this->consumer_a_thread();
 }
 
-void main_thread(void * arg)
+void TestQueue1::_consumer_b_thread(void * arg)
 {
-    Ar::Thread * self = Ar::Thread::getCurrent();
-    const char * myName = self->getName();
-    
-    printf("[%s] Main thread is running\r\n", myName);
-    
-    g_testCase.init();
-    g_testCase.run();
-    
-//     while (1)
-//     {
-//         print_thread_ticks();
-//         
-//         Ar::Thread::sleep(100);
-//     }
+    TestQueue1 * _this = (TestQueue1 *)arg;
+    _this->consumer_b_thread();
 }
 
-void main(void)
+void TestQueue1::producer_thread()
 {
-    debug_init();
+    printHello();
     
-    printf("Running test...\r\n");
-    
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
-    g_mainThread.resume();
-    
-    Ar::Thread::run();
+    int counter = 0;
+    while (1)
+    {
+        int value = ++counter;
+        printf("%s sending %d\r\n", threadIdString(), value);
+        m_q.send(value);
+        
+        Ar::Thread::sleep(200);
+    }
+}
 
-    Ar::_halt();
+void TestQueue1::consumer_a_thread()
+{
+    printHello();
+    
+    while (1)
+    {
+        int value = m_q.receive();
+        printf("%s received %d\r\n", threadIdString(), value);
+    }
+}
+
+void TestQueue1::consumer_b_thread()
+{
+    printHello();
+    
+    while (1)
+    {
+        int value = m_q.receive();
+        printf("%s received %d\r\n", threadIdString(), value);
+    }
 }
 
 //------------------------------------------------------------------------------
