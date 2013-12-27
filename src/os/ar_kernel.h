@@ -56,9 +56,6 @@ namespace Ar {
 
 class Thread;
 
-// Global symbols outside of the namespace for easy access from assembler.
-extern Ar::Thread * g_ar_currentThread;
-
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
@@ -266,32 +263,14 @@ public:
     //! @brief Change the thread's priority.
     void setPriority(uint8_t priority);
     //@}
-    
-    //! @name RTOS control
-    //@{
-    //! @brief Enables the tick timer and switches to a ready thread.
-    static void run();
-    //@}
 
     //! @name Accessors
     //!
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return g_ar_currentThread; }
-
-    //! @brief Returns the current tick count.
-    static uint32_t getTickCount() { return s_tickCount; }
-    
-    //! @brief Returns the current system load average.
-    static unsigned getSystemLoad() { return s_systemLoad; }
+    static Thread * getCurrent() { return s_currentThread; }
     //@}
-
-    //! @brief Handles the periodic timer tick interrupt.
-    static void periodicTimerIsr();
-
-    //! @brief Handles the software interrupt to invoke the scheduler.
-    static uint32_t yieldIsr(uint32_t topOfStack);
     
     
 protected:
@@ -300,7 +279,6 @@ protected:
     virtual void threadEntry();
 
 protected:
-    // Instance member variables
     
     volatile uint8_t * m_stackPointer; //!< Current stack pointer.
     uint8_t * m_stackTop;  //!< Original top of stack.
@@ -313,30 +291,11 @@ protected:
     Thread * m_nextBlocked; //!< Linked list node for blocked threads.
     uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
     status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
-    
-    // Static member variables
-    
-    static bool s_isRunning;    //!< True if the kernel has been started.
+
     static Thread * s_readyList;    //!< Head of a linked list of ready threads.
     static Thread * s_suspendedList;    //!< Head of linked list of suspended threads.
     static Thread * s_sleepingList; //!< Head of linked list of sleeping threads.
-    static volatile uint32_t s_tickCount;   //!< Current tick count.
     static Thread * s_currentThread;    //!< The currently running thread.
-    static volatile uint32_t s_irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
-    static unsigned s_systemLoad;   //!< Percent of system load from 0-100.
-    
-    //! @name Idle thread members
-    //@{
-    
-//  #pragma alignvar(8)
-    //! The stack for #s_idleThread.
-    static uint8_t s_idleThreadStack[];
-    
-    //! The lowest priority thread in the system. Executes only when no other
-    //! threads are ready.
-    static Thread s_idleThread;
-    
-    //@}
     
 protected:
     //
@@ -389,29 +348,18 @@ protected:
     //!
     //! Functions that implement the low-level parts of the operating system.
     //@{
-    //! @brief Function to wrap the thread entry point.
-    static void thread_wrapper(Thread * param);
-    
-    //! @brief Idle thread entry point.
-    static void idle_entry(void * param);
-
-    //! @brief Force entry into the scheduler with a swi instruction.
-    static void enterScheduler();
-    
-    //! @brief Sets up the periodic system tick timer.
-    static void initTimerInterrupt();
-    
-    //! @brief
-    static void initSystem();
-    
     //! @brief Bumps the system tick count and updates sleeping threads.
     static bool incrementTickCount(unsigned ticks);
     
     //! @brief Selects the next thread to run.
     static void scheduler();
+
+    //! @brief Function to wrap the thread entry point.
+    static void thread_wrapper(Thread * param);
     //@}
 
     // Friends have access to all protected members for efficiency.
+    friend class Kernel;
     friend class Semaphore;     //!< Needs access to protected member functions.
     friend class Mutex;     //!< Needs access to protected member functions.
     friend class Queue; //!< Needs access to protected member functions.
@@ -628,6 +576,78 @@ public:
     
 protected:
     T m_storage[N]; //!< Static storage for the queue elements.
+};
+
+/*!
+ * @brief RTOS core.
+ */
+class Kernel
+{
+public:
+    
+    //! @name RTOS control
+    //@{
+    //! @brief Enables the tick timer and switches to a ready thread.
+    static void run();
+    //@}
+
+    //! @brief Returns the current tick count.
+    static uint32_t getTickCount() { return s_tickCount; }
+    
+    //! @brief Returns the current system load average.
+    static unsigned getSystemLoad() { return s_systemLoad; }
+    
+    static bool isRunning() { return s_isRunning; }
+
+    //! @brief Handles the periodic timer tick interrupt.
+    static void periodicTimerIsr();
+
+    //! @brief Handles the software interrupt to invoke the scheduler.
+    static uint32_t yieldIsr(uint32_t topOfStack);
+
+protected:
+
+    static bool s_isRunning;    //!< True if the kernel has been started.
+    static volatile uint32_t s_tickCount;   //!< Current tick count.
+    static volatile uint32_t s_irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
+    static unsigned s_systemLoad;   //!< Percent of system load from 0-100.
+
+    //! @name Idle thread members
+    //@{
+    //! The stack for the idle thread.
+    static uint8_t s_idleThreadStack[];
+    
+    //! The lowest priority thread in the system. Executes only when no other
+    //! threads are ready.
+    static Thread s_idleThread;
+    //@}
+    
+    static uint32_t getIrqDepth() { return s_irqDepth; }
+
+    //! @brief Force entry into the scheduler.
+    static void enterScheduler();
+    
+    //! @brief Sets up the periodic system tick timer.
+    static void initTimerInterrupt();
+    
+    //! @brief
+    static void initSystem();
+
+    //! @brief Idle thread entry point.
+    static void idle_entry(void * param);
+
+    friend class Thread;
+    friend class Semaphore;
+    friend class Queue;
+
+private:
+
+    //! @brief The constructor is private so nobody can create an instance.
+    Kernel() {}
+
+    //! @brief The copy constructor is disabled by being private.
+    Kernel(const Kernel & other) {}
+    
 };
 
 #if AR_GLOBAL_OBJECT_LISTS

@@ -122,19 +122,9 @@ inline void _halt()
     asm volatile ("bkpt #0");
 }
 
-//! @brief Invoke the SVCall handler.
+//! @brief Make the PendSV exception pending.
 inline void service_call()
 {
-//     asm volatile ("svc #0");
-
-    // Set PendSV pending.
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-}
-
-//! @brief Set the PendSV IRQ pending.
-inline void pending_service_call()
-{
-    // Set PendSV pending.
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 

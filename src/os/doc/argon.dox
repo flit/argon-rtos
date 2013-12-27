@@ -20,14 +20,10 @@ of Thread. See the description for Thread for details about the threading
 implementation.
 
 There are several steps involved in starting the RTOS running.
-    -   Call install_sysc_isr(). This function sets up the System Controller
-        interrupt handler required by the RTOS to handle the tick timer.
     -   Create at least one thread and resume it. If a thread is not created
         then only the idle thread will exist and the system will do nothing.
     -   Finally call Thread::run() to start the scheduler. This call will
         not return.
-
-@todo Refactor code to support multiple platforms.
 
 @todo Refactor the linked list management code into its own class. Right now
 there are three copies of basically the same add/remove node code!

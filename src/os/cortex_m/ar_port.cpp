@@ -61,7 +61,7 @@ extern "C" void SysTick_Handler(void);
 // Code
 //------------------------------------------------------------------------------
 
-void Thread::initSystem()
+void Kernel::initSystem()
 {
     // Init PSP.
     __set_PSP((uint32_t)s_idleThread.m_stackPointer);
@@ -74,7 +74,7 @@ void Thread::initSystem()
 //     __ISB();
 }
 
-void Thread::initTimerInterrupt()
+void Kernel::initTimerInterrupt()
 {
     uint32_t ticks = SystemCoreClock / 1000 * kSchedulerQuanta_ms;
     SysTick_Config(ticks);

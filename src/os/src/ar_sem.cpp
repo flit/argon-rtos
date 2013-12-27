@@ -98,7 +98,7 @@ void Semaphore::cleanup()
 status_t Semaphore::get(uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    assert(Thread::s_irqDepth == 0 || (Thread::s_irqDepth > 0 && timeout == 0));
+    assert(Kernel::s_irqDepth == 0 || (Kernel::s_irqDepth > 0 && timeout == 0));
     
     IrqStateSetAndRestore disableIrq(false);
 
@@ -111,7 +111,7 @@ status_t Semaphore::get(uint32_t timeout)
         }
 
         // Block this thread on the semaphore.
-        Thread * thread = g_ar_currentThread;
+        Thread * thread = Thread::getCurrent();
         thread->block(m_blockedList, timeout);
 
         disableIrq.enable();
@@ -119,7 +119,7 @@ status_t Semaphore::get(uint32_t timeout)
         // Yield to the scheduler. We'll return when a call to put()
         // wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
-        Thread::enterScheduler();
+        Kernel::enterScheduler();
 
         disableIrq.disable();
         
@@ -155,11 +155,11 @@ void Semaphore::put()
         thread->unblockWithStatus(m_blockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar_currentThread->m_priority)
+        if (thread->m_priority > Thread::getCurrent()->m_priority)
         {
             disableIrq.enable();
         
-            Thread::enterScheduler();
+            Kernel::enterScheduler();
         }
     }
 }

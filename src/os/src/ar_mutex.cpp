@@ -94,7 +94,7 @@ void Mutex::cleanup()
 status_t Mutex::get(uint32_t timeout)
 {
     // If this thread already owns the mutex, just increment the count.
-    if (g_ar_currentThread == m_owner)
+    if (Thread::getCurrent() == m_owner)
     {
         m_ownerLockCount++;
         return kSuccess;
@@ -106,7 +106,7 @@ status_t Mutex::get(uint32_t timeout)
         if (result == kSuccess)
         {
             // Set the owner now that we own the lock.
-            m_owner = g_ar_currentThread;
+            m_owner = Thread::getCurrent();
             m_ownerLockCount++;
         }
         
@@ -120,7 +120,7 @@ status_t Mutex::get(uint32_t timeout)
 //! to call put() when the mutex is not owned by the calling thread.
 void Mutex::put()
 {
-    assert(g_ar_currentThread == m_owner && m_ownerLockCount > 0);
+    assert(Thread::getCurrent() == m_owner && m_ownerLockCount > 0);
     
     if (--m_ownerLockCount == 0)
     {

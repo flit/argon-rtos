@@ -115,7 +115,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = g_ar_currentThread;
+        Thread * thread = Thread::getCurrent();
         thread->block(m_sendBlockedList, timeout);
         
         disableIrq.enable();
@@ -123,7 +123,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
-        Thread::enterScheduler();
+        Kernel::enterScheduler();
         
         disableIrq.disable();
         
@@ -153,11 +153,11 @@ status_t Queue::send(const void * element, uint32_t timeout)
         thread->unblockWithStatus(m_receiveBlockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar_currentThread->m_priority)
+        if (thread->m_priority > Thread::getCurrent()->m_priority)
         {
             disableIrq.enable();
         
-            Thread::enterScheduler();
+            Kernel::enterScheduler();
         }
     }
     
@@ -186,7 +186,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = g_ar_currentThread;
+        Thread * thread = Thread::getCurrent();
         thread->block(m_receiveBlockedList, timeout);
         
         disableIrq.enable();
@@ -194,7 +194,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
-        Thread::enterScheduler();
+        Kernel::enterScheduler();
         
         disableIrq.disable();
         
@@ -224,11 +224,11 @@ status_t Queue::receive(void * element, uint32_t timeout)
         thread->unblockWithStatus(m_sendBlockedList, kSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar_currentThread->m_priority)
+        if (thread->m_priority > Thread::getCurrent()->m_priority)
         {
             disableIrq.enable();
         
-            Thread::enterScheduler();
+            Kernel::enterScheduler();
         }
     }
     

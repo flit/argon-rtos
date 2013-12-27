@@ -72,7 +72,7 @@ void KernelTest::printHello()
 
 void KernelTest::printTicks()
 {
-    uint32_t ticks = Ar::Thread::getTickCount();
+    uint32_t ticks = Ar::Kernel::getTickCount();
     printf("%s ticks=%u!\r\n", threadIdString(), ticks);
 }
 
@@ -104,7 +104,7 @@ void main(void)
     g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
     g_mainThread.resume();
     
-    Ar::Thread::run();
+    Ar::Kernel::run();
 
     Ar::_halt();
 }

@@ -76,24 +76,22 @@ using namespace Ar;
 // Variables
 //------------------------------------------------------------------------------
 
-Thread * Ar::g_ar_currentThread;
-
-bool Thread::s_isRunning = false;
 Thread * Thread::s_readyList = NULL;
 Thread * Thread::s_suspendedList = NULL;
 Thread * Thread::s_sleepingList = NULL;
-volatile uint32_t Thread::s_tickCount = 0;
-// Thread * Thread::g_ar_currentThread = NULL;
-volatile uint32_t Thread::s_irqDepth = 0;
-unsigned Thread::s_systemLoad = 0;
+Thread * Thread::s_currentThread = NULL;
 
-//#pragma alignvar(8)
+bool Kernel::s_isRunning = false;
+volatile uint32_t Kernel::s_tickCount = 0;
+volatile uint32_t Kernel::s_irqDepth = 0;
+unsigned Kernel::s_systemLoad = 0;
+
 //! The stack for #s_idleThread.
-uint8_t Thread::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
+uint8_t Kernel::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
 
 //! The lowest priority thread in the system. Executes only when no other
 //! threads are ready.
-Thread Thread::s_idleThread;
+Thread Kernel::s_idleThread;
 
 #if AR_GLOBAL_OBJECT_LISTS
 //! This global contains linked lists of all the various Ar object
@@ -121,7 +119,7 @@ ObjectLists g_muAllObjects;
 //! very easy to save power.
 //!
 //! @param param Ignored.
-void Thread::idle_entry(void * param)
+void Kernel::idle_entry(void * param)
 {
 #if MU_ENABLE_SYSTEM_LOAD
     uint32_t start;
@@ -129,14 +127,14 @@ void Thread::idle_entry(void * param)
     uint32_t ticks;
     uint32_t skipped = 0;
     
-    start = Thread::getTickCount();
+    start = Kernel::getTickCount();
     last = start;
 #endif // MU_ENABLE_SYSTEM_LOAD
     
     while (1)
     {
 #if MU_ENABLE_SYSTEM_LOAD
-        ticks = Thread::getTickCount();
+        ticks = Kernel::getTickCount();
         
         if (ticks != last)
         {
@@ -371,9 +369,9 @@ void Thread::resume()
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
-    if (s_isRunning && this->m_priority > g_ar_currentThread->m_priority)
+    if (Kernel::isRunning() && this->m_priority > s_currentThread->m_priority)
     {
-        enterScheduler();
+        Kernel::enterScheduler();
     }
 }
 
@@ -406,9 +404,9 @@ void Thread::suspend()
     }
 
     // are we suspending the current thread?
-    if (s_isRunning && this == g_ar_currentThread)
+    if (Kernel::isRunning() && this == s_currentThread)
     {
-        enterScheduler();
+        Kernel::enterScheduler();
     }
 }
 
@@ -428,9 +426,9 @@ void Thread::setPriority(uint8_t priority)
     
     m_priority = priority;
 
-    if (s_isRunning)
+    if (Kernel::isRunning())
     {
-        enterScheduler();
+        Kernel::enterScheduler();
     }
 }
 
@@ -460,7 +458,7 @@ void Thread::sleep(unsigned ticks)
     assert(ticks != 0);
     
     // bail if there is not a running thread to put to sleep
-    if (!g_ar_currentThread)
+    if (!s_currentThread)
     {
         return;
     }
@@ -469,14 +467,14 @@ void Thread::sleep(unsigned ticks)
         IrqStateSetAndRestore disableIrq(false);
         
         // put the current thread on the sleeping list
-        g_ar_currentThread->m_wakeupTime = s_tickCount + ticks;
-        g_ar_currentThread->removeFromList(s_readyList);
-        g_ar_currentThread->m_state = kThreadSleeping;
-        g_ar_currentThread->addToList(s_sleepingList);
+        s_currentThread->m_wakeupTime = Kernel::getTickCount() + ticks;
+        s_currentThread->removeFromList(s_readyList);
+        s_currentThread->m_state = kThreadSleeping;
+        s_currentThread->addToList(s_sleepingList);
     }
     
     // run scheduler and switch to another thread
-    enterScheduler();
+    Kernel::enterScheduler();
 }
 
 //!
@@ -519,13 +517,13 @@ void Thread::thread_wrapper(Thread * thread)
     }
         
     // Switch to the scheduler to let another thread take over
-    enterScheduler();
+    Kernel::enterScheduler();
 }
 
 //! Uses a "swi" instruction to yield to the scheduler when in user mode. If
 //! the CPU is in IRQ mode then we can just call the scheduler() method
 //! directly and any change will take effect when the ISR exits.
-void Thread::enterScheduler()
+void Kernel::enterScheduler()
 {
     if (s_irqDepth == 0)
     {
@@ -535,7 +533,7 @@ void Thread::enterScheduler()
     else
     {
         // We're in IRQ mode so just call the scheduler directly
-        scheduler();
+        Thread::scheduler();
     }
 }
 
@@ -549,10 +547,10 @@ void Thread::enterScheduler()
 //! @pre Interrupts must not be enabled prior to calling this routine.
 //!
 //! @note Control will never return from this method.
-void Thread::run()
+void Kernel::run()
 {
     // Assert if there is no thread ready to run.
-    assert(s_readyList);
+    assert(Thread::s_readyList);
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
@@ -568,7 +566,7 @@ void Thread::run()
     // We're now ready to run
     s_isRunning = true;
     
-    // Swi into the scheduler. The yieldIsr() will see that g_ar_currentThread
+    // Swi into the scheduler. The yieldIsr() will see that s_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
     // runs, we return from the swi handler to the init thread. Interrupts
     // are enabled in that switch to the init thread since all threads start
@@ -579,7 +577,7 @@ void Thread::run()
     _halt();
 }
 
-void Thread::periodicTimerIsr()
+void Kernel::periodicTimerIsr()
 {
     // Exit immediately if the kernel isn't running.
     if (!s_isRunning)
@@ -587,15 +585,13 @@ void Thread::periodicTimerIsr()
         return;
     }
     
-    incrementTickCount(1);
+    Thread::incrementTickCount(1);
 
-    // Run the scheduler. It will modify g_ar_currentThread if switching threads.
-//     scheduler();
-//     pending_service_call();
+    // Run the scheduler. It will modify s_currentThread if switching threads.
     service_call();
 
     // This case should never happen because of the idle thread.
-    assert(g_ar_currentThread);
+    assert(Thread::getCurrent());
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
@@ -603,22 +599,22 @@ void Thread::periodicTimerIsr()
 //! @return The value of the current thread's stack pointer is returned. If the scheduler
 //!     changed the current thread, this will be a different value from what was passed
 //!     in @a topOfStack.
-uint32_t Thread::yieldIsr(uint32_t topOfStack)
+uint32_t Kernel::yieldIsr(uint32_t topOfStack)
 {
     // save top of stack for the thread we interrupted
-    if (g_ar_currentThread)
+    if (Thread::getCurrent())
     {
-        g_ar_currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
+        Thread::getCurrent()->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
     
-    // Run the scheduler. It will modify g_ar_currentThread if switching threads.
-    scheduler();
+    // Run the scheduler. It will modify s_currentThread if switching threads.
+    Thread::scheduler();
 
     // The idle thread prevents this condition.
-    assert(g_ar_currentThread);
+    assert(Thread::getCurrent());
 
     // return the new thread's stack pointer
-    return (uint32_t)g_ar_currentThread->m_stackPointer;
+    return (uint32_t)Thread::getCurrent()->m_stackPointer;
 }
 
 //! Increments the system tick count and wakes any sleeping threads whose wakeup time
@@ -636,7 +632,7 @@ bool Thread::incrementTickCount(unsigned ticks)
     assert(ticks > 0);
     
     // Increment tick count.
-    s_tickCount += ticks;
+    Kernel::s_tickCount += ticks;
 
     // Scan list of sleeping threads to see if any should wake up.
     Thread * thread = s_sleepingList;
@@ -647,7 +643,7 @@ bool Thread::incrementTickCount(unsigned ticks)
         Thread * next = thread->m_next;
         
         // Is it time to wake this thread?
-        if (s_tickCount >= thread->m_wakeupTime)
+        if (Kernel::s_tickCount >= thread->m_wakeupTime)
         {
             wasThreadWoken = true;
             
@@ -689,18 +685,18 @@ void Thread::scheduler()
     
     // Start the search either at the current thread or at the beginning of
     // the ready list.
-    if (g_ar_currentThread)
+    if (s_currentThread)
     {
-        // Handle case where current thread was suspended. Here the g_ar_currentThread is no longer
+        // Handle case where current thread was suspended. Here the s_currentThread is no longer
         // on the ready list so we can't start from its m_next.
-        if (g_ar_currentThread->m_state != kThreadRunning)
+        if (s_currentThread->m_state != kThreadRunning)
         {
-            g_ar_currentThread = NULL;
+            s_currentThread = NULL;
             next = s_readyList;
         }
         else
         {
-            next = g_ar_currentThread;
+            next = s_currentThread;
         }
     }
     else
@@ -736,22 +732,22 @@ void Thread::scheduler()
 
         // Handle both the case when we start with s_currentThead is 0 and when we loop
         // from the end of the ready list to the beginning.
-        if (!next && g_ar_currentThread)
+        if (!next && s_currentThread)
         {
             next = s_readyList;
         }
-    } while (next && next != g_ar_currentThread);
+    } while (next && next != s_currentThread);
 
     // Switch to newly selected thread.
-    if (highest && highest != g_ar_currentThread)
+    if (highest && highest != s_currentThread)
     {
-        if (g_ar_currentThread && g_ar_currentThread->m_state == kThreadRunning)
+        if (s_currentThread && s_currentThread->m_state == kThreadRunning)
         {
-            g_ar_currentThread->m_state = kThreadReady;
+            s_currentThread->m_state = kThreadReady;
         }
         
         highest->m_state = kThreadRunning;
-        g_ar_currentThread = highest;
+        s_currentThread = highest;
     }
 }
 
@@ -902,7 +898,7 @@ void Thread::block(Thread * & blockedList, uint32_t timeout)
     // If a valid timeout was given, put the thread on the sleeping list.
     if (timeout != kInfiniteTimeout)
     {
-        m_wakeupTime = s_tickCount + timeout;
+        m_wakeupTime = Kernel::getTickCount() + timeout;
         addToList(s_sleepingList);
     }
     else
@@ -944,12 +940,12 @@ void Thread::unblockWithStatus(Thread * & blockedList, status_t unblockStatus)
 
 void * ar_yield(void * topOfStack)
 {
-    return (void *)Thread::yieldIsr((uint32_t)topOfStack);
+    return (void *)Kernel::yieldIsr((uint32_t)topOfStack);
 }
 
 void ar_periodic_timer(void)
 {
-    return Thread::periodicTimerIsr();
+    return Kernel::periodicTimerIsr();
 }
 
 //------------------------------------------------------------------------------
