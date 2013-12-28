@@ -48,7 +48,7 @@ void ar_periodic_timer(void);
 
 //! @}
 
-//! @ingroup ar
+//! @brief The Argon RTOS namespace.
 namespace Ar {
 
 //! @addtogroup ar
@@ -730,13 +730,13 @@ public:
         return Queue::init(name, m_storage, sizeof(T), N);
     }
     
-    //! @brief
+    //! @copydoc Queue::send()
     status_t send(T element, uint32_t timeout=kInfiniteTimeout)
     {
         return Queue::send((const void *)&element, timeout);
     }
     
-    //! @brief
+    //! @copydoc Queue::receive()
     status_t receive(T * element, uint32_t timeout=kInfiniteTimeout)
     {
         return Queue::receive((void *)element, timeout);
