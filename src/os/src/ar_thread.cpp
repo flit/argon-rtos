@@ -30,7 +30,6 @@
 /*!
  * @file
  * @brief Source for Ar microkernel threads.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"
@@ -53,21 +52,7 @@ Thread * Thread::s_currentThread = NULL;
 // Code
 //------------------------------------------------------------------------------
 
-//! The thread is in suspended state when this method exits. The make it eligible for
-//! execution, call the resume() method.
-//!
-//! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
-//! @param entry Thread entry point taking one parameter and returning void.
-//! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
-//!     entry point.
-//! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
-//!     not it's top.
-//! @param stackSize Number of bytes of stack space allocated to the thread. This value is
-//!     added to @a stack to get the initial top of stack address.
-//! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
-//!     reserved for the idle thread.
-//!
-//! @return kSuccess The thread was initialised without error.
+// See ar_kernel.h for documentation of this function.
 status_t Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
     // Assertions.
@@ -112,6 +97,7 @@ status_t Thread::init(const char * name, thread_entry_t entry, void * param, voi
     return kSuccess;
 }
 
+// See ar_kernel.h for documentation of this function.
 Thread::~Thread()
 {
     if (m_state != kThreadDone)
@@ -132,18 +118,7 @@ Thread::~Thread()
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
-//! If the thread being resumed has a higher priority than that of the
-//! current thread, the scheduler is called to immediately switch threads.
-//! In this case the thread being resumed will always become the new
-//! current thread. This is because the highest priority thread is always
-//! guaranteed to be running, meaning the calling thread was the previous
-//! highest priority thread.
-//!
-//! Does not enter the scheduler if Ar is not running. Does nothing if
-//! the thread is already on the ready list.
-//!
-//! @todo Deal with all thread states properly.
-//!
+// See ar_kernel.h for documentation of this function.
 void Thread::resume()
 {
     {
@@ -169,16 +144,7 @@ void Thread::resume()
     }
 }
 
-//! If this method is called from the current thread then the scheduler is
-//! entered immediately after putting the thread on the suspended list.
-//! Calling suspend() on another thread will not cause the scheduler to
-//! switch threads.
-//!
-//! Does not enter the scheduler if Ar is not running. Does nothing if
-//! the thread is already suspended.
-//!
-//! @todo Deal with all thread states properly.
-//!
+// See ar_kernel.h for documentation of this function.
 void Thread::suspend()
 {
     {
@@ -204,18 +170,7 @@ void Thread::suspend()
     }
 }
 
-//! The scheduler is invoked after the priority is set so that the current thread can
-//! be changed to the one with the highest priority. The scheduler is invoked even if
-//! there is no new highest priority thread. In this case, control may switch to the
-//! next thread with the same priority, assuming there is one.
-//!
-//! Does not enter the scheduler if Ar is not running.
-//!
-//! @param priority Thread priority level from 1 to 255, where lower number have
-//!     a lower priority. Priority number 0 is not allowed because it is reserved for
-//!     the idle thread.
-//!
-//! @retval kInvalidPriorityError
+// See ar_kernel.h for documentation of this function.
 status_t Thread::setPriority(uint8_t priority)
 {
     if (priority == 0)
@@ -236,16 +191,7 @@ status_t Thread::setPriority(uint8_t priority)
     return kSuccess;
 }
 
-//! The thread of the caller is put to sleep for as long as the thread
-//! referenced by this thread object is running. Once this thread
-//! completes and its state is kThreadDone, the caller's thread is woken
-//! and this method call returns. If this thread takes longer than
-//! @a timeout to finish running, then #kTimeoutError is returned.
-//!
-//! @param timeout Timeout value in operating system ticks.
-//!
-//! @retval kSuccess
-//! @retval kTimeoutError
+// See ar_kernel.h for documentation of this function.
 status_t Thread::join(uint32_t timeout)
 {
     // Not yet implemented!
@@ -253,10 +199,7 @@ status_t Thread::join(uint32_t timeout)
     return kSuccess;
 }
 
-//! Does nothing if Ar is not running.
-//!
-//! @param ticks The number of operating system ticks to sleep the calling thread.
-//!     A sleep time of 0 is ignored.
+// See ar_kernel.h for documentation of this function.
 void Thread::sleep(unsigned ticks)
 {
     // bail if there is not a running thread to put to sleep

@@ -122,21 +122,26 @@ enum _ar_errors
  *
  * @ingroup ar
  *
- * This class provides functionality required by all Ar RTOS classes. It
- * keeps a name associated with each object instance. Having one copy of
- * the name handling code makes it easy to disable in order to reduce memory
- * usage, if necessary.
+ * This class provides functionality required by all Ar RTOS classes. It keeps a name associated
+ * with each object instance. Having one copy of the name handling code makes it easy to disable in
+ * order to reduce memory usage, if necessary.
  *
  * For debug builds, this class manages a linked list of object instances.
  */
 class NamedObject
 {
 public:
+    //! @brief Default constructor.
     NamedObject() {}
     
+    //! @brief Destructor.
     virtual ~NamedObject() {}
     
     //! @brief Initialiser.
+    //!
+    //! @param name The object's name. The pointer to the name is saved in the object.
+    //!
+    //! @retval kSuccess Initialisation was successful.
     status_t init(const char * name);
     
     //! @brief Access the object's name.
@@ -161,30 +166,27 @@ protected:
  *
  * @ingroup ar
  *
- * This thread class implements a preemptive threading system with priorities.
- * The highest priority thread that is ready to run will always get the processor. That
- * means that if there is only one high priority thread, it can starve lower priority
- * threads if it never relinquishes control by sleeping or blocking on a resource.
- * Threads with the same priority will preempt each other in a round robin order
- * every system tick.
+ * This thread class implements a preemptive threading system with priorities. The highest priority
+ * thread that is ready to run will always get the processor. That means that if there is only one
+ * high priority thread, it can starve lower priority threads if it never relinquishes control by
+ * sleeping or blocking on a resource. Threads with the same priority will preempt each other in a
+ * round robin order every system tick.
  *
- * Thread priorities range from 0 to 255. Higher values are higher priorities, with
- * 255 being the highest priority. Priority 0 is reserved for the idle thread.
+ * Thread priorities range from 0 to 255. Higher values are higher priorities, with 255 being the
+ * highest priority. Priority 0 is reserved for the idle thread.
  *
- * To create a thread, first allocate it either on the stack or with the new operator.
- * Then call the init() method passing in the name, entry point, entry parameter,
- * stack information, and priority. The entry point can be any non-member, i.e static, function
- * that matches the #thread_entry_t prototype. The init() method leaves the new thread
- * suspended. To make the new thread eligible to run you must call the resume() method
- * on it.
+ * To create a thread, first allocate it either on the stack or with the new operator. Then call the
+ * init() method passing in the name, entry point, entry parameter, stack information, and priority.
+ * The entry point can be any non-member, i.e static, function that matches the #thread_entry_t
+ * prototype. The init() method leaves the new thread suspended. To make the new thread eligible to
+ * run you must call the resume() method on it.
  *
- * If you want to fully encapsulate a thread you can create a subclass of Thread
- * that provides its own init() method which calls the original Thread::init(). You
- * can either pass a pointer to a static function to the base init() method, as
- * usual, or you can override the virtual Thread::threadEntry() method. In the latter
- * case, you can simply pass NULL for the entry point to the base init() method.
- * To pass values to the thread function, simply create member variables and set them
- * in your subclass' init() method.
+ * If you want to fully encapsulate a thread you can create a subclass of Thread that provides its
+ * own init() method which calls the original Thread::init(). You can either pass a pointer to a
+ * static function to the base init() method, as usual, or you can override the virtual
+ * Thread::threadEntry() method. In the latter case, you can simply pass NULL for the entry point to
+ * the base init() method. To pass values to the thread function, simply create member variables and
+ * set them in your subclass' init() method.
  *
  * Here's an example subclass that uses a member function as the entry point:
  * @code
@@ -230,13 +232,30 @@ public:
 
 public:
     //! @brief Constructor.
-    Thread() {} //const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority) {}
+    Thread() {}
     
+    //! @brief Destructor.
     virtual ~Thread();
     
     //! @name Thread init and cleanup
     //@{
     //! @brief Base initialiser.
+    //!
+    //! The thread is in suspended state when this method exits. The make it eligible for
+    //! execution, call the resume() method.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param entry Thread entry point taking one parameter and returning void.
+    //! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
+    //!     entry point.
+    //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
+    //!     not it's top.
+    //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
+    //!     added to @a stack to get the initial top of stack address.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
+    //!
+    //! @return kSuccess The thread was initialised without error.
     status_t init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
     //@}
 
@@ -245,18 +264,53 @@ public:
     //! Control of and access to the thread state.
     //@{
     //! @brief Put thread in suspended state.
+    //!
+    //! If this method is called from the current thread then the scheduler is entered immediately
+    //! after putting the thread on the suspended list. Calling suspend() on another thread will not
+    //! cause the scheduler to switch threads.
+    //!
+    //! Does not enter the scheduler if Ar is not running. Does nothing if the thread is already
+    //! suspended.
+    //!
+    //! @todo Deal with all thread states properly.
     void suspend();
 
     //! @brief Make the thread eligible for execution.
+    //!
+    //! If the thread being resumed has a higher priority than that of the current thread, the
+    //! scheduler is called to immediately switch threads. In this case the thread being resumed
+    //! will always become the new current thread. This is because the highest priority thread is
+    //! always guaranteed to be running, meaning the calling thread was the previous highest
+    //! priority thread.
+    //!
+    //! Does not enter the scheduler if Ar is not running. Does nothing if the thread is already on
+    //! the ready list.
+    //!
+    //! @todo Deal with all thread states properly.
     void resume();
 
     //! @brief Return the current state of the thread.
     thread_state_t getState() const { return m_state; }
 
     //! @brief Put the current thread to sleep for a certain amount of time.
+    //!
+    //! Does nothing if Ar is not running.
+    //!
+    //! @param ticks The number of operating system ticks to sleep the calling thread. A sleep time
+    //!     of 0 is ignored.
     static void sleep(unsigned ticks);
     
     //! @brief Block the current thread until this thread completes.
+    //!
+    //! The thread of the caller is put to sleep for as long as the thread referenced by this thread
+    //! object is running. Once this thread completes and its state is kThreadDone, the caller's
+    //! thread is woken and this method call returns. If this thread takes longer than @a timeout to
+    //! finish running, then #kTimeoutError is returned.
+    //!
+    //! @param timeout Timeout value in operating system ticks.
+    //!
+    //! @retval kSuccess
+    //! @retval kTimeoutError
     status_t join(uint32_t timeout=kInfiniteTimeout);
     //@}
 
@@ -268,6 +322,18 @@ public:
     uint8_t getPriority() const { return m_priority; }
 
     //! @brief Change the thread's priority.
+    //!
+    //! The scheduler is invoked after the priority is set so that the current thread can be changed
+    //! to the one with the highest priority. The scheduler is invoked even if there is no new
+    //! highest priority thread. In this case, control may switch to the next thread with the same
+    //! priority, assuming there is one.
+    //!
+    //! Does not enter the scheduler if Ar is not running.
+    //!
+    //! @param priority Thread priority level from 1 to 255, where lower number have a lower
+    //!     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
+    //!
+    //! @retval kInvalidPriorityError
     status_t setPriority(uint8_t priority);
     //@}
 
@@ -405,15 +471,52 @@ class Semaphore : public NamedObject
 {
 public:
     //! @brief Initialiser.
+    //!
+    //! @param name Pass a name for the semaphore. If NULL is passed the name will be set to an
+    //!     empty string.
+    //! @param count The initial semaphore count. Setting this value to 0 will cause the first call
+    //!     to get() to block until put() is called. A value of 1 or greater will allow that many
+    //!     calls to get() to succeed.
+    //!
+    //! @retval kSuccess Semaphore initialised successfully.
     status_t init(const char * name, unsigned count=1);
 
-    //! @brief
+    //! @brief Destructor.
+    //!
+    //! Any threads on the blocked list will be unblocked immediately. Their return status  from the
+    //! get() method will be #kObjectDeletedError.
     virtual ~Semaphore();
 
     //! @brief Acquire the semaphore.
+    //!
+    //! The semaphore count is decremented. If the count is 0 upon entering this method then the
+    //! caller thread is blocked until the count reaches 1. Threads are unblocked in the order in
+    //! which they were blocked. Priority is not taken into consideration, so priority inversions
+    //! are possible.
+    //!
+    //! @note This function may be called from interrupt context only if the timeout parameter is
+    //!     set to #Ar::kNoTimeout (or 0).
+    //!
+    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
+    //!     state before the semaphore can be obtained. If this value is 0, or #kNoTimeout, then
+    //!     this method will return immediately if the semaphore cannot be obtained. Setting the
+    //!     timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to get
+    //!     the semaphore.
+    //!
+    //! @retval kSuccess The semaphore was obtained without error.
+    //! @retval kTimeoutError The specified amount of time has elapsed before the semaphore could be
+    //!     obtained.
+    //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
+    //!     blocked on it.
+    //! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
+    //!     context.
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
 
     //! @brief Release the semaphore.
+    //!
+    //! The semaphore count is incremented.
+    //!
+    //! @note This call is safe from interrupt context.
     virtual status_t put();
 
     //! @brief Returns the current semaphore count.
@@ -429,17 +532,17 @@ protected:
  *
  * @ingroup ar
  *
- * This class is intended to be stack allocated. It gets and holds a semaphore or mutex
- * for the duration of the scope in which it is declared. Once it goes out of
- * scope, the destructor automatically puts the lock.
+ * This class is intended to be stack allocated. It gets and holds a semaphore or mutex for the
+ * duration of the scope in which it is declared. Once it goes out of scope, the destructor
+ * automatically puts the lock.
  */
 class LockHolder
 {
 public:
     //! @brief Constructor which gets the semaphore.
     //!
-    //! Like the Semaphore::get() method, this constructor takes an optional timeout
-    //! value which defaults to never timeout.
+    //! Like the Semaphore::get() method, this constructor takes an optional timeout value which
+    //! defaults to never timeout.
     LockHolder(Semaphore & sem, uint32_t timeout=kInfiniteTimeout)
     :   m_sem(sem)
     {
@@ -461,27 +564,55 @@ protected:
  *
  * @ingroup ar
  *
- * Very similar to a binary semaphore, except that a single thread can
- * lock the mutex multiple times without deadlocking. In this case, the
- * number of calls to get() and put() must be matched.
+ * Very similar to a binary semaphore, except that a single thread can lock the mutex multiple times
+ * without deadlocking. In this case, the number of calls to get() and put() must be matched.
  *
- * Because Mutex is a sublcass of Semaphore, it can be used anywhere that
- * accepts a Semaphore object. For instance, LockHolder works equally well
- * for a Mutex.
+ * Because Mutex is a sublcass of Semaphore, it can be used anywhere that accepts a Semaphore
+ * object. For instance, LockHolder works equally well for a Mutex.
  */
 class Mutex : public Semaphore
 {
 public:
     //! @brief Initialiser.
+    //!
+    //! The mutex starts out unlocked.
+    //!
+    //! @param name The name of the mutex.
+    //!
+    //! @retval SUCCCESS
     status_t init(const char * name);
 
     //! @brief Cleanup.
     virtual ~Mutex();
     
     //! @brief Lock the mutex.
+    //!
+    //! If the thread that already owns the mutex calls get() more than once, a count is incremented
+    //! rather than attempting to decrement the underlying semaphore again. The converse is true for
+    //! put(), thus allowing a thread to lock a mutex any number of times as long as there are
+    //! matching get() and put() calls.
+    //!
+    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
+    //!     state before the lock can be obtained. If this value is 0, or @a kNoTimeout, then this
+    //!     method will return immediately if the lock cannot be obtained. Setting the timeout to
+    //!     @a kInfiniteTimeout will cause the thread to wait forever for a chance to get the lock.
+    //!
+    //! @retval kSuccess The mutex was obtained without error.
+    //! @retval kTimeoutError The specified amount of time has elapsed before the mutex could be
+    //!     obtained.
+    //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
+    //!     blocked on it.
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
     
     //! @brief Unlock the mutex.
+    //!
+    //! Only the owning thread is allowed to unlock the mutex. If the owning thread has called get()
+    //! multiple times, it must also call put() the same number of time before the underlying
+    //! semaphore is actually released. It is illegal to call put() when the mutex is not owned by
+    //! the calling thread.
+    //!
+    //! @retval kAlreadyUnlockedError The mutex is not locked.
+    //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
     virtual status_t put();
     
     //! @brief Returns the current owning thread, if there is one.
@@ -501,15 +632,44 @@ class Queue : public NamedObject
 {
 public:
     //! @brief Queue initialiser.
+    //!
+    //! @param name The new queue's name.
+    //! @param storage Pointer to a buffer used to store queue elements. The buffer must be at least
+    //!     @a elementSize * @a capacity bytes big.
+    //! @param elementSize Size in bytes of each element in the queue.
+    //! @param capacity The number of elements that the buffer pointed to by @a storage will hold.
+    //!
+    //! @retval kSuccess The queue was initialised.
     status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity);
     
     //! @brief Queue cleanup.
     virtual ~Queue();
     
     //! @brief Add an item to the queue.
+    //!
+    //! The caller will block if the queue is full.
+    //!
+    //! @param element Pointer to the element to post to the queue. The element size was specified
+    //!     in the init() call.
+    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
+    //!     state before the element can be sent. If this value is 0, or #kNoTimeout, then this
+    //!     method will return immediately if the queue is full. Setting the timeout to
+    //!     #kInfiniteTimeout will cause the thread to wait forever for a chance to send.
+    //!
+    //! @retval kSuccess
+    //! @retval kQueueFullError
     status_t send(const void * element, uint32_t timeout=kInfiniteTimeout);
 
     //! @brief Remove an item from the queue.
+    //!
+    //! @param[out] element
+    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
+    //!     state before an element is received. If this value is 0, or #kNoTimeout, then this
+    //!     method will return immediately if the queue is empty. Setting the timeout to
+    //!     #kInfiniteTimeout will cause the thread to wait forever to receive an element.
+    //!
+    //! @retval kSuccess
+    //! @retval kQueueEmptyError
     status_t receive(void * element, uint32_t timeout=kInfiniteTimeout);
     
     //! @brief Returns whether the queue is currently empty.
@@ -534,9 +694,8 @@ protected:
  *
  * @ingroup ar
  *
- * This template class helps create a Queue instance by defining a
- * static array of queue elements. The array length is one of the template
- * parameters.
+ * This template class helps create a Queue instance by defining a static array of queue elements.
+ * The array length is one of the template parameters.
  *
  * Example of creating a queue and adding an element:
  * @code

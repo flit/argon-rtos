@@ -30,7 +30,6 @@
 /*!
  * @file
  * @brief Source for Ar microkernel mutexes.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"
@@ -43,11 +42,7 @@ using namespace Ar;
 // Implementation
 //------------------------------------------------------------------------------
 
-//! The mutex starts out unlocked.
-//!
-//! @param name The name of the mutex.
-//!
-//! @retval SUCCCESS
+// See ar_kernel.h for documentation of this function.
 status_t Mutex::init(const char * name)
 {
     status_t status = Semaphore::init(name);
@@ -66,6 +61,7 @@ status_t Mutex::init(const char * name)
     return status;
 }
 
+// See ar_kernel.h for documentation of this function.
 Mutex::~Mutex()
 {
 #if AR_GLOBAL_OBJECT_LISTS
@@ -73,24 +69,7 @@ Mutex::~Mutex()
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
-//! If the thread that already owns the mutex calls get() more than once, a
-//! count is incremented rather than attempting to decrement the underlying
-//! semaphore again. The converse is true for put(), thus allowing a
-//! thread to lock a mutex any number of times as long as there are matching
-//! get() and put() calls.
-//!
-//! @param timeout The maximum number of ticks that the caller is willing to
-//!     wait in a blocked state before the lock can be obtained. If this
-//!     value is 0, or @a kNoTimeout, then this method will return immediately
-//!     if the lock cannot be obtained. Setting the timeout to
-//!     @a kInfiniteTimeout will cause the thread to wait forever for a chance
-//!     to get the lock.
-//!
-//! @retval kSuccess The mutex was obtained without error.
-//! @retval kTimeoutError The specified amount of time has elapsed before the
-//!     mutex could be obtained.
-//! @retval kObjectDeletedError Another thread deleted the semaphore while the
-//!     caller was blocked on it.
+// See ar_kernel.h for documentation of this function.
 status_t Mutex::get(uint32_t timeout)
 {
     // If this thread already owns the mutex, just increment the count.
@@ -114,13 +93,7 @@ status_t Mutex::get(uint32_t timeout)
     }
 }
 
-//! Only the owning thread is allowed to unlock the mutex. If the owning thread
-//! has called get() multiple times, it must also call put() the same number of
-//! time before the underlying semaphore is actually released. It is illegal
-//! to call put() when the mutex is not owned by the calling thread.
-//!
-//! @retval kAlreadyUnlockedError The mutex is not locked.
-//! @retval kNotOwnerError The caller is not the thread that owns the mutex.
+// See ar_kernel.h for documentation of this function.
 status_t Mutex::put()
 {
     if (m_ownerLockCount == 0)

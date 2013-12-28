@@ -30,7 +30,6 @@
 /*!
  * @file
  * @brief Source for Ar base class.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"
@@ -64,9 +63,7 @@ using namespace Ar;
 // Code
 //------------------------------------------------------------------------------
 
-//! @param name The object's name. The pointer to the name is saved in the object.
-//!
-//! @retval kSuccess Initialisation was successful.
+// See ar_kernel.h for documentation of this function.
 status_t NamedObject::init(const char * name)
 {
     m_name = name;

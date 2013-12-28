@@ -30,7 +30,6 @@
 /*!
  * @file ar_kernel.cpp
  * @brief Source for Ar kernel.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"

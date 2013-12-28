@@ -30,7 +30,6 @@
 /*!
  * @file
  * @brief Source for Ar microkernel semaphores.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"
@@ -43,13 +42,7 @@ using namespace Ar;
 // Code
 //------------------------------------------------------------------------------
 
-//! @param name Pass a name for the semaphore. If NULL is passed the name will
-//!     be set to an empty string.
-//! @param count The initial semaphore count. Setting this value to 0 will
-//!     cause the first call to get() to block until put() is called. A value
-//!     of 1 or greater will allow that many calls to get() to succeed.
-//!
-//! @retval kSuccess Semaphore initialised successfully.
+// See ar_kernel.h for documentation of this function.
 status_t Semaphore::init(const char * name, unsigned count)
 {
     NamedObject::init(name);
@@ -63,8 +56,7 @@ status_t Semaphore::init(const char * name, unsigned count)
     return kSuccess;
 }
 
-//! Any threads on the blocked list will be unblocked immediately. Their return status
-//! from the get() method will be #kObjectDeletedError.
+// See ar_kernel.h for documentation of this function.
 Semaphore::~Semaphore()
 {
     // Unblock all threads blocked on this semaphore.
@@ -78,28 +70,7 @@ Semaphore::~Semaphore()
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
-//! The semaphore count is decremented. If the count is 0 upon entering this
-//! method then the caller thread is blocked until the count reaches 1. Threads
-//! are unblocked in the order in which they were blocked. Priority is not
-//! taken into consideration, so priority inversions are possible.
-//!
-//! @note This function may be called from interrupt context only if the timeout
-//!     parameter is set to #Ar::kNoTimeout (or 0).
-//!
-//! @param timeout The maximum number of ticks that the caller is willing to
-//!     wait in a blocked state before the semaphore can be obtained. If this
-//!     value is 0, or #kNoTimeout, then this method will return immediately
-//!     if the semaphore cannot be obtained. Setting the timeout to
-//!     #kInfiniteTimeout will cause the thread to wait forever for a chance
-//!     to get the semaphore.
-//!
-//! @retval kSuccess The semaphore was obtained without error.
-//! @retval kTimeoutError The specified amount of time has elapsed before the
-//!     semaphore could be obtained.
-//! @retval kObjectDeletedError Another thread deleted the semaphore while the
-//!     caller was blocked on it.
-//! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the
-//!     interrupt context.
+// See ar_kernel.h for documentation of this function.
 status_t Semaphore::get(uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
@@ -147,9 +118,7 @@ status_t Semaphore::get(uint32_t timeout)
     return kSuccess;
 }
 
-//! The semaphore count is incremented.
-//!
-//! @note This call is safe from interrupt context.
+// See ar_kernel.h for documentation of this function.
 status_t Semaphore::put()
 {
     IrqStateSetAndRestore disableIrq(false);

@@ -30,7 +30,6 @@
 /*!
  * @file
  * @brief Implementation of Ar microkernel queue.
- * @ingroup ar
  */
 
 #include "os/ar_kernel.h"
@@ -51,14 +50,7 @@ using namespace Ar;
 // Implementation
 //------------------------------------------------------------------------------
 
-//! @param name The new queue's name.
-//! @param storage Pointer to a buffer used to store queue elements. The buffer
-//!     must be at least @a elementSize * @a capacity bytes big.
-//! @param elementSize Size in bytes of each element in the queue.
-//! @param capacity The number of elements that the buffer pointed to by @a
-//!     storage will hold.
-//!
-//! @retval kSuccess The queue was initialised.
+// See ar_kernel.h for documentation of this function.
 status_t Queue::init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
 {
     NamedObject::init(name);
@@ -81,7 +73,7 @@ status_t Queue::init(const char * name, void * storage, unsigned elementSize, un
     return kSuccess;
 }
 
-//! 
+// See ar_kernel.h for documentation of this function.
 Queue::~Queue()
 {
 #if AR_GLOBAL_OBJECT_LISTS
@@ -89,18 +81,7 @@ Queue::~Queue()
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
-//! The caller will block if the queue is full.
-//!
-//! @param element Pointer to the element to post to the queue. The
-//!     element size was specified in the init() call.
-//! @param timeout The maximum number of ticks that the caller is willing to
-//!     wait in a blocked state before the element can be sent. If this
-//!     value is 0, or #kNoTimeout, then this method will return immediately
-//!     if the queue is full. Setting the timeout to #kInfiniteTimeout will
-//!     cause the thread to wait forever for a chance to send.
-//!
-//! @retval kSuccess
-//! @retval kQueueFullError
+// See ar_kernel.h for documentation of this function.
 status_t Queue::send(const void * element, uint32_t timeout)
 {
     IrqStateSetAndRestore disableIrq(false);
@@ -164,15 +145,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
     return kSuccess;
 }
 
-//! @param[out] element
-//! @param timeout The maximum number of ticks that the caller is willing to
-//!     wait in a blocked state before an element is received. If this
-//!     value is 0, or #kNoTimeout, then this method will return immediately
-//!     if the queue is empty. Setting the timeout to #kInfiniteTimeout will
-//!     cause the thread to wait forever to receive an element.
-//!
-//! @retval kSuccess
-//! @retval kQueueEmptyError
+// See ar_kernel.h for documentation of this function.
 status_t Queue::receive(void * element, uint32_t timeout)
 {
     IrqStateSetAndRestore disableIrq(false);
