@@ -28,110 +28,63 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if !defined(_KERNEL_TESTS_H_)
-#define _KERNEL_TESTS_H_
-
 #include "os/ar_kernel.h"
+#include "debug_uart.h"
+#include "kernel_tests.h"
 
 //------------------------------------------------------------------------------
-// Definitions
+// Code
 //------------------------------------------------------------------------------
 
-/*!
- * @brief Abstract kernel test class.
- */
-class KernelTest
+void TestSem1::run()
 {
-public:
-    KernelTest() {}
+    m_sem.init("sem", 0);
     
-    virtual ~KernelTest() {}
+    m_aThread.init("a", _a_thread, this, 60);
+    m_aThread.resume();
 
-    virtual void init() {}
-    virtual void run()=0;
+    m_bThread.init("b", _b_thread, this, 70);
+    m_bThread.resume();
     
-    const char * threadIdString() const;
+}
 
-protected:
-    Ar::Thread * m_self;
-
-    void printHello();
-    void printTicks();
-    
-};
-
-class TestSleep1 : public KernelTest
+void TestSem1::_a_thread(void * arg)
 {
-public:
-    TestSleep1() : KernelTest() {}
-    
-    virtual void run();
+    TestSem1 * _this = (TestSem1 *)arg;
+    _this->a_thread();
+}
 
-protected:
-    
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
-
-    void a_thread();
-    void b_thread();
-
-    static void _a_thread(void * arg);
-    static void _b_thread(void * arg);
-    
-};
-
-class TestSem1 : public KernelTest
+void TestSem1::_b_thread(void * arg)
 {
-public:
-    TestSem1() {}
-    
-    virtual void run();
+    TestSem1 * _this = (TestSem1 *)arg;
+    _this->b_thread();
+}
 
-protected:
-    
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
-    
-    Ar::Semaphore m_sem;
-
-    void a_thread();
-    void b_thread();
-
-    static void _a_thread(void * arg);
-    static void _b_thread(void * arg);
-    
-};
-
-class TestQueue1 : public KernelTest
+void TestSem1::a_thread()
 {
-public:
-    TestQueue1() {}
+    printHello();
     
-    virtual void run();
+    while (1)
+    {
+        printf("%s sleeping for 200\r\n", threadIdString());
+        Ar::Thread::sleep(200);
+        printf("%s putting sem\r\n", threadIdString());
+        m_sem.put();
+    }
+}
 
-protected:
-
-    Ar::ThreadWithStack<512> m_producerThread;
-    Ar::ThreadWithStack<512> m_consumerAThread;
-    Ar::ThreadWithStack<512> m_consumerBThread;
-
-    Ar::StaticQueue<int, 5> m_q;
-
-    void producer_thread();
-    void consumer_a_thread();
-    void consumer_b_thread();
-
-    static void _producer_thread(void * arg);
-    static void _consumer_a_thread(void * arg);
-    static void _consumer_b_thread(void * arg);
+void TestSem1::b_thread()
+{
+    printHello();
     
-};
+    while (1)
+    {
+        printf("%s getting sem\r\n", threadIdString());
+        m_sem.get();
+        printf("%s got sem\r\n", threadIdString());
+    }
+}
 
-//------------------------------------------------------------------------------
-// Prototypes
-//------------------------------------------------------------------------------
-
-#endif // _KERNEL_TESTS_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

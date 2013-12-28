@@ -1990,6 +1990,9 @@
       <name>$PROJ_DIR$\..\test\src\test_queue_1.cpp</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\test\src\test_sem_1.cpp</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\test\src\test_sleep_1.cpp</name>
     </file>
   </group>
