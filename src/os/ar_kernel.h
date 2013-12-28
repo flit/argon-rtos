@@ -840,6 +840,29 @@ private:
     
 };
 
+//! @brief %Time related utilities.
+namespace Time {
+
+//! @brief Get the number of milliseconds per tick.
+//!
+//! @ingroup ar
+uint32_t getMillisecondsPerTick();
+
+//! @name Time conversion
+//@{
+//! @brief Convert ticks to milliseconds.
+//!
+//! @ingroup ar
+inline uint32_t ticksToMilliseconds(uint32_t ticks) { return ticks * getMillisecondsPerTick(); }
+
+//! @brief Convert milliseconds to ticks.
+//!
+//! @ingroup ar
+inline uint32_t millisecondsToTicks(uint32_t millisecs) { return millisecs / getMillisecondsPerTick(); }
+//@}
+
+} // namespace Time
+
 #if AR_GLOBAL_OBJECT_LISTS
 
 /*!

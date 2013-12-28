@@ -66,8 +66,8 @@ void TestSem1::a_thread()
     
     while (1)
     {
-        printf("%s sleeping for 200\r\n", threadIdString());
-        Ar::Thread::sleep(200);
+        printf("%s sleeping for 2 sec\r\n", threadIdString());
+        Ar::Thread::sleep(Ar::Time::millisecondsToTicks(2000));
         printf("%s putting sem\r\n", threadIdString());
         m_sem.put();
     }

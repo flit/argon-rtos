@@ -48,6 +48,11 @@ namespace Ar {
 // Definitions
 //------------------------------------------------------------------------------
 
+enum
+{
+    kSchedulerQuanta_ms = 10
+};
+
 //! @brief Priorities for kernel exceptions.
 enum _exception_priorities
 {
@@ -127,6 +132,16 @@ inline void service_call()
 {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
+
+namespace Time {
+
+//! @brief Returns the number of milliseconds per tick.
+inline uint32_t getMillisecondsPerTick()
+{
+    return kSchedulerQuanta_ms;
+}
+
+} // namespace Time
 
 //! @}
 

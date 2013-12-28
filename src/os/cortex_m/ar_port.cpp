@@ -39,11 +39,6 @@ using namespace Ar;
 // Definitions
 //------------------------------------------------------------------------------
 
-enum
-{
-    kSchedulerQuanta_ms = 10
-};
-
 //! Initial thread register values.
 enum
 {

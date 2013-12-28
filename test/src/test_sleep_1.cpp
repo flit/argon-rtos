@@ -66,7 +66,7 @@ void TestSleep1::a_thread()
     {
         printTicks();
         
-        Ar::Thread::sleep(200);
+        Ar::Thread::sleep(Ar::Time::millisecondsToTicks(2000));
     }
 }
 
@@ -78,7 +78,7 @@ void TestSleep1::b_thread()
     {
         printTicks();
         
-        Ar::Thread::sleep(300);
+        Ar::Thread::sleep(Ar::Time::millisecondsToTicks(3000));
     }
 }
 
