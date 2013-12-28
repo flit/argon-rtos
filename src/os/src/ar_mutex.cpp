@@ -81,15 +81,15 @@ Mutex::~Mutex()
 //!
 //! @param timeout The maximum number of ticks that the caller is willing to
 //!     wait in a blocked state before the lock can be obtained. If this
-//!     value is 0, or #kNoTimeout, then this method will return immediately
+//!     value is 0, or @a kNoTimeout, then this method will return immediately
 //!     if the lock cannot be obtained. Setting the timeout to
-//!     #kInfiniteTimeout will cause the thread to wait forever for a chance
+//!     @a kInfiniteTimeout will cause the thread to wait forever for a chance
 //!     to get the lock.
 //!
 //! @retval kSuccess The mutex was obtained without error.
-//! @retval ERROR_MU_TIMEOUT The specified amount of time has elapsed before the
+//! @retval kTimeoutError The specified amount of time has elapsed before the
 //!     mutex could be obtained.
-//! @retval ERROR_MU_OBJECT_DELETED Another thread deleted the semaphore while the
+//! @retval kObjectDeletedError Another thread deleted the semaphore while the
 //!     caller was blocked on it.
 status_t Mutex::get(uint32_t timeout)
 {
@@ -118,9 +118,19 @@ status_t Mutex::get(uint32_t timeout)
 //! has called get() multiple times, it must also call put() the same number of
 //! time before the underlying semaphore is actually released. It is illegal
 //! to call put() when the mutex is not owned by the calling thread.
-void Mutex::put()
+//!
+//! @retval kAlreadyUnlockedError The mutex is not locked.
+//! @retval kNotOwnerError The caller is not the thread that owns the mutex.
+status_t Mutex::put()
 {
-    assert(Thread::getCurrent() == m_owner && m_ownerLockCount > 0);
+    if (m_ownerLockCount == 0)
+    {
+        return kAlreadyUnlockedError;
+    }
+    if (Thread::getCurrent() != m_owner)
+    {
+        return kNotOwnerError;
+    }
     
     if (--m_ownerLockCount == 0)
     {
@@ -128,7 +138,9 @@ void Mutex::put()
         // The owner is cleared first since putting the sem can cause us to
         // switch threads.
         m_owner = NULL;
-        Semaphore::put();
+        return Semaphore::put();
     }
+    
+    return kSuccess;
 }
 

@@ -71,8 +71,14 @@ Thread * Thread::s_currentThread = NULL;
 status_t Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
     // Assertions.
-    assert(priority != 0);
-    assert(stackSize >= 64);
+    if (priority == 0)
+    {
+        return kInvalidPriorityError;
+    }
+    if (stackSize < sizeof(ThreadContext))
+    {
+        return kStackSizeTooSmallError;
+    }
     
     NamedObject::init(name);
     
@@ -157,7 +163,7 @@ void Thread::resume()
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
-    if (Kernel::isRunning() && this->m_priority > s_currentThread->m_priority)
+    if (Kernel::isRunning() && m_priority > s_currentThread->m_priority)
     {
         Kernel::enterScheduler();
     }
@@ -208,16 +214,26 @@ void Thread::suspend()
 //! @param priority Thread priority level from 1 to 255, where lower number have
 //!     a lower priority. Priority number 0 is not allowed because it is reserved for
 //!     the idle thread.
-void Thread::setPriority(uint8_t priority)
+//!
+//! @retval kInvalidPriorityError
+status_t Thread::setPriority(uint8_t priority)
 {
-    assert(priority != 0);
-    
-    m_priority = priority;
-
-    if (Kernel::isRunning())
+    if (priority == 0)
     {
-        Kernel::enterScheduler();
+        return kInvalidPriorityError;
     }
+    
+    if (priority != m_priority)
+    {
+        m_priority = priority;
+
+        if (Kernel::isRunning())
+        {
+            Kernel::enterScheduler();
+        }
+    }
+    
+    return kSuccess;
 }
 
 //! The thread of the caller is put to sleep for as long as the thread
@@ -230,23 +246,21 @@ void Thread::setPriority(uint8_t priority)
 //!
 //! @retval kSuccess
 //! @retval kTimeoutError
-void join(uint32_t timeout=kInfiniteTimeout)
+status_t Thread::join(uint32_t timeout)
 {
     // Not yet implemented!
     assert(0);
-//  return kSuccess;
+    return kSuccess;
 }
 
 //! Does nothing if Ar is not running.
 //!
 //! @param ticks The number of operating system ticks to sleep the calling thread.
-//!     A sleep time of 0 is not allowed.
+//!     A sleep time of 0 is ignored.
 void Thread::sleep(unsigned ticks)
 {
-    assert(ticks != 0);
-    
     // bail if there is not a running thread to put to sleep
-    if (!s_currentThread)
+    if (ticks == 0 || !s_currentThread)
     {
         return;
     }

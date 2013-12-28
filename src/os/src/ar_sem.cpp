@@ -83,6 +83,9 @@ Semaphore::~Semaphore()
 //! are unblocked in the order in which they were blocked. Priority is not
 //! taken into consideration, so priority inversions are possible.
 //!
+//! @note This function may be called from interrupt context only if the timeout
+//!     parameter is set to #Ar::kNoTimeout (or 0).
+//!
 //! @param timeout The maximum number of ticks that the caller is willing to
 //!     wait in a blocked state before the semaphore can be obtained. If this
 //!     value is 0, or #kNoTimeout, then this method will return immediately
@@ -95,10 +98,15 @@ Semaphore::~Semaphore()
 //!     semaphore could be obtained.
 //! @retval kObjectDeletedError Another thread deleted the semaphore while the
 //!     caller was blocked on it.
+//! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the
+//!     interrupt context.
 status_t Semaphore::get(uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    assert(Kernel::s_irqDepth == 0 || (Kernel::s_irqDepth > 0 && timeout == 0));
+    if (Kernel::getIrqDepth() > 0 && timeout != 0)
+    {
+        return kNotFromInterruptError;
+    }
     
     IrqStateSetAndRestore disableIrq(false);
 
@@ -140,7 +148,9 @@ status_t Semaphore::get(uint32_t timeout)
 }
 
 //! The semaphore count is incremented.
-void Semaphore::put()
+//!
+//! @note This call is safe from interrupt context.
+status_t Semaphore::put()
 {
     IrqStateSetAndRestore disableIrq(false);
 
@@ -162,6 +172,8 @@ void Semaphore::put()
             Kernel::enterScheduler();
         }
     }
+    
+    return kSuccess;
 }
 
 //------------------------------------------------------------------------------

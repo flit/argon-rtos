@@ -64,21 +64,12 @@ using namespace Ar;
 // Code
 //------------------------------------------------------------------------------
 
-//! @param name The object's name, a copy of which is made in the object itself. If
-//!     @a name is NULL, the object's name is set to the empty string.
+//! @param name The object's name. The pointer to the name is saved in the object.
 //!
 //! @retval kSuccess Initialisation was successful.
 status_t NamedObject::init(const char * name)
 {
-    // Copy name into the object.
-    if (name)
-    {
-        strncpy(m_name, name, sizeof(m_name));
-    }
-    else
-    {
-        m_name[0] = 0;
-    }
+    m_name = name;
     
     return kSuccess;
 }

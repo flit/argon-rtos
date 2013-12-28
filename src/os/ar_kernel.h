@@ -62,12 +62,6 @@ class Thread;
 
 #define AR_GLOBAL_OBJECT_LISTS (0)
 
-// The maximum name length can be overridden.
-#if !defined(AR_MAX_NAME_LENGTH)
-    //! Maximum length for names.
-    #define AR_MAX_NAME_LENGTH (16)
-#endif
-
 //! @brief Timeout constants.
 //!
 //! @ingroup ar
@@ -100,6 +94,21 @@ enum _ar_errors
     
     //! No elements are in the queue.
     kQueueEmptyError,
+    
+    //! The requested thread priority is invalid.
+    kInvalidPriorityError,
+    
+    //! The thread's stack size is too small.
+    kStackSizeTooSmallError,
+    
+    //! The requested operation cannot be performed from interrupt context.
+    kNotFromInterruptError,
+    
+    //! The caller is not the owning thread.
+    kNotOwnerError,
+    
+    //! The mutex is already unlocked.
+    kAlreadyUnlockedError
 };
 
 //! @}
@@ -134,7 +143,7 @@ public:
     const char * getName() const { return m_name; }
     
 protected:
-    char m_name[AR_MAX_NAME_LENGTH];    //!< The object's name.
+    const char * m_name;    //!< The object's name.
 
 #if AR_GLOBAL_OBJECT_LISTS
     NamedObject * m_nextCreated;    //!< Linked list node.
@@ -259,7 +268,7 @@ public:
     uint8_t getPriority() const { return m_priority; }
 
     //! @brief Change the thread's priority.
-    void setPriority(uint8_t priority);
+    status_t setPriority(uint8_t priority);
     //@}
 
     //! @name Accessors
@@ -390,7 +399,7 @@ protected:
  *
  * @ingroup ar
  *
- * @see SemaphoreHolder
+ * @see LockHolder
  */
 class Semaphore : public NamedObject
 {
@@ -405,7 +414,7 @@ public:
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
 
     //! @brief Release the semaphore.
-    virtual void put();
+    virtual status_t put();
 
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
@@ -416,29 +425,29 @@ protected:
 };
 
 /*!
- * @brief Utility class to automatically get and put a semaphore.
+ * @brief Utility class to automatically get and put a semaphore or mutex.
  *
  * @ingroup ar
  *
- * This class is intended to be stack allocated. It gets and holds a semaphore
+ * This class is intended to be stack allocated. It gets and holds a semaphore or mutex
  * for the duration of the scope in which it is declared. Once it goes out of
- * scope, the destructor automatically puts the semaphore.
+ * scope, the destructor automatically puts the lock.
  */
-class SemaphoreHolder
+class LockHolder
 {
 public:
     //! @brief Constructor which gets the semaphore.
     //!
     //! Like the Semaphore::get() method, this constructor takes an optional timeout
     //! value which defaults to never timeout.
-    inline SemaphoreHolder(Semaphore & sem, uint32_t timeout=kInfiniteTimeout)
+    LockHolder(Semaphore & sem, uint32_t timeout=kInfiniteTimeout)
     :   m_sem(sem)
     {
         m_sem.get(timeout);
     }
     
     //! @brief Destructor that puts the semaphore.
-    inline ~SemaphoreHolder()
+    ~LockHolder()
     {
         m_sem.put();
     }
@@ -457,7 +466,7 @@ protected:
  * number of calls to get() and put() must be matched.
  *
  * Because Mutex is a sublcass of Semaphore, it can be used anywhere that
- * accepts a Semaphore object. For instance, SemaphoreHolder works equally well
+ * accepts a Semaphore object. For instance, LockHolder works equally well
  * for a Mutex.
  */
 class Mutex : public Semaphore
@@ -473,10 +482,10 @@ public:
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
     
     //! @brief Unlock the mutex.
-    virtual void put();
+    virtual status_t put();
     
     //! @brief Returns the current owning thread, if there is one.
-    inline Thread * getOwner() { return (Thread *)m_owner; }
+    Thread * getOwner() { return (Thread *)m_owner; }
 
 protected:
     volatile Thread * m_owner;  //!< Current owner thread of the mutex.
@@ -504,10 +513,10 @@ public:
     status_t receive(void * element, uint32_t timeout=kInfiniteTimeout);
     
     //! @brief Returns whether the queue is currently empty.
-    inline bool isEmpty() const { return m_count == 0; }
+    bool isEmpty() const { return m_count == 0; }
     
     //! @brief Returns the current number of elements in the queue.
-    inline unsigned getCount() const { return m_count; }
+    unsigned getCount() const { return m_count; }
 
 protected:
     uint8_t * m_elements;   //!< Pointer to element storage.
@@ -557,19 +566,19 @@ class StaticQueue : public Queue
 {
 public:
     //! @brief Initialiser method.
-    inline status_t init(const char * name)
+    status_t init(const char * name)
     {
         return Queue::init(name, m_storage, sizeof(T), N);
     }
     
     //! @brief
-    inline status_t send(T element, uint32_t timeout=kInfiniteTimeout)
+    status_t send(T element, uint32_t timeout=kInfiniteTimeout)
     {
         return Queue::send((const void *)&element, timeout);
     }
     
     //! @brief
-    inline status_t receive(T * element, uint32_t timeout=kInfiniteTimeout)
+    status_t receive(T * element, uint32_t timeout=kInfiniteTimeout)
     {
         return Queue::receive((void *)element, timeout);
     }
