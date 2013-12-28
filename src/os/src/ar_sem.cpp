@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file arsem.cpp
+ * @file
  * @brief Source for Ar microkernel semaphores.
  * @ingroup ar
  */

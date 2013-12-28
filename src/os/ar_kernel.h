@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file arkernel.h
+ * @file
  * @brief Header for the Argon RTOS.
  * @ingroup ar
  */
@@ -367,6 +367,24 @@ protected:
 private:
     //! @brief The copy constructor is disabled for thread objects.
     Thread(const Thread & other) {}
+};
+
+/*!
+ * @brief Template to create a thread and its stack.
+ */
+template <uint32_t S>
+class ThreadWithStack : public Thread
+{
+public:
+    ThreadWithStack() {}
+    
+    status_t init(const char * name, thread_entry_t entry, void * param, uint8_t priority)
+    {
+        return Thread::init(name, entry, param, m_stack, S, priority);
+    }
+
+protected:
+    uint8_t m_stack[S];
 };
 
 /*!

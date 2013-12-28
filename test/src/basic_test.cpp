@@ -48,8 +48,7 @@ void main_thread(void * arg);
 // Variables
 //------------------------------------------------------------------------------
 
-uint8_t g_mainThreadStack[512];
-Ar::Thread g_mainThread;
+Ar::ThreadWithStack<512> g_mainThread;
 
 TEST_CASE_CLASS g_testCase;
 
@@ -101,7 +100,7 @@ void main(void)
     printf("Running test...\r\n");
     
     // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-    g_mainThread.init("main", main_thread, 0, g_mainThreadStack, sizeof(g_mainThreadStack), 50);
+    g_mainThread.init("main", main_thread, 0, 50);
     g_mainThread.resume();
     
     Ar::Kernel::run();

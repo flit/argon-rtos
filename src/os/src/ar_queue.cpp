@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file arqueue.cpp
+ * @file
  * @brief Implementation of Ar microkernel queue.
  * @ingroup ar
  */

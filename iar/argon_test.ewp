@@ -1931,7 +1931,13 @@
       <group>
         <name>src</name>
         <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_kernel.cpp</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_mutex.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_named_object.cpp</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_queue.cpp</name>

@@ -28,9 +28,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file mutex.cpp
+ * @file
  * @brief Source for Ar microkernel mutexes.
- * @ingroup mu
+ * @ingroup ar
  */
 
 #include "os/ar_kernel.h"

@@ -69,17 +69,26 @@ public:
 
 protected:
     
-    uint8_t m_aThreadStack[512];
-    Ar::Thread m_aThread;
-
-    uint8_t m_bThreadStack[512];
-    Ar::Thread m_bThread;
+    Ar::ThreadWithStack<512> m_aThread;
+    Ar::ThreadWithStack<512> m_bThread;
 
     void a_thread();
     void b_thread();
 
     static void _a_thread(void * arg);
     static void _b_thread(void * arg);
+    
+};
+
+class SemTest1 : public KernelTest
+{
+public:
+    SemTest1() {}
+    
+    virtual void run();
+
+protected:
+    
     
 };
 
@@ -92,14 +101,9 @@ public:
 
 protected:
 
-    uint8_t m_producerThreadStack[512];
-    Ar::Thread m_producerThread;
-
-    uint8_t m_consumerAThreadStack[512];
-    Ar::Thread m_consumerAThread;
-
-    uint8_t m_consumerBThreadStack[512];
-    Ar::Thread m_consumerBThread;
+    Ar::ThreadWithStack<512> m_producerThread;
+    Ar::ThreadWithStack<512> m_consumerAThread;
+    Ar::ThreadWithStack<512> m_consumerBThread;
 
     Ar::StaticQueue<int, 5> m_q;
 
