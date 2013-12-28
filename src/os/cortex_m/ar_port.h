@@ -87,16 +87,32 @@ struct ThreadContext
 };
 
 /*!
+ * @brief Utility class to temporarily modify the interrupt mask.
  *
+ * This class is used to temporarily enable or disable interrupts. The template parameter @a E
+ * specifies whether to enable or disable interrupts. The constructor saves the current interrupt
+ * mask state, then sets the mask to the desired state. When the object falls out of scope, the
+ * destructor restores the interrupt mask to the state saved in the constructor.
+ *
+ * In addition, there are methods to explicitly enable or disable interrupts. These can be used
+ * to modify the interrupt mask inside a block wrapped with this class. Keep in mind that even
+ * when using these methods, the interrupt mask will still be restored to its original state by
+ * the destructor.
+ *
+ * @param E The desired interrupt enable state. Pass true to enable interrupts, and false to disable.
+ *
+ * @see IrqDisableAndRestore
+ * @see IrqEnableAndRestore
  */
-// template <bool E>
+template <bool E>
 class IrqStateSetAndRestore
 {
 public:
-    IrqStateSetAndRestore(bool doEnable)
+    //! @brief Saves interrupt mask state then modifies it.
+    IrqStateSetAndRestore()
     {
         m_savedPrimask = __get_PRIMASK();
-        if (doEnable)
+        if (E)
         {
             __enable_irq();
         }
@@ -106,20 +122,24 @@ public:
         }
     }
     
+    //! @brief Restores interrupt mask state.
     ~IrqStateSetAndRestore()
     {
         __set_PRIMASK(m_savedPrimask);
     }
     
+    //! @brief Disable interrupts.
     void disable() { __disable_irq(); }
+    
+    //! @brief Enable interrupts.
     void enable() { __enable_irq(); }
 
-protected:
-    uint32_t m_savedPrimask;
+private:
+    uint32_t m_savedPrimask;    //!< The interrupt mask saved by the constructor.
 };
 
-// typedef IrqStateSetAndRestore<true> IrqEnableAndRestore;
-// typedef IrqStateSetAndRestore<false> IrqDisableAndRestore;
+typedef IrqStateSetAndRestore<false> IrqDisableAndRestore;  //!< Disable and restore interrupts.
+typedef IrqStateSetAndRestore<true> IrqEnableAndRestore;    //!< Enable and restore interrupts.
 
 //! @brief Stop the CPU because of a serious error.
 inline void _halt()

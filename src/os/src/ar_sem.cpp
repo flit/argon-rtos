@@ -79,7 +79,7 @@ status_t Semaphore::get(uint32_t timeout)
         return kNotFromInterruptError;
     }
     
-    IrqStateSetAndRestore disableIrq(false);
+    IrqDisableAndRestore disableIrq;
 
     if (m_count == 0)
     {
@@ -121,7 +121,7 @@ status_t Semaphore::get(uint32_t timeout)
 // See ar_kernel.h for documentation of this function.
 status_t Semaphore::put()
 {
-    IrqStateSetAndRestore disableIrq(false);
+    IrqDisableAndRestore disableIrq;
 
     // Increment count.
     m_count++;

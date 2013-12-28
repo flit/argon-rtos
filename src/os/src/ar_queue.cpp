@@ -84,7 +84,7 @@ Queue::~Queue()
 // See ar_kernel.h for documentation of this function.
 status_t Queue::send(const void * element, uint32_t timeout)
 {
-    IrqStateSetAndRestore disableIrq(false);
+    IrqDisableAndRestore disableIrq;
     
     // Check for full queue
     if (m_count >= m_capacity)
@@ -99,6 +99,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         Thread * thread = Thread::getCurrent();
         thread->block(m_sendBlockedList, timeout);
         
+        // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
         
         // Yield to the scheduler. While other threads are executing, interrupts
@@ -136,6 +137,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > Thread::getCurrent()->m_priority)
         {
+            // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
         
             Kernel::enterScheduler();
@@ -148,7 +150,7 @@ status_t Queue::send(const void * element, uint32_t timeout)
 // See ar_kernel.h for documentation of this function.
 status_t Queue::receive(void * element, uint32_t timeout)
 {
-    IrqStateSetAndRestore disableIrq(false);
+    IrqDisableAndRestore disableIrq;
     
     // Check for empty queue
     if (m_count == 0)
@@ -162,6 +164,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         Thread * thread = Thread::getCurrent();
         thread->block(m_receiveBlockedList, timeout);
         
+        // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
         
         // Yield to the scheduler. While other threads are executing, interrupts
@@ -199,6 +202,7 @@ status_t Queue::receive(void * element, uint32_t timeout)
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > Thread::getCurrent()->m_priority)
         {
+            // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
         
             Kernel::enterScheduler();

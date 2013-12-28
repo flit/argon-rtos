@@ -84,7 +84,7 @@ status_t Thread::init(const char * name, thread_entry_t entry, void * param, voi
 
     {
         // disable interrupts
-        IrqStateSetAndRestore disableIrq(false);
+        IrqDisableAndRestore disableIrq;
         
         // add to suspended list
         addToList(s_suspendedList);
@@ -108,7 +108,7 @@ Thread::~Thread()
         
         // Now remove from the suspended list
         {
-            IrqStateSetAndRestore disableIrq(false);
+            IrqDisableAndRestore disableIrq;
             removeFromList(s_suspendedList);
         }
     }
@@ -122,7 +122,7 @@ Thread::~Thread()
 void Thread::resume()
 {
     {
-        IrqStateSetAndRestore disableIrq(false);
+        IrqDisableAndRestore disableIrq;
     
         if (m_state == kThreadReady)
         {
@@ -148,7 +148,7 @@ void Thread::resume()
 void Thread::suspend()
 {
     {
-        IrqStateSetAndRestore disableIrq(false);
+        IrqDisableAndRestore disableIrq;
     
         if (m_state == kThreadSuspended)
         {
@@ -209,7 +209,7 @@ void Thread::sleep(unsigned ticks)
     }
 
     {
-        IrqStateSetAndRestore disableIrq(false);
+        IrqDisableAndRestore disableIrq;
         
         // put the current thread on the sleeping list
         s_currentThread->m_wakeupTime = Kernel::getTickCount() + ticks;
@@ -251,7 +251,7 @@ void Thread::thread_wrapper(Thread * thread)
     
     // Thread function has finished, so clean up and terminate the thread.
     {
-        IrqStateSetAndRestore disableIrq(false);
+        IrqDisableAndRestore disableIrq;
         
         // This thread must be in the running state for this code to execute,
         // so we know it is on the ready list.
