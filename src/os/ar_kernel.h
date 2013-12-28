@@ -220,17 +220,15 @@ public:
     typedef void (*thread_entry_t)(void * param);
 
 public:
-    Thread() {}
+    //! @brief Constructor.
+    Thread() {} //const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority) {}
     
-    virtual ~Thread() {}
+    virtual ~Thread();
     
     //! @name Thread init and cleanup
     //@{
     //! @brief Base initialiser.
     status_t init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-
-    //! @brief Releases any resources held by the thread.
-    virtual void cleanup();
     //@}
 
     //! @name Thread state
@@ -401,7 +399,7 @@ public:
     status_t init(const char * name, unsigned count=1);
 
     //! @brief
-    virtual void cleanup();
+    virtual ~Semaphore();
 
     //! @brief Acquire the semaphore.
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
@@ -469,7 +467,7 @@ public:
     status_t init(const char * name);
 
     //! @brief Cleanup.
-    virtual void cleanup();
+    virtual ~Mutex();
     
     //! @brief Lock the mutex.
     virtual status_t get(uint32_t timeout=kInfiniteTimeout);
@@ -497,7 +495,7 @@ public:
     status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity);
     
     //! @brief Queue cleanup.
-    virtual void cleanup();
+    virtual ~Queue();
     
     //! @brief Add an item to the queue.
     status_t send(const void * element, uint32_t timeout=kInfiniteTimeout);
@@ -598,6 +596,8 @@ protected:
 
 /*!
  * @brief RTOS core.
+ *
+ * @ingroup ar
  */
 class Kernel
 {
@@ -609,13 +609,17 @@ public:
     static void run();
     //@}
 
+    //! @name Accessors
+    //@{
     //! @brief Returns the current tick count.
     static uint32_t getTickCount() { return s_tickCount; }
     
     //! @brief Returns the current system load average.
     static unsigned getSystemLoad() { return s_systemLoad; }
     
+    //! @brief Whether the scheduler is running.
     static bool isRunning() { return s_isRunning; }
+    //@}
 
     //! @brief Handles the periodic timer tick interrupt.
     static void periodicTimerIsr();
@@ -682,7 +686,7 @@ struct ObjectLists
 };
 
 //! \brief Global containing lists of all Ar objects.
-extern ObjectLists g_muAllObjects;
+extern ObjectLists g_allObjects;
 
 #endif // AR_GLOBAL_OBJECT_LISTS
 

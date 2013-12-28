@@ -57,7 +57,7 @@ status_t Semaphore::init(const char * name, unsigned count)
     m_count = count;
 
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_muAllObjects.m_semaphores);
+    addToCreatedList(g_allObjects.m_semaphores);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
     return kSuccess;
@@ -65,7 +65,7 @@ status_t Semaphore::init(const char * name, unsigned count)
 
 //! Any threads on the blocked list will be unblocked immediately. Their return status
 //! from the get() method will be #kObjectDeletedError.
-void Semaphore::cleanup()
+Semaphore::~Semaphore()
 {
     // Unblock all threads blocked on this semaphore.
     while (m_blockedList)
@@ -74,7 +74,7 @@ void Semaphore::cleanup()
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_muAllObjects.m_semaphores);
+    removeFromCreatedList(g_allObjects.m_semaphores);
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 

@@ -89,7 +89,7 @@ Thread Kernel::s_idleThread;
 //! This global contains linked lists of all the various Ar object
 //! types that have been created during runtime. This makes it much
 //! easier to examine objects of interest.
-ObjectLists g_muAllObjects;
+ObjectLists g_allObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 
 //------------------------------------------------------------------------------

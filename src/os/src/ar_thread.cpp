@@ -100,13 +100,13 @@ status_t Thread::init(const char * name, thread_entry_t entry, void * param, voi
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_muAllObjects.m_threads);
+    addToCreatedList(g_allObjects.m_threads);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
     return kSuccess;
 }
 
-void Thread::cleanup()
+Thread::~Thread()
 {
     if (m_state != kThreadDone)
     {
@@ -122,7 +122,7 @@ void Thread::cleanup()
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_muAllObjects.m_threads);
+    removeFromCreatedList(g_allObjects.m_threads);
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 

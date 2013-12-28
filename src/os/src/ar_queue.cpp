@@ -75,17 +75,17 @@ status_t Queue::init(const char * name, void * storage, unsigned elementSize, un
     m_receiveBlockedList = NULL;
     
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_muAllObjects.m_queues);
+    addToCreatedList(g_allObjects.m_queues);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kSuccess;
 }
 
 //! 
-void Queue::cleanup()
+Queue::~Queue()
 {
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_muAllObjects.m_queues);
+    removeFromCreatedList(g_allObjects.m_queues);
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 

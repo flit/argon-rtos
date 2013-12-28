@@ -65,13 +65,6 @@ void Kernel::initSystem()
 {
     // Init PSP.
     __set_PSP((uint32_t)s_idleThread.m_stackPointer);
-    
-    // Switch to PSP.
-//     CONTROL_Type c;
-//     c.w = __get_CONTROL();
-//     c.b.SPSEL = 1;
-//     __set_CONTROL(c.w);
-//     __ISB();
 }
 
 void Kernel::initTimerInterrupt()

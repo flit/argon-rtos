@@ -59,17 +59,17 @@ status_t Mutex::init(const char * name)
         m_ownerLockCount = 0;
         
 #if AR_GLOBAL_OBJECT_LISTS
-        addToCreatedList(g_muAllObjects.m_mutexes);
+        addToCreatedList(g_allObjects.m_mutexes);
 #endif // AR_GLOBAL_OBJECT_LISTS
     }
     
     return status;
 }
 
-void Mutex::cleanup()
+Mutex::~Mutex()
 {
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_muAllObjects.m_mutexes);
+    removeFromCreatedList(g_allObjects.m_mutexes);
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
