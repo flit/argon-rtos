@@ -58,7 +58,8 @@ static inline void dac_write(dac_t *obj, int value) {
 }
 
 static inline int dac_read(dac_t *obj) {
-    return ((DAC0->DAT[obj->dac].DATH << 8) | DAC0->DAT[obj->dac].DATL);
+    int temp = (DAC0->DAT[obj->dac].DATH << 8);
+    return temp | (DAC0->DAT[obj->dac].DATL);
 }
 
 void analogout_write(dac_t *obj, float value) {

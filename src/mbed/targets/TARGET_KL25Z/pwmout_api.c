@@ -110,7 +110,8 @@ void pwmout_write(pwmout_t* obj, float value) {
 }
 
 float pwmout_read(pwmout_t* obj) {
-    float v = (float)(*obj->CnV) / (float)(*obj->MOD);
+    float v = (float)(*obj->CnV);
+    v /= (float)(*obj->MOD);
     return (v > 1.0) ? (1.0) : (v);
 }
 

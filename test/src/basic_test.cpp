@@ -32,25 +32,35 @@
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
+#include "mbed.h"
+
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
-#define TEST_CASE_CLASS TestSleep1
+#define TEST_CASE_CLASS TestSem1
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
 void main_thread(void * arg);
+void green_thread(void * arg);
+void red_thread(void * arg);
 
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
 
 Ar::ThreadWithStack<512> g_mainThread;
+Ar::ThreadWithStack<196> g_greenThread;
+Ar::ThreadWithStack<196> g_redThread;
 
 TEST_CASE_CLASS g_testCase;
+
+PwmOut blueLed(LED_BLUE);
+PwmOut greenLed(LED_GREEN);
+PwmOut redLed(LED_RED);
 
 //------------------------------------------------------------------------------
 // Code
@@ -84,18 +94,102 @@ void main_thread(void * arg)
     
     g_testCase.init();
     g_testCase.run();
+
+    g_greenThread.init("green", green_thread, 0, 50);
+    g_greenThread.resume();
+
+    g_redThread.init("red", red_thread, 0, 50);
+    g_redThread.resume();
     
-//     while (1)
-//     {
+    blueLed.period_ms(2);   // 500 Hz
+    
+    float dutyCycle = 1.0f;
+    float delta = -0.05f;
+    while (1)
+    {
 //         print_thread_ticks();
-//         
-//         Ar::Thread::sleep(100);
-//     }
+
+        blueLed = dutyCycle;
+        
+        Ar::Thread::sleep(50);
+        
+        dutyCycle += delta;
+        if (dutyCycle < 0.01f)
+        {
+            dutyCycle = 0.0f;// 1.0f;
+            delta = -delta;
+        }
+        else if (dutyCycle > 0.99f)
+        {
+            dutyCycle = 1.0f;
+            delta = -delta;
+        }
+    }
+}
+
+void green_thread(void * arg)
+{
+    Ar::Thread::sleep(500);
+    
+    greenLed.period_ms(2);   // 500 Hz
+    
+    float dutyCycle = 1.0f;
+    float delta = -0.05f;
+    while (1)
+    {
+//         print_thread_ticks();
+
+        greenLed = dutyCycle;
+        
+        Ar::Thread::sleep(50);
+        
+        dutyCycle += delta;
+        if (dutyCycle < 0.01f)
+        {
+            dutyCycle = 0.0f;// 1.0f;
+            delta = -delta;
+        }
+        else if (dutyCycle > 0.99f)
+        {
+            dutyCycle = 1.0f;
+            delta = -delta;
+        }
+    }
+}
+
+void red_thread(void * arg)
+{
+    Ar::Thread::sleep(1250);
+    
+    redLed.period_ms(2);   // 500 Hz
+    
+    float dutyCycle = 1.0f;
+    float delta = -0.05f;
+    while (1)
+    {
+//         print_thread_ticks();
+
+        redLed = dutyCycle;
+        
+        Ar::Thread::sleep(50);
+        
+        dutyCycle += delta;
+        if (dutyCycle < 0.01f)
+        {
+            dutyCycle = 0.0f;// 1.0f;
+            delta = -delta;
+        }
+        else if (dutyCycle > 0.99f)
+        {
+            dutyCycle = 1.0f;
+            delta = -delta;
+        }
+    }
 }
 
 void main(void)
 {
-    debug_init();
+//     debug_init();
     
     printf("Running test...\r\n");
     

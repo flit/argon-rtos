@@ -70,16 +70,16 @@
         <option>
           <name>GRuntimeLibSelect</name>
           <version>0</version>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>GRuntimeLibSelectSlave</name>
           <version>0</version>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>RTDescription</name>
-          <state>Use the normal configuration of the C/C++ runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
+          <state>Use the full configuration of the C/C++ runtime library. Full locale interface, C locale, file descriptor support, multibytes in printf and scanf, and hex floats in strtod.</state>
         </option>
         <option>
           <name>OGProductVersion</name>
@@ -133,7 +133,7 @@
         </option>
         <option>
           <name>RTConfigPath2</name>
-          <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Normal.h</state>
+          <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Full.h</state>
         </option>
         <option>
           <name>GFPUCoreSlave</name>
@@ -213,7 +213,7 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state>Pa050</state>
+          <state>Pa050, Pa093</state>
         </option>
         <option>
           <name>CCDiagRemark</name>
@@ -308,6 +308,9 @@
           <state>$PROJ_DIR$\..\src\startup</state>
           <state>$PROJ_DIR$\..\src\os\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
+          <state>$PROJ_DIR$\..\src\mbed\hal</state>
+          <state>$PROJ_DIR$\..\src\mbed\api</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -374,15 +377,15 @@
         </option>
         <option>
           <name>IccCppDialect</name>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>IccExceptions</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccRTTI</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccStaticDestr</name>
@@ -708,7 +711,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\config\16KB_RAM.icf</state>
+          <state>$PROJ_DIR$\config\128KB_Pflash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -1915,6 +1918,186 @@
       </file>
     </group>
     <group>
+      <name>mbed</name>
+      <group>
+        <name>common</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\board.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\BusIn.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\BusInOut.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\BusOut.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\CallChain.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\CAN.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Ethernet.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\exit.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\FileBase.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\FileLike.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\FilePath.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\FileSystemLike.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\FunctionPointer.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\I2C.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\I2CSlave.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\InterruptIn.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\InterruptManager.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\LocalFileSystem.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\mbed_interface.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\pinmap_common.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\RawSerial.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\retarget.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\rtc_time.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\semihost_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Serial.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\SerialBase.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\SPI.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\SPISlave.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Stream.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Ticker.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Timeout.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\Timer.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\TimerEvent.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\us_ticker_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\wait_api.c</name>
+        </file>
+      </group>
+      <group>
+        <name>kl25</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\analogin_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\analogout_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis_nvic.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis_nvic.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\device.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_irq_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_object.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\i2c_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\objects.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PeripheralNames.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\pinmap.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PinNames.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\port_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PortNames.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\pwmout_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\rtc_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\serial_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\sleep.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\spi_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\us_ticker.c</name>
+        </file>
+      </group>
+    </group>
+    <group>
       <name>os</name>
       <group>
         <name>cortex_m</name>
@@ -1979,6 +2162,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
+      <excluded>
+        <configuration>Debug</configuration>
+      </excluded>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>

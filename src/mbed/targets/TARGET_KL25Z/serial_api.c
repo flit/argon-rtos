@@ -170,7 +170,7 @@ void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_b
         case ParityEven: parity_enable = 1; parity_select = 0; data_bits++; break;
         default:
             error("Invalid serial parity setting\r\n");
-            return;
+//             return;
     }
 
     // 1 stop bits = 0, 2 stop bits = 1

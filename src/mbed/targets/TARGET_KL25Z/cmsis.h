@@ -7,7 +7,8 @@
 #ifndef MBED_CMSIS_H
 #define MBED_CMSIS_H
 
-#include "MKL25Z4.h"
+// #include "MKL25Z4.h"
+#include "device/fsl_device_registers.h"
 #include "cmsis_nvic.h"
 
 #endif
