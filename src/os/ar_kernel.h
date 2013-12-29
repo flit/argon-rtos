@@ -162,7 +162,7 @@ protected:
 };
 
 /*!
- * @brief Preemptive thread class and RTOS core.
+ * @brief Preemptive thread class.
  *
  * @ingroup ar
  *
@@ -344,7 +344,6 @@ public:
     //! @brief Returns the currently running thread object.
     static Thread * getCurrent() { return s_currentThread; }
     //@}
-    
     
 protected:
     
@@ -872,7 +871,7 @@ protected:
     static bool s_isRunning;    //!< True if the kernel has been started.
     static volatile uint32_t s_tickCount;   //!< Current tick count.
     static volatile uint32_t s_irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
-    static unsigned s_systemLoad;   //!< Percent of system load from 0-100.
+    static volatile unsigned s_systemLoad;   //!< Percent of system load from 0-100.
 
     //! @name Idle thread members
     //@{

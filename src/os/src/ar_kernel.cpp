@@ -43,30 +43,22 @@ using namespace Ar;
 // Defines
 //------------------------------------------------------------------------------
 
-#ifndef MU_ENABLE_IDLE_SLEEP
+#if !defined(AR_ENABLE_IDLE_SLEEP)
     //! Controls whether the idle thread puts the processor to sleep
     //! until the next interrupt. Set to 1 to enable.
-    #define MU_ENABLE_IDLE_SLEEP 0
+    #define AR_ENABLE_IDLE_SLEEP (0)
 #endif
 
-#ifndef MU_ENABLE_SYSTEM_LOAD
+#if !defined(AR_ENABLE_SYSTEM_LOAD)
     //! When set to 1 the idle thread will compute the system load percentage.
-    #define MU_ENABLE_SYSTEM_LOAD 1
+    #define AR_ENABLE_SYSTEM_LOAD (1)
 #endif
 
-#ifndef MU_PRINT_SYSTEM_LOAD
-    //! Controls if the system load is printed.
-    #define MU_PRINT_SYSTEM_LOAD 0
-#endif
-
-#if MU_PRINT_SYSTEM_LOAD
-    //! Size in bytes of the idle thread's stack. Needs much more stack
-    //! space in order to call printf().
-    #define MU_IDLE_THREAD_STACK_SIZE (2048)
-#else // MU_PRINT_SYSTEM_LOAD
+#if !defined(AR_IDLE_THREAD_STACK_SIZE)
     //! Size in bytes of the idle thread's stack.
-    #define MU_IDLE_THREAD_STACK_SIZE (256)
-#endif // MU_PRINT_SYSTEM_LOAD
+    #define AR_IDLE_THREAD_STACK_SIZE 256 
+    //(sizeof(ThreadContext) + 32)
+#endif // AR_IDLE_THREAD_STACK_SIZE
 
 //------------------------------------------------------------------------------
 // Variables
@@ -75,10 +67,15 @@ using namespace Ar;
 bool Kernel::s_isRunning = false;
 volatile uint32_t Kernel::s_tickCount = 0;
 volatile uint32_t Kernel::s_irqDepth = 0;
-unsigned Kernel::s_systemLoad = 0;
 
-//! The stack for #s_idleThread.
-uint8_t Kernel::s_idleThreadStack[MU_IDLE_THREAD_STACK_SIZE];
+//! @internal
+//!
+//! The volatile is necessary so that the IAR optimizer doesn't remove the entire load
+//! calculation loop of the idle_entry() function.
+volatile unsigned Kernel::s_systemLoad = 0;
+
+//! The stack for the idle thread.
+uint8_t Kernel::s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 
 //! The lowest priority thread in the system. Executes only when no other
 //! threads are ready.
@@ -99,20 +96,14 @@ ObjectLists g_allObjects;
 //!
 //! This thread just spins forever.
 //!
-//! If the #MU_ENABLE_SYSTEM_LOAD define has been set to 1 then this thread will
+//! If the #AR_ENABLE_SYSTEM_LOAD define has been set to 1 then this thread will
 //! also calculate the average system load once per second. The system load is
-//! accessible with the Thread::getSystemLoad() static member.
-//!
-//! If the #MU_ENABLE_IDLE_SLEEP define is set to 1, the idle thread hits the
-//! PCK bit in the SCDR register of the AT91 Power Management Controller
-//! peripheral. This causes the CPU to go to sleep until the next interrupt,
-//! which if nothing else will be the OS tick timer. This option can make it
-//! very easy to save power.
+//! accessible with the Kernel::getSystemLoad() static member.
 //!
 //! @param param Ignored.
 void Kernel::idle_entry(void * param)
 {
-#if MU_ENABLE_SYSTEM_LOAD
+#if AR_ENABLE_SYSTEM_LOAD
     uint32_t start;
     uint32_t last;
     uint32_t ticks;
@@ -120,11 +111,11 @@ void Kernel::idle_entry(void * param)
     
     start = Kernel::getTickCount();
     last = start;
-#endif // MU_ENABLE_SYSTEM_LOAD
+#endif // AR_ENABLE_SYSTEM_LOAD
     
     while (1)
     {
-#if MU_ENABLE_SYSTEM_LOAD
+#if AR_ENABLE_SYSTEM_LOAD
         ticks = Kernel::getTickCount();
         
         if (ticks != last)
@@ -146,10 +137,6 @@ void Kernel::idle_entry(void * param)
                 
                 s_systemLoad = skipped;
                 
-                #if MU_PRINT_SYSTEM_LOAD
-                printf("%d%% system load\n", s_systemLoad);
-                #endif // MU_PRINT_SYSTEM_LOAD
-                
                 // start over counting
                 if (diff - 1 > s)
                 {
@@ -168,13 +155,12 @@ void Kernel::idle_entry(void * param)
             
             last = ticks;
         }
-#endif // MU_ENABLE_SYSTEM_LOAD
+#endif // AR_ENABLE_SYSTEM_LOAD
         
-#if MU_ENABLE_IDLE_SLEEP
-        // Hitting this bit puts the processor to sleep until the next
-        // IRQ or FIQ fires.
-        *AT91C_PMC_SCDR = AT91C_PMC_PCK;
-#endif // MU_ENABLE_IDLE_SLEEP
+#if AR_ENABLE_IDLE_SLEEP
+        // Hitting this bit puts the processor to sleep until the next interrupt fires.
+        __WFI();
+#endif // AR_ENABLE_IDLE_SLEEP
     }
 }
 
@@ -203,7 +189,7 @@ void Kernel::run()
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
-    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, MU_IDLE_THREAD_STACK_SIZE, 1);
+    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, AR_IDLE_THREAD_STACK_SIZE, 1);
     s_idleThread.m_priority = 0;
     s_idleThread.resume();
     

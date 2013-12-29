@@ -40,26 +40,6 @@
 using namespace Ar;
 
 //------------------------------------------------------------------------------
-// Defines
-//------------------------------------------------------------------------------
-
-#ifndef MU_ENABLE_IDLE_SLEEP
-    //! Controls whether the idle thread puts the processor to sleep
-    //! until the next interrupt. Set to 1 to enable.
-    #define MU_ENABLE_IDLE_SLEEP 0
-#endif
-
-#ifndef MU_ENABLE_SYSTEM_LOAD
-    //! When set to 1 the idle thread will compute the system load percentage.
-    #define MU_ENABLE_SYSTEM_LOAD 1
-#endif
-
-#ifndef MU_PRINT_SYSTEM_LOAD
-    //! Controls if the system load is printed.
-    #define MU_PRINT_SYSTEM_LOAD 0
-#endif
-
-//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
