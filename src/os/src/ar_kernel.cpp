@@ -195,16 +195,7 @@ void Kernel::enterScheduler()
     }
 }
 
-//! The system idle thread is created here. Its priority is set to 0, the lowest
-//! possible priority. The idle thread will run when there are no other ready threads.
-//!
-//! At least one user thread must have been created and resumed before
-//! calling run(). Usually this will be an initialisation thread that itself
-//! creates the other threads of the application.
-//!
-//! @pre Interrupts must not be enabled prior to calling this routine.
-//!
-//! @note Control will never return from this method.
+// See ar_kernel.h for documentation of this function.
 void Kernel::run()
 {
     // Assert if there is no thread ready to run.
@@ -273,6 +264,18 @@ uint32_t Kernel::yieldIsr(uint32_t topOfStack)
 
     // return the new thread's stack pointer
     return (uint32_t)Thread::getCurrent()->m_stackPointer;
+}
+
+// See ar_kernel.h for documentation of this function.
+void Kernel::enterInterrupt()
+{
+    ++Kernel::s_irqDepth;
+}
+
+// See ar_kernel.h for documentation of this function.
+void Kernel::exitInterrupt()
+{
+    --Kernel::s_irqDepth;
 }
 
 void * ar_yield(void * topOfStack)

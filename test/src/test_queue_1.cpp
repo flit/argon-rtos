@@ -79,7 +79,7 @@ void TestQueue1::producer_thread()
         printf("%s sending %d\r\n", threadIdString(), value);
         m_q.send(value);
         
-        Ar::Thread::sleep(Ar::Time::millisecondsToTicks(2000));
+        Ar::Thread::sleep(2000);
     }
 }
 

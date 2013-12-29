@@ -89,16 +89,16 @@ public:
 
 protected:
     
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
+    Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_aThread;
+    Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_bThread;
     
     Ar::Semaphore m_sem;
 
-    void a_thread();
-    void b_thread();
+    void a_thread(void * param);
+    void b_thread(void * param);
 
-    static void _a_thread(void * arg);
-    static void _b_thread(void * arg);
+//     static void _a_thread(void * arg);
+//     static void _b_thread(void * arg);
     
 };
 

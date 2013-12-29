@@ -442,6 +442,33 @@ private:
     Thread(const Thread & other) {}
 };
 
+template <typename T>
+class ThreadToMemberFunction : public Thread
+{
+public:
+
+    typedef void (T::*thread_member_entry_t)(void * param);
+    
+    ThreadToMemberFunction() {}
+
+    status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    {
+        m_object = obj;
+        m_entryMember = entry;
+        return Thread::init(name, NULL, param, stack, stackSize, priority);
+    }
+
+protected:
+    T * m_object;
+    thread_member_entry_t m_entryMember;
+    
+    virtual void threadEntry()
+    {
+        (m_object->*m_entryMember)(m_param);
+    }
+    
+};
+
 /*!
  * @brief Template to create a thread and its stack.
  */
@@ -454,6 +481,28 @@ public:
     status_t init(const char * name, thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
+    }
+
+protected:
+    uint8_t m_stack[S];
+};
+
+/*!
+ * @brief Template to create a thread and its stack.
+ */
+template <uint32_t S, typename T>
+class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
+{
+public:
+    
+//     typedef ThreadToMemberFunction<T>::thread_member_entry_t thread_member_entry_t;
+    typedef void (T::*thread_member_entry_t)(void * param);
+    
+    ThreadToMemberFunctionWithStack() {}
+    
+    status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
+    {
+        return ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
     }
 
 protected:
@@ -497,11 +546,11 @@ public:
     //! @note This function may be called from interrupt context only if the timeout parameter is
     //!     set to #Ar::kNoTimeout (or 0).
     //!
-    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
-    //!     state before the semaphore can be obtained. If this value is 0, or #kNoTimeout, then
-    //!     this method will return immediately if the semaphore cannot be obtained. Setting the
-    //!     timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to get
-    //!     the semaphore.
+    //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
+    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kNoTimeout,
+    //!     then this method will return immediately if the semaphore cannot be obtained. Setting
+    //!     the timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to
+    //!     get the semaphore.
     //!
     //! @retval kSuccess The semaphore was obtained without error.
     //! @retval kTimeoutError The specified amount of time has elapsed before the semaphore could be
@@ -592,10 +641,11 @@ public:
     //! put(), thus allowing a thread to lock a mutex any number of times as long as there are
     //! matching get() and put() calls.
     //!
-    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
-    //!     state before the lock can be obtained. If this value is 0, or @a kNoTimeout, then this
-    //!     method will return immediately if the lock cannot be obtained. Setting the timeout to
-    //!     @a kInfiniteTimeout will cause the thread to wait forever for a chance to get the lock.
+    //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
+    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kNoTimeout,
+    //!     then this method will return immediately if the lock cannot be obtained. Setting
+    //!     the timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to
+    //!     get the lock.
     //!
     //! @retval kSuccess The mutex was obtained without error.
     //! @retval kTimeoutError The specified amount of time has elapsed before the mutex could be
@@ -651,9 +701,9 @@ public:
     //!
     //! @param element Pointer to the element to post to the queue. The element size was specified
     //!     in the init() call.
-    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
-    //!     state before the element can be sent. If this value is 0, or #kNoTimeout, then this
-    //!     method will return immediately if the queue is full. Setting the timeout to
+    //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
+    //!     blocked state before the element can be sent. If this value is 0, or #kNoTimeout, then
+    //!     this method will return immediately if the queue is full. Setting the timeout to
     //!     #kInfiniteTimeout will cause the thread to wait forever for a chance to send.
     //!
     //! @retval kSuccess
@@ -663,10 +713,10 @@ public:
     //! @brief Remove an item from the queue.
     //!
     //! @param[out] element
-    //! @param timeout The maximum number of ticks that the caller is willing to wait in a blocked
-    //!     state before an element is received. If this value is 0, or #kNoTimeout, then this
-    //!     method will return immediately if the queue is empty. Setting the timeout to
-    //!     #kInfiniteTimeout will cause the thread to wait forever to receive an element.
+    //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
+    //!     blocked state before an element is received. If this value is 0, or #kNoTimeout, then
+    //!     this method will return immediately if the queue is empty. Setting the timeout to
+    //!     #kInfiniteTimeout will cause the thread to wait forever for receive an element.
     //!
     //! @retval kSuccess
     //! @retval kQueueEmptyError
@@ -774,6 +824,17 @@ public:
     //! @name RTOS control
     //@{
     //! @brief Enables the tick timer and switches to a ready thread.
+    //!
+    //! The system idle thread is created here. Its priority is set to 0, the lowest
+    //! possible priority. The idle thread will run when there are no other ready threads.
+    //!
+    //! At least one user thread must have been created and resumed before
+    //! calling run(). Usually this will be an initialisation thread that itself
+    //! creates the other threads of the application.
+    //!
+    //! @pre Interrupts must not be enabled prior to calling this routine.
+    //!
+    //! @note Control will never return from this method.
     static void run();
     //@}
 
@@ -787,6 +848,17 @@ public:
     
     //! @brief Whether the scheduler is running.
     static bool isRunning() { return s_isRunning; }
+    //@}
+    
+    //! @name Interrupt handling
+    //!
+    //! Routines to inform the kernel of user interrupt handler execution.
+    //@{
+    //! @brief Inform the kernel that an interrupt handler is running.
+    static void enterInterrupt();
+    
+    //! @brief Inform the kernel that an interrupt handler is exiting.
+    static void exitInterrupt();
     //@}
 
     //! @brief Handles the periodic timer tick interrupt.
@@ -829,6 +901,7 @@ protected:
     friend class Thread;
     friend class Semaphore;
     friend class Queue;
+    friend class InterruptWrapper;
 
 private:
 
@@ -862,6 +935,21 @@ inline uint32_t millisecondsToTicks(uint32_t millisecs) { return millisecs / get
 //@}
 
 } // namespace Time
+
+/*!
+ * @brief Helper class for managing user interrupt handlers.
+ */
+class InterruptWrapper
+{
+public:
+
+    //! @brief Increments interrupt depth.
+    InterruptWrapper() { Kernel::enterInterrupt(); }
+    
+    //! @brief Decrements interrupt depth.
+    ~InterruptWrapper() { Kernel::exitInterrupt(); }
+    
+};
 
 #if AR_GLOBAL_OBJECT_LISTS
 

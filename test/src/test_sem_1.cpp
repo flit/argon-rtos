@@ -40,40 +40,45 @@ void TestSem1::run()
 {
     m_sem.init("sem", 0);
     
-    m_aThread.init("a", _a_thread, this, 60);
+//     m_aThread.init("a", _a_thread, this, 60);
+//     m_aThread.resume();
+// 
+//     m_bThread.init("b", _b_thread, this, 70);
+//     m_bThread.resume();
+    
+    m_aThread.init("a", this, &TestSem1::a_thread, this, 60);
     m_aThread.resume();
 
-    m_bThread.init("b", _b_thread, this, 70);
+    m_bThread.init("b", this, &TestSem1::b_thread, this, 70);
     m_bThread.resume();
-    
 }
 
-void TestSem1::_a_thread(void * arg)
-{
-    TestSem1 * _this = (TestSem1 *)arg;
-    _this->a_thread();
-}
+// void TestSem1::_a_thread(void * arg)
+// {
+//     TestSem1 * _this = (TestSem1 *)arg;
+//     _this->a_thread();
+// }
+// 
+// void TestSem1::_b_thread(void * arg)
+// {
+//     TestSem1 * _this = (TestSem1 *)arg;
+//     _this->b_thread();
+// }
 
-void TestSem1::_b_thread(void * arg)
-{
-    TestSem1 * _this = (TestSem1 *)arg;
-    _this->b_thread();
-}
-
-void TestSem1::a_thread()
+void TestSem1::a_thread(void * param)
 {
     printHello();
     
     while (1)
     {
         printf("%s sleeping for 2 sec\r\n", threadIdString());
-        Ar::Thread::sleep(Ar::Time::millisecondsToTicks(2000));
+        Ar::Thread::sleep(2000);
         printf("%s putting sem\r\n", threadIdString());
         m_sem.put();
     }
 }
 
-void TestSem1::b_thread()
+void TestSem1::b_thread(void * param)
 {
     printHello();
     

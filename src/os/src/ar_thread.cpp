@@ -212,7 +212,7 @@ void Thread::sleep(unsigned ticks)
         IrqDisableAndRestore disableIrq;
         
         // put the current thread on the sleeping list
-        s_currentThread->m_wakeupTime = Kernel::getTickCount() + ticks;
+        s_currentThread->m_wakeupTime = Kernel::getTickCount() + Time::millisecondsToTicks(ticks);
         s_currentThread->removeFromList(s_readyList);
         s_currentThread->m_state = kThreadSleeping;
         s_currentThread->addToList(s_sleepingList);
@@ -546,7 +546,7 @@ void Thread::block(Thread * & blockedList, uint32_t timeout)
     // If a valid timeout was given, put the thread on the sleeping list.
     if (timeout != kInfiniteTimeout)
     {
-        m_wakeupTime = Kernel::getTickCount() + timeout;
+        m_wakeupTime = Kernel::getTickCount() + Time::millisecondsToTicks(timeout);
         addToList(s_sleepingList);
     }
     else
