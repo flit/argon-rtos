@@ -211,18 +211,7 @@ int __read_console(__file_handle handle, unsigned char* buffer, size_t * count)
 {
     (void)handle;                        /* Parameter is not used, suppress unused argument warning */
 
-    if (TERM_PORT_NUM == 0)
-    {
-        *buffer = (unsigned char)uart0_getchar(UART0_BASE_PTR);
-    }
-    else if (TERM_PORT_NUM == 1)
-    {
-        *buffer = (unsigned char)uart_getchar(UART1_BASE_PTR);
-    }
-    else
-    {
-        *buffer = (unsigned char)uart_getchar(UART2_BASE_PTR);
-    }
+    *buffer = (unsigned char)uart_getchar((UART_Type*)REGS_UART_BASE(TERM_PORT_NUM));
 
     *count = 1;
 

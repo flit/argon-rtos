@@ -17,15 +17,15 @@
         <debug>1</debug>
         <option>
           <name>ExePath</name>
-          <state>Debug\Exe</state>
+          <state>output\KL25\debug\exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>Debug\Obj</state>
+          <state>output\KL25\debug\obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>Debug\List</state>
+          <state>output\KL25\debug\list</state>
         </option>
         <option>
           <name>Variant</name>
@@ -763,7 +763,7 @@
         </option>
         <option>
           <name>IlinkOverrideProgramEntryLabel</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkProgramEntryLabelSelect</name>
@@ -771,7 +771,7 @@
         </option>
         <option>
           <name>IlinkProgramEntryLabel</name>
-          <state>__iar_program_start</state>
+          <state>Reset_Handler</state>
         </option>
         <option>
           <name>DoFill</name>
@@ -963,15 +963,15 @@
         <debug>0</debug>
         <option>
           <name>ExePath</name>
-          <state>Release\Exe</state>
+          <state>output\KL25\release\exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>Release\Obj</state>
+          <state>output\KL25\release\obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>Release\List</state>
+          <state>output\KL25\release\list</state>
         </option>
         <option>
           <name>Variant</name>
@@ -1016,16 +1016,16 @@
         <option>
           <name>GRuntimeLibSelect</name>
           <version>0</version>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>GRuntimeLibSelectSlave</name>
           <version>0</version>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>RTDescription</name>
-          <state>Use the normal configuration of the C/C++ runtime library. No locale interface, C locale, no file descriptor support, no multibytes in printf and scanf, and no hex floats in strtod.</state>
+          <state>Use the full configuration of the C/C++ runtime library. Full locale interface, C locale, file descriptor support, multibytes in printf and scanf, and hex floats in strtod.</state>
         </option>
         <option>
           <name>OGProductVersion</name>
@@ -1079,7 +1079,7 @@
         </option>
         <option>
           <name>RTConfigPath2</name>
-          <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Normal.h</state>
+          <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Full.h</state>
         </option>
         <option>
           <name>GFPUCoreSlave</name>
@@ -1159,7 +1159,7 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state>Pa050</state>
+          <state>Pa050, Pa093</state>
         </option>
         <option>
           <name>CCDiagRemark</name>
@@ -1254,6 +1254,9 @@
           <state>$PROJ_DIR$\..\src\startup</state>
           <state>$PROJ_DIR$\..\src\os\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
+          <state>$PROJ_DIR$\..\src\mbed\hal</state>
+          <state>$PROJ_DIR$\..\src\mbed\api</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1320,15 +1323,15 @@
         </option>
         <option>
           <name>IccCppDialect</name>
-          <state>1</state>
+          <state>2</state>
         </option>
         <option>
           <name>IccExceptions</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccRTTI</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>IccStaticDestr</name>
@@ -1650,11 +1653,11 @@
         </option>
         <option>
           <name>IlinkIcfOverride</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$TOOLKIT_DIR$\config\linker\Freescale\MKL25Z128xxx4.icf</state>
+          <state>$PROJ_DIR$\config\128KB_Pflash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -1706,7 +1709,7 @@
         </option>
         <option>
           <name>IlinkOverrideProgramEntryLabel</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>IlinkProgramEntryLabelSelect</name>
@@ -1714,7 +1717,7 @@
         </option>
         <option>
           <name>IlinkProgramEntryLabel</name>
-          <state>__iar_program_start</state>
+          <state>Reset_Handler</state>
         </option>
         <option>
           <name>DoFill</name>
@@ -1895,6 +1898,15 @@
     <name>src</name>
     <group>
       <name>drivers</name>
+      <group>
+        <name>MMA8451Q</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\drivers\MMA8451Q\MMA8451Q.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\drivers\MMA8451Q\MMA8451Q.h</name>
+        </file>
+      </group>
       <group>
         <name>uart</name>
         <file>
@@ -2164,6 +2176,7 @@
       <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
       <excluded>
         <configuration>Debug</configuration>
+        <configuration>Release</configuration>
       </excluded>
     </file>
     <file>

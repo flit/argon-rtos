@@ -133,11 +133,17 @@
     // CMSIS-style register definitions
     #include "device/MK64F12/MK64F12.h"
 
+#elif (defined(CPU_MK60DN512ZVMD10))
+    #define K60D10_SERIES
+    #include "device/MK60DZ10/K60_uart.h"
+    #include "device/MK60DZ10/K60_sim.h"
+    #include "device/MK60DZ10/MK60DZ10.h"
+
 #elif (defined(CPU_MKL25Z32VFM4) || defined(CPU_MKL25Z64VFM4) || defined(CPU_MKL25Z128VFM4) || \
        defined(CPU_MKL25Z32VFT4) || defined(CPU_MKL25Z64VFT4) || defined(CPU_MKL25Z128VFT4) || \
        defined(CPU_MKL25Z32VLH4) || defined(CPU_MKL25Z64VLH4) || defined(CPU_MKL25Z128VLH4) || \
        defined(CPU_MKL25Z32VLK4) || defined(CPU_MKL25Z64VLK4) || defined(CPU_MKL25Z128VLK4))
-       
+    #define KL25Z4_SERIES
     #include "device/MKL25Z4/MKL25Z4_dma.h"
     #include "device/MKL25Z4/MKL25Z4_dmamux.h"
     #include "device/MKL25Z4/MKL25Z4_ftfa.h"

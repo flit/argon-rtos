@@ -45,7 +45,7 @@
         </option>
         <option>
           <name>MemFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MKL25Z128xxx4.ddf</state>
+          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK60DN512Zxxx10.ddf</state>
         </option>
         <option>
           <name>RunToEnable</name>
@@ -85,7 +85,7 @@
         </option>
         <option>
           <name>OCDynDriverList</name>
-          <state>PEMICRO_ID</state>
+          <state>JLINK_ID</state>
         </option>
         <option>
           <name>OCLastSavedByProductVersion</name>
@@ -117,7 +117,7 @@
         </option>
         <option>
           <name>FlashLoadersV3</name>
-          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashKLxx128K.board</state>
+          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK60Dxxx128K.board</state>
         </option>
         <option>
           <name>OCImagesSuppressCheck1</name>
@@ -803,7 +803,7 @@
         <option>
           <name>CCJLinkResetList</name>
           <version>6</version>
-          <state>5</state>
+          <state>7</state>
         </option>
         <option>
           <name>CCJLinkInterfaceCmdLine</name>
@@ -1366,7 +1366,7 @@
         </option>
         <option>
           <name>MemFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MKL25Z128xxx4.ddf</state>
+          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK60DN512Zxxx10.ddf</state>
         </option>
         <option>
           <name>RunToEnable</name>
@@ -1406,7 +1406,7 @@
         </option>
         <option>
           <name>OCDynDriverList</name>
-          <state>ARMSIM_ID</state>
+          <state>JLINK_ID</state>
         </option>
         <option>
           <name>OCLastSavedByProductVersion</name>
@@ -1418,7 +1418,7 @@
         </option>
         <option>
           <name>UseFlashLoader</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CLowLevel</name>
@@ -1438,7 +1438,7 @@
         </option>
         <option>
           <name>FlashLoadersV3</name>
-          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashKLxx128K.board</state>
+          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK60Dxxx128K.board</state>
         </option>
         <option>
           <name>OCImagesSuppressCheck1</name>
@@ -2124,7 +2124,7 @@
         <option>
           <name>CCJLinkResetList</name>
           <version>6</version>
-          <state>5</state>
+          <state>7</state>
         </option>
         <option>
           <name>CCJLinkInterfaceCmdLine</name>
@@ -2349,7 +2349,7 @@
         <option>
           <name>CCPEMicroInterfaceList</name>
           <version>0</version>
-          <state>0</state>
+          <state>7</state>
         </option>
         <option>
           <name>CCPEMicroResetDelay</name>
@@ -2357,7 +2357,7 @@
         </option>
         <option>
           <name>CCPEMicroJtagSpeed</name>
-          <state>#UNINITIALIZED#</state>
+          <state>5000</state>
         </option>
         <option>
           <name>CCJPEMicroShowSettings</name>
@@ -2395,7 +2395,7 @@
         </option>
         <option>
           <name>CCSTLinkInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCSTLinkInterfaceCmdLine</name>

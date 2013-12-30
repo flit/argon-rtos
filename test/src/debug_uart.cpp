@@ -30,7 +30,12 @@
 
 #include "debug_uart.h"
 #include "fsl_device_registers.h"
+
+#if defined(K60D10_SERIES)
+#include "uart/scuart.h"
+#elif defined(KL25Z4_SERIES)
 #include "uart/uart0.h"
+#endif
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -60,6 +65,7 @@ void debug_init(void)
                   | SIM_SCGC5_PORTD_MASK
                   | SIM_SCGC5_PORTE_MASK );
 
+#if defined(KL25Z4_SERIES)
     SIM->SOPT2 |= SIM_SOPT2_PLLFLLSEL_MASK // set PLLFLLSEL to select the PLL for this clock source
                 | SIM_SOPT2_UART0SRC(1);   // select the PLLFLLCLK as UART0 clock source
                 
@@ -67,6 +73,7 @@ void debug_init(void)
     BW_PORT_PCRn_MUX(HW_PORTA, UART0_TX_GPIO_PIN_NUM, UART0_TX_ALT_MODE);   // Set UART0_TX pin to UART0_TX functionality
     
     uart0_init(GetSystemMCGPLLClock(), DEBUG_UART_BAUD);
+#endif
 }
 
 #if __ICCARM__
@@ -75,7 +82,9 @@ size_t __write(int handle, const unsigned char *buf, size_t size)
 {
     while (size--)
     {
+#if defined(KL25Z4_SERIES)
         uart0_putchar(*buf++);
+#endif
     }
 
     return size;
