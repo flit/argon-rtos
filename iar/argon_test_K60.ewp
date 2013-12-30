@@ -2120,7 +2120,7 @@
       <group>
         <name>cortex_m</name>
         <file>
-          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers.s</name>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers_cm4.s</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.cpp</name>

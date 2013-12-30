@@ -28,9 +28,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* offset to the m_stackPointer member of a Thread object */
-// THREAD_STACK_PTR_OFFSET		equ	20
-
 // EXC_RETURN value to return to Thread mode, while restoring state from PSP.
 EXC_RETURN  equ 0xfffffffd
 
@@ -40,7 +37,6 @@ EXC_RETURN  equ 0xfffffffd
         thumb
 
         import ar_yield
-        import g_ar_currentThread
 
         public SVC_Handler
         public PendSV_Handler
@@ -48,55 +44,21 @@ EXC_RETURN  equ 0xfffffffd
 SVC_Handler
 PendSV_Handler
         
-        // Save the EXC_RETURN value in the LR register on the MSP, temporarily,
-        // while we save the thread context on the PSP. We also save r11 just to
-        // maintain 8-byte alignment.
-//         push    {r0, lr}
-        
         // Get PSP
         mrs     r0, psp
         
-        // Subtract room for the registers we are going to store. We have to pre-subtract
-        // and use the incrementing store multiple instruction because the CM0+ doesn't
-        // have the decrementing variant.
-        subs    r0, r0, #32
-        
-        // Save registers on the stack. This has to be done in two stages because
-        // the stmia instruction cannot access the upper registers on the CM0+.
-        stmia   r0!, {r4-r7}
-        mov     r4, r8
-        mov     r5, r9
-        mov     r6, r10
-        mov     r7, r10
-        stmia   r0!, {r4-r7}
-        
-        // Get back to the bottom of the stack before we pass the current SP to the
-        // ar_yield call.
-        subs    r0, r0, #32
+        // Save registers on the stack and update the stack pointer (r0).
+        stmdb   r0!, {r4-r11}
         
         // Invoke scheduler. On return, r0 contains the stack pointer for the new thread.
         ldr     r1, =ar_yield
         blx     r1
         
         // Unstack saved registers.
-        adds    r0, r0, #16
-        ldmia   r0!, {r4-r7}
-        subs    r0, r0, #32
-        mov     r8, r4
-        mov     r9, r5
-        mov     r10, r6
-        mov     r11, r7
-        ldmia   r0!, {r4-r7}
-        adds    r0, r0, #16
+        ldmia   r0!, {r4-r11}
         
         // Update PSP with new stack pointer.
         msr     psp, r0
-        
-        // Pop the saved EXC_RETURN value from the main stack into r1. r0 is just there
-        // to maintain 8-byte stack alignment and is unused. r0 and r1 will be restored
-        // to their saved values when the core performs the exception return behavior.
-//         pop     {r0, r1}
-//         bx      r1
         
         // Exit handler. Using a bx to the special EXC_RETURN values causes the
         // processor to perform the exception return behavior.
