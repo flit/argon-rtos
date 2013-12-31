@@ -36,7 +36,7 @@
 // Definitions
 //------------------------------------------------------------------------------
 
-#define TEST_CASE_CLASS TestSem1
+#define TEST_CASE_CLASS TestMutex1
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -58,15 +58,14 @@ TEST_CASE_CLASS g_testCase;
 
 const char * KernelTest::threadIdString() const
 {
-    Ar::Thread * self = Ar::Thread::getCurrent();
     static char idString[32];
-    snprintf(idString, sizeof(idString), "[%s]", self->getName());
+    snprintf(idString, sizeof(idString), "[%s]", self()->getName());
     return idString;
 }
 
 void KernelTest::printHello()
 {
-    printf("%s running\r\n", threadIdString());
+    printf("%s running (prio=%d)\r\n", threadIdString(), self()->getPriority());
 }
 
 void KernelTest::printTicks()
@@ -90,7 +89,9 @@ void main_thread(void * arg)
 
 void main(void)
 {
+#if !defined(KL25Z4_SERIES)
     debug_init();
+#endif
     
     printf("Running test...\r\n");
     

@@ -458,31 +458,44 @@ void Thread::removeFromList(Thread * & listHead)
     }
 }
 
-//! The thread is added to the end of the linked list.
+//! The thread is inserted in sorted order by priority. The highest priority thread in the list
+//! is the head of the list. If there are already one or more threads in the list with the same
+//! priority as ours, we will be inserted after the existing threads.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. Will be
 //!     NULL if the list is empty, in which case it is set to the thread instance.
 void Thread::addToBlockedList(Thread * & listHead)
 {
-    this->m_nextBlocked = NULL;
+    m_nextBlocked = NULL;
 
-    // handle an empty list
-    if (!listHead)
+    // Insert at head of list if our priority is the highest or if the list is empty.
+    if (!listHead || m_priority > listHead->m_priority)
     {
+        m_nextBlocked = listHead;
         listHead = this;
         return;
     }
-    
-    // find the end of the list
-    Thread * thread = listHead;
 
+    // Insert sorted by priority.
+    Thread * thread = listHead;
+    
     while (thread)
     {
+        // Insert at end if we've reached the end of the list and there were no lower
+        // priority threads.
         if (!thread->m_nextBlocked)
         {
             thread->m_nextBlocked = this;
             break;
         }
+        // If our priority is higher than the next thread in the list, insert here.
+        else if (m_priority > thread->m_nextBlocked->m_priority)
+        {
+            m_nextBlocked = thread->m_nextBlocked;
+            thread->m_nextBlocked = this;
+            break;
+        }
+        
         thread = thread->m_nextBlocked;
     }
 }
@@ -499,7 +512,7 @@ void Thread::removeFromBlockedList(Thread * & listHead)
     if (listHead == this)
     {
         // special case for removing the list head
-        listHead = this->m_nextBlocked;
+        listHead = m_nextBlocked;
     }
     else
     {
@@ -508,18 +521,20 @@ void Thread::removeFromBlockedList(Thread * & listHead)
         {
             if (item->m_nextBlocked == this)
             {
-                item->m_nextBlocked = this->m_nextBlocked;
+                item->m_nextBlocked = m_nextBlocked;
                 return;
             }
 
             item = item->m_nextBlocked;
         }
     }
+    
+    m_nextBlocked = NULL;
 }
 
 //! The thread is removed from the ready list. It is placed on the blocked list
 //! referenced by the @a blockedList argument and its state is set to
-//! #THREAD_BLOCKED. If the timeout is non-infinite, the thread is also
+//! #kThreadBlocked. If the timeout is non-infinite, the thread is also
 //! placed on the sleeping list with the wakeup time set to when the timeout
 //! expires.
 //!
@@ -559,7 +574,7 @@ void Thread::block(Thread * & blockedList, uint32_t timeout)
 //! If the thread had a valid timeout when it was blocked, it is removed from
 //! the sleeping list. It is always removed from the blocked list passed in
 //! @a blockedList. And finally the thread is restored to ready status by setting
-//! its state to #THREAD_READY and adding it back to the ready list.
+//! its state to #kThreadReady and adding it back to the ready list.
 //!
 //! @param[in,out] blockedList Reference to the head of the linked list of
 //!     blocked threads.

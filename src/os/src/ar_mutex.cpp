@@ -52,6 +52,7 @@ status_t Mutex::init(const char * name)
         // Start without an owner.
         m_owner = NULL;
         m_ownerLockCount = 0;
+        m_originalPriority = 0;
         
 #if AR_GLOBAL_OBJECT_LISTS
         addToCreatedList(g_allObjects.m_mutexes);
@@ -72,21 +73,44 @@ Mutex::~Mutex()
 // See ar_kernel.h for documentation of this function.
 status_t Mutex::get(uint32_t timeout)
 {
+    IrqDisableAndRestore disableIrq;
+
     // If this thread already owns the mutex, just increment the count.
     if (Thread::getCurrent() == m_owner)
     {
-        m_ownerLockCount++;
+        ++m_ownerLockCount;
         return kSuccess;
     }
     // Otherwise attempt to get the mutex.
     else
     {
+        // Will we block?
+        if (m_count == 0)
+        {
+            // Return immediately if the timeout is 0. No reason to call into the sem code.
+            if (timeout == kNoTimeout)
+            {
+                return kTimeoutError;
+            }
+            
+            // Check if we need to hoist the owning thread's priority to our own.
+            Thread * self = Thread::getCurrent();
+            if (self->m_priority > m_owner->m_priority)
+            {
+                if (!m_originalPriority)
+                {
+                    m_originalPriority = m_owner->m_priority;
+                }
+                m_owner->m_priority = self->m_priority;
+            }
+        }
+
         status_t result = Semaphore::get(timeout);
         if (result == kSuccess)
         {
             // Set the owner now that we own the lock.
             m_owner = Thread::getCurrent();
-            m_ownerLockCount++;
+            ++m_ownerLockCount;
         }
         
         return result;
@@ -96,24 +120,42 @@ status_t Mutex::get(uint32_t timeout)
 // See ar_kernel.h for documentation of this function.
 status_t Mutex::put()
 {
+    IrqDisableAndRestore disableIrq;
+
+    // Nothing to do if the mutex is already unlocked.
     if (m_ownerLockCount == 0)
     {
         return kAlreadyUnlockedError;
     }
-    if (Thread::getCurrent() != m_owner)
+    
+    // Only the owning thread can unlock a mutex.
+    Thread * self = Thread::getCurrent();
+    if (self != m_owner)
     {
         return kNotOwnerError;
     }
     
+    status_t result = kSuccess;
+
+    // We are the owner of the mutex, so decrement its recursive lock count. 
     if (--m_ownerLockCount == 0)
     {
         // The lock count has reached zero, so put the semaphore and clear the owner.
         // The owner is cleared first since putting the sem can cause us to
         // switch threads.
         m_owner = NULL;
-        return Semaphore::put();
+        
+        result = Semaphore::put();
+        
+        // Restore this thread's priority if it had been raised.
+        uint8_t original = m_originalPriority;
+        if (original)
+        {
+            m_originalPriority = 0;
+            self->setPriority(original);
+        }
     }
     
-    return kSuccess;
+    return result;
 }
 

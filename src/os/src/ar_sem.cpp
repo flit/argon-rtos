@@ -113,7 +113,7 @@ status_t Semaphore::get(uint32_t timeout)
     }
     
     // Take ownership of the semaphore.
-    m_count--;
+    --m_count;
 
     return kSuccess;
 }
@@ -124,7 +124,7 @@ status_t Semaphore::put()
     IrqDisableAndRestore disableIrq;
 
     // Increment count.
-    m_count++;
+    ++m_count;
 
     // Are there any threads waiting on this semaphore?
     if (m_blockedList)

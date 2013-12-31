@@ -50,16 +50,19 @@ public:
     virtual void init() {}
     virtual void run()=0;
     
+    Ar::Thread * self() const { return Ar::Thread::getCurrent(); }
     const char * threadIdString() const;
 
 protected:
-    Ar::Thread * m_self;
 
     void printHello();
     void printTicks();
     
 };
 
+/*!
+ * @brief Thread sleep test.
+ */
 class TestSleep1 : public KernelTest
 {
 public:
@@ -80,6 +83,9 @@ protected:
     
 };
 
+/*!
+ * @brief Semaphore test.
+ */
 class TestSem1 : public KernelTest
 {
 public:
@@ -96,12 +102,38 @@ protected:
 
     void a_thread(void * param);
     void b_thread(void * param);
-
-//     static void _a_thread(void * arg);
-//     static void _b_thread(void * arg);
     
 };
 
+/*!
+ * @brief Mutex test.
+ */
+class TestMutex1 : public KernelTest
+{
+public:
+    TestMutex1() {}
+    
+    virtual void run();
+
+protected:
+    
+    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_aThread;
+    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_bThread;
+    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_cThread;
+    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_dThread;
+    
+    Ar::Mutex m_mutex;
+
+    void a_thread(void * param);
+    void b_thread(void * param);
+    void c_thread(void * param);
+    void d_thread(void * param);
+
+};
+
+/*!
+ * @brief Queue test.
+ */
 class TestQueue1 : public KernelTest
 {
 public:

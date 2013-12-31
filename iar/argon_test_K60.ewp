@@ -103,7 +103,7 @@
         </option>
         <option>
           <name>GenLowLevelInterface</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>GEndianModeBE</name>
@@ -2189,6 +2189,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\kernel_tests.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\test_mutex_1.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\test_queue_1.cpp</name>

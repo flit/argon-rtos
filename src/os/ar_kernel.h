@@ -330,7 +330,7 @@ public:
     //!
     //! Does not enter the scheduler if Ar is not running.
     //!
-    //! @param priority Thread priority level from 1 to 255, where lower number have a lower
+    //! @param priority Thread priority level from 1 to 255, where lower numbers have a lower
     //!     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
     //!
     //! @retval kInvalidPriorityError
@@ -670,6 +670,7 @@ public:
 protected:
     volatile Thread * m_owner;  //!< Current owner thread of the mutex.
     volatile unsigned m_ownerLockCount; //!< Number of times the owner thread has locked the mutex.
+    uint8_t m_originalPriority; //!< Original priority of the owner thread before its priority was raised.
 };
 
 /*!
