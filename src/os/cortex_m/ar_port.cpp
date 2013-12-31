@@ -101,6 +101,9 @@ void Thread::prepareStack()
     context->pc = reinterpret_cast<uint32_t>(thread_wrapper);
     context->lr = kInitialLR;
     context->r0 = reinterpret_cast<uint32_t>(this);
+    
+    // For debug builds, set registers to initial values that are easy to identify on the stack.
+#if DEBUG
     context->r1 = 0x11111111;
     context->r2 = 0x22222222;
     context->r3 = 0x33333333;
@@ -113,9 +116,28 @@ void Thread::prepareStack()
     context->r10 = 0xaaaaaaaa;
     context->r11 = 0xbbbbbbbb;
     context->r12 = 0xcccccccc;
+#endif
     
     // Write a check value to the bottom of the stack.
     *stackBottom = 0xdeadbeef;
+}
+
+void Atomic::add(uint32_t * value, uint32_t delta)
+{
+    IrqDisableAndRestore irqDisable;
+    *value += delta;
+}
+
+bool Atomic::compareAndSwap(uint32_t * value, uint32_t expectedValue, uint32_t newValue)
+{
+    IrqDisableAndRestore irqDisable;
+    uint32_t oldValue = *value;
+    if (oldValue == expectedValue)
+    {
+        *value = newValue;
+        return true;
+    }
+    return false;
 }
 
 void SysTick_Handler(void)

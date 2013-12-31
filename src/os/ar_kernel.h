@@ -936,6 +936,23 @@ inline uint32_t millisecondsToTicks(uint32_t millisecs) { return millisecs / get
 
 } // namespace Time
 
+//! @brief %Atomic operations.
+namespace Atomic {
+
+//! @brief %Atomic add.
+void add(uint32_t * value, uint32_t delta);
+
+//! @brief %Atomic increment.
+inline void increment(uint32_t * value) { add(value, 1); }
+
+//! @brief %Atomic decrement.
+inline void decrement(uint32_t * value) { add(value, -1); }
+
+//! @brief %Atomic compare-and-swap operation.
+bool compareAndSwap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
+
+} // namespace Atomic
+
 /*!
  * @brief Helper class for managing user interrupt handlers.
  */
