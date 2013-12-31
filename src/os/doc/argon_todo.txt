@@ -1,0 +1,14 @@
+Argon RTOS Todo List
+====================
+
+- Refactor list management code.
+- Add constructors and copy constructors.
+- Get global object lists working.
+- Implement timers.
+- Implement priority inheritence for mutexes.
+- Finish user interrupt support.
+- Clean up member function support for threads.
+- Either implement or remove Thread::join().
+- More thorough testing.
+- Unpriveledged support on M4?
+- Events?
