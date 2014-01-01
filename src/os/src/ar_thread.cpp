@@ -350,60 +350,43 @@ bool Thread::incrementTickCount(unsigned ticks)
 //! @todo There are many opportunities for optimising the scheduler search loop.
 void Thread::scheduler()
 {
-    // Find the next ready thread using a round-robin search algorithm.
-    Thread * next;
+    // There must always be at least one thread on the ready list.
+    assert(s_readyList);
     
-    // Start the search either at the current thread or at the beginning of
-    // the ready list.
-    if (s_currentThread)
+    // Find the next ready thread using a round-robin search algorithm.
+    Thread * start;
+    
+    // Handle both the first time the scheduler runs and s_currentThread is NULL, and the case where
+    // the current thread was suspended. For both cases we want to start searching at the beginning
+    // of the ready list. Otherwise start searching at the current thread.
+    if (!s_currentThread || s_currentThread->m_state != kThreadRunning)
     {
-        // Handle case where current thread was suspended. Here the s_currentThread is no longer
-        // on the ready list so we can't start from its m_next.
-        if (s_currentThread->m_state != kThreadRunning)
-        {
-            s_currentThread = NULL;
-            next = s_readyList;
-        }
-        else
-        {
-            next = s_currentThread;
-        }
+        start = s_readyList;
     }
     else
     {
-        next = s_readyList;
+        start = s_currentThread;
     }
     
-    assert(next);
+    assert(start);
+    Thread * next = start;
     Thread * highest = next;
     uint8_t priority = highest->m_priority;
-
-    // Search the ready list starting from the current thread. The search will loop back
-    // to the list head when it hits NULL. The first thread after the current one whose
-    // state is kThreadReady and has the highest priority will be selected.
+    
+    // Iterate over the ready list, finding the highest priority thread.
     do {
-        if (next)
-        {
-            next = next->m_next;
-        }
-        
-        // Find highest priority thread.
-        if (next && next->m_state == kThreadReady && next->m_priority > priority)
+        if (next->m_state == kThreadReady && next->m_priority > priority)
         {
             highest = next;
             priority = next->m_priority;
         }
-
-        // Handle both the case when we start with s_currentThead is 0 and when we loop
-        // from the end of the ready list to the beginning.
-        if (!next && s_currentThread)
-        {
-            next = s_readyList;
-        }
-    } while (next && next != s_currentThread);
-
+        
+        next = next->m_next;
+    } while (next != start);
+    
     // Switch to newly selected thread.
-    if (highest && highest != s_currentThread)
+    assert(highest);
+    if (highest != s_currentThread)
     {
         if (s_currentThread && s_currentThread->m_state == kThreadRunning)
         {
@@ -415,13 +398,11 @@ void Thread::scheduler()
     }
     
     // Check for stack overflow on current thread.
-    if (s_currentThread)
+    assert(s_currentThread);
+    uint32_t check = *(uint32_t *)((uint32_t)s_currentThread->m_stackTop - s_currentThread->m_stackSize);
+    if (check != 0xdeadbeef)
     {
-        uint32_t check = *(uint32_t *)((uint32_t)s_currentThread->m_stackTop - s_currentThread->m_stackSize);
-        if (check != 0xdeadbeef)
-        {
-            THREAD_STACK_OVERFLOW_DETECTED();
-        }
+        THREAD_STACK_OVERFLOW_DETECTED();
     }
 }
 
@@ -431,27 +412,29 @@ void Thread::scheduler()
 //!     NULL if the list is empty, in which case it is set to the thread instance.
 void Thread::addToList(Thread * & listHead)
 {
-    this->m_next = NULL;
+    m_next = NULL;
 
     // handle an empty list
     if (!listHead)
     {
         listHead = this;
+        m_next = this;
         return;
     }
     
     // find the end of the list
     Thread * thread = listHead;
 
-    while (thread)
+    while (true)
     {
-        if (!thread->m_next)
+        if (thread->m_next == listHead)
         {
             thread->m_next = this;
+            m_next = listHead;
             break;
         }
         thread = thread->m_next;
-    }
+    } // while (thread != listHead);
 }
 
 //! The list is not allowed to be empty.
@@ -463,25 +446,25 @@ void Thread::removeFromList(Thread * & listHead)
     // the list must not be empty
     assert(listHead != NULL);
 
-    if (listHead == this)
-    {
-        // special case for removing the list head
-        listHead = this->m_next;
-    }
-    else
-    {
-        Thread * item = listHead;
-        while (item)
+    Thread * item = listHead;
+    do {
+        if (item->m_next == this)
         {
-            if (item->m_next == this)
-            {
-                item->m_next = this->m_next;
-                return;
-            }
+            // De-link the item.
+            item->m_next = m_next;
 
-            item = item->m_next;
+            // Special case for removing the list head.
+            if (listHead == this)
+            {
+                listHead = m_next;
+            }
+            
+            m_next = NULL;
+            break;
         }
-    }
+
+        item = item->m_next;
+    } while (item != listHead);
 }
 
 //! The thread is inserted in sorted order by priority. The highest priority thread in the list
