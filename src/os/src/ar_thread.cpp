@@ -185,7 +185,7 @@ void Thread::suspend()
 // See ar_kernel.h for documentation of this function.
 status_t Thread::setPriority(uint8_t priority)
 {
-    if (priority == 0)
+    if (priority == 0 && this != &Kernel::s_idleThread)
     {
         return kInvalidPriorityError;
     }
@@ -331,6 +331,17 @@ bool Thread::incrementTickCount(unsigned ticks)
         }
         
         thread = next;
+    }
+    
+    // Check for an active timer whose wakeup time has expired.
+    if (Timer::s_activeTimers)
+    {
+        if (Timer::s_activeTimers->m_wakeupTime <= Kernel::getTickCount())
+        {
+            // Raise the idle thread priority to maximum so it can execute the timer.
+            // The idle thread will reduce its own priority when done.
+            Kernel::s_idleThread.setPriority(255);
+        }
     }
     
     return wasThreadWoken;

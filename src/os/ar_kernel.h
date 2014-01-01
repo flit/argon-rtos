@@ -444,6 +444,7 @@ protected:
     friend class Semaphore;     //!< Needs access to protected member functions.
     friend class Mutex;     //!< Needs access to protected member functions.
     friend class Queue; //!< Needs access to protected member functions.
+    friend class Timer;
     
 private:
     //! @brief The copy constructor is disabled for thread objects.
@@ -873,6 +874,69 @@ protected:
 };
 
 /*!
+ * @brief Timer object.
+ */
+class Timer : public NamedObject
+{
+public:
+    
+    //! @brief Modes of operation for timers.
+    typedef enum _timer_modes {
+        kOneShotTimer,
+        kPeriodicTimer
+    } timer_mode_t;
+    
+    //! @brief
+    typedef void (*timer_entry_t)(Timer * timer, void * param);
+    
+    //! @brief Default constructor.
+    Timer() {}
+    
+    //! @brief Constructor.
+    Timer(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay)
+    {
+        init(name, callback, param, timerMode, delay);
+    }
+    
+    //! @brief Destructor.
+    virtual ~Timer() {}
+    
+    //! @brief
+    void init(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay);
+    
+    //! @brief
+    void start();
+    
+    //! @brief
+    void stop();
+    
+    //! @brief
+    void setDelay(uint32_t delay);
+
+    //! @brief
+    uint32_t getDelay() const { return m_delay; }
+    
+protected:
+    
+    timer_entry_t m_callback;
+    Timer * m_next;
+    void * m_param;
+    timer_mode_t m_mode;
+    uint32_t m_delay;
+    uint32_t m_wakeupTime;
+    bool m_isActive;
+    
+    static Timer * s_activeTimers;
+
+    void addToList();
+    void removeFromList();
+    
+    friend class Thread;
+    friend class Kernel;
+    
+};
+
+/*!
  * @brief RTOS core.
  *
  * @ingroup ar
@@ -961,6 +1025,7 @@ protected:
     friend class Thread;
     friend class Semaphore;
     friend class Queue;
+    friend class Timer;
     friend class InterruptWrapper;
 
 private:

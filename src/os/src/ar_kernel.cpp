@@ -115,6 +115,41 @@ void Kernel::idle_entry(void * param)
     
     while (1)
     {
+        // Check if we need to handle a timer.
+        Timer * timer = Timer::s_activeTimers;
+        bool handledTimer = false;
+        while (timer && timer->m_wakeupTime <= Kernel::s_tickCount)
+        {
+            // Invoke the timer callback.
+            assert(timer->m_callback);
+            timer->m_callback(timer, timer->m_param);
+            
+            switch (timer->m_mode)
+            {
+                case Timer::kOneShotTimer:
+                    // Stop a one shot timer after it has fired.
+                    timer->stop();
+                    break;
+                    
+                case Timer::kPeriodicTimer:
+                    // Restart a periodic timer.
+                    timer->start();
+                    break;
+            }
+            
+            handledTimer = true;
+            timer = timer->m_next;
+        }
+        
+        // If we handled any timers, we need to set our priority back to the normal idle thread
+        // priority. The tick handler will have raised our priority to the max in order to handle
+        // the expired timers.
+        if (handledTimer)
+        {
+            s_idleThread.setPriority(0);
+        }
+        
+        // Compute system load.
 #if AR_ENABLE_SYSTEM_LOAD
         ticks = Kernel::getTickCount();
         
