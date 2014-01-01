@@ -357,7 +357,7 @@ public:
 protected:
     
     //! @brief Virtual thread entry point.
-    virtual void threadEntry();
+    virtual void threadEntry(void * param);
 
 protected:
     
@@ -367,7 +367,6 @@ protected:
     uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
     thread_state_t m_state; //!< Current thread state.
     thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-    void * m_param; //!< Initial parameter passed to the entry point.
     Thread * m_next;    //!< Linked list node.
     Thread * m_nextBlocked; //!< Linked list node for blocked threads.
     uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
@@ -388,7 +387,7 @@ protected:
     //! Utilities for getting a thread ready to run.
     //@{
     //! @brief Fill the thread's stack with it's initial contents.
-    void prepareStack();
+    void prepareStack(void * param);
     //@}
 
     //! @name List management
@@ -436,7 +435,7 @@ protected:
     static void scheduler();
 
     //! @brief Function to wrap the thread entry point.
-    static void thread_wrapper(Thread * param);
+    static void thread_wrapper(Thread * thread, void * param);
     //@}
 
     // Friends have access to all protected members for efficiency.
@@ -476,9 +475,9 @@ protected:
     T * m_object;
     thread_member_entry_t m_entryMember;
     
-    virtual void threadEntry()
+    virtual void threadEntry(void * param)
     {
-        (m_object->*m_entryMember)(m_param);
+        (m_object->*m_entryMember)(param);
     }
     
 };

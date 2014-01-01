@@ -86,13 +86,12 @@ status_t Thread::init(const char * name, thread_entry_t entry, void * param, voi
     m_priority = priority;
     m_state = kThreadSuspended;
     m_entry = entry;
-    m_param = param;
     m_next = NULL;
     m_wakeupTime = 0;
     m_unblockStatus = 0;
 
     // prepare top of stack
-    prepareStack();
+    prepareStack(param);
 
     {
         // disable interrupts
@@ -234,32 +233,34 @@ void Thread::sleep(unsigned ticks)
     Kernel::enterScheduler();
 }
 
+//! Call the thread entry point function.
 //!
-//!
-void Thread::threadEntry()
+//! This method can also be overridden by subclasses.
+void Thread::threadEntry(void * param)
 {
     // Call the entry point.
     if (m_entry)
     {
-        m_entry(m_param);
+        m_entry(param);
     }
 }
 
 //! The thread wrapper calls the thread entry function that was set in
 //! the init() call. When and if the function returns, the thread is removed
-//! from the ready list and its state set to #THREAD_DONE.
+//! from the ready list and its state set to #kThreadDone.
 //!
 //! This function will never actually itself return. Instead, it switches to
 //! the scheduler before exiting, and the scheduler will never switch back
 //! because the thread is marked as done.
 //!
 //! @param thread Pointer to the thread object which is starting up.
-void Thread::thread_wrapper(Thread * thread)
+//! @param param Arbitrary parameter passed to the thread entry point.
+void Thread::thread_wrapper(Thread * thread, void * param)
 {
     assert(thread);
     
     // Call the entry point.
-    thread->threadEntry();
+    thread->threadEntry(param);
     
     // Thread function has finished, so clean up and terminate the thread.
     {

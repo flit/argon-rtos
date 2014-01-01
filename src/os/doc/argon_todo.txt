@@ -9,6 +9,18 @@ Argon RTOS Todo List
 - Finish user interrupt support.
 - Clean up member function support for threads.
 - Either implement or remove Thread::join().
-- More thorough testing.
+- More thorough testing using cppunit.
 - Unpriveledged support on M4?
-- Events?
+- Event flags?
+- Invert thread priorities, so that 0 is highest priority? This is the more common arrangement for RTOSes.
+- Floating point support for M4F.
+- Use circular linked lists instead of NULL terminated.
+- Use a lock on the scheduler instead of disabling interrupts.
+- Handle a thread changings its own priority when it owns a mutex and has been hoisted in priority.
+- Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
+- Sort thread sleeping list by wakeup time.
+- Add link from thread to object it's blocked on.
+- Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
+- Support tickless idle.
+
+

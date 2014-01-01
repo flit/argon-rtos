@@ -224,7 +224,7 @@ void Kernel::run()
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
-    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, AR_IDLE_THREAD_STACK_SIZE, 1);
+    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
     s_idleThread.m_priority = 0;
     s_idleThread.resume();
     
@@ -236,11 +236,9 @@ void Kernel::run()
     // We're now ready to run
     s_isRunning = true;
     
-    // Swi into the scheduler. The yieldIsr() will see that s_currentThread
+    // Enter into the scheduler. The yieldIsr() will see that s_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
-    // runs, we return from the swi handler to the init thread. Interrupts
-    // are enabled in that switch to the init thread since all threads start
-    // with a CPSR that enables IRQ and FIQ.
+    // runs, we return from the scheduler to a ready thread.
     enterScheduler();
 
     // should never reach here

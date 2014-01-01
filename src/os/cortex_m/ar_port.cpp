@@ -85,7 +85,7 @@ void Kernel::initTimerInterrupt()
 //!
 //! The entire remainder of the stack is filled with the pattern 0xba
 //! as an easy way to tell what the high watermark of stack usage is.
-void Thread::prepareStack()
+void Thread::prepareStack(void * param)
 {
     // 8-byte align stack.
     uint32_t sp = reinterpret_cast<uint32_t>(m_stackTop);
@@ -107,11 +107,11 @@ void Thread::prepareStack()
     context->xpsr = kInitialxPSR;
     context->pc = reinterpret_cast<uint32_t>(thread_wrapper);
     context->lr = kInitialLR;
-    context->r0 = reinterpret_cast<uint32_t>(this);
+    context->r0 = reinterpret_cast<uint32_t>(this); // Pass pointer to Thread object as first argument.
+    context->r1 = reinterpret_cast<uint32_t>(param); // Pass arbitrary parameter as second argument.
     
     // For debug builds, set registers to initial values that are easy to identify on the stack.
 #if DEBUG
-    context->r1 = 0x11111111;
     context->r2 = 0x22222222;
     context->r3 = 0x33333333;
     context->r4 = 0x44444444;
