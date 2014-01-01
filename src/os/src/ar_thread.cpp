@@ -49,8 +49,20 @@ Thread * Thread::s_sleepingList = NULL;
 Thread * Thread::s_currentThread = NULL;
 
 //------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static void THREAD_STACK_OVERFLOW_DETECTED();
+
+//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
+
+//! @brief Function to make it clear what happened.
+void THREAD_STACK_OVERFLOW_DETECTED()
+{
+    _halt();
+}
 
 // See ar_kernel.h for documentation of this function.
 status_t Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
@@ -324,8 +336,7 @@ bool Thread::incrementTickCount(unsigned ticks)
     return wasThreadWoken;
 }
 
-//! @todo There are many opportunities for optimising the scheduler search
-//! loop.
+//! @todo There are many opportunities for optimising the scheduler search loop.
 void Thread::scheduler()
 {
     // Find the next ready thread using a round-robin search algorithm.
@@ -358,19 +369,13 @@ void Thread::scheduler()
 
     // Search the ready list starting from the current thread. The search will loop back
     // to the list head when it hits NULL. The first thread after the current one whose
-    // state is THREAD_READY and has the highest priority will be selected.
+    // state is kThreadReady and has the highest priority will be selected.
     do {
         if (next)
         {
-            uint32_t check = *(uint32_t *)((uint32_t)next->m_stackTop - next->m_stackSize);
-            if (check != 0xdeadbeef)
-            {
-                _halt();
-            }
-            
             next = next->m_next;
         }
-
+        
         // Find highest priority thread.
         if (next && next->m_state == kThreadReady && next->m_priority > priority)
         {
@@ -396,6 +401,16 @@ void Thread::scheduler()
         
         highest->m_state = kThreadRunning;
         s_currentThread = highest;
+    }
+    
+    // Check for stack overflow on current thread.
+    if (s_currentThread)
+    {
+        uint32_t check = *(uint32_t *)((uint32_t)s_currentThread->m_stackTop - s_currentThread->m_stackSize);
+        if (check != 0xdeadbeef)
+        {
+            THREAD_STACK_OVERFLOW_DETECTED();
+        }
     }
 }
 
