@@ -134,6 +134,9 @@ public:
     //! @brief Default constructor.
     NamedObject() {}
     
+    //! @brief Constructor.
+    NamedObject(const char * name) { init(name); }
+    
     //! @brief Destructor.
     virtual ~NamedObject() {}
     
@@ -233,6 +236,12 @@ public:
 public:
     //! @brief Constructor.
     Thread() {}
+    
+    //! @brief Constructor.
+    Thread(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    {
+        init(name, entry, param, stack, stackSize, priority);
+    }
     
     //! @brief Destructor.
     virtual ~Thread();
@@ -449,6 +458,11 @@ public:
     typedef void (T::*thread_member_entry_t)(void * param);
     
     ThreadToMemberFunction() {}
+    
+    ThreadToMemberFunction(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    {
+        init(name, obj, entry, param, stack, stackSize, priority);
+    }
 
     status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
@@ -477,6 +491,11 @@ class ThreadWithStack : public Thread
 public:
     ThreadWithStack() {}
     
+    ThreadWithStack(const char * name, thread_entry_t entry, void * param, uint8_t priority)
+    {
+        Thread::init(name, entry, param, m_stack, S, priority);
+    }
+    
     status_t init(const char * name, thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
@@ -499,6 +518,11 @@ public:
     
     ThreadToMemberFunctionWithStack() {}
     
+    ThreadToMemberFunctionWithStack(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
+    {
+        ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
+    }
+    
     status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
     {
         return ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
@@ -518,6 +542,15 @@ protected:
 class Semaphore : public NamedObject
 {
 public:
+    //! @brief Default constructor.
+    Semaphore() {}
+    
+    //! @brief Constructor.
+    Semaphore(const char * name, unsigned count=1)
+    {
+        init(name, count);
+    }
+    
     //! @brief Initialiser.
     //!
     //! @param name Pass a name for the semaphore. If NULL is passed the name will be set to an
@@ -621,6 +654,15 @@ protected:
 class Mutex : public Semaphore
 {
 public:
+    //! @brief Default constructor.
+    Mutex() {}
+    
+    //! @brief Constructor.
+    Mutex(const char * name)
+    {
+        init(name);
+    }
+    
     //! @brief Initialiser.
     //!
     //! The mutex starts out unlocked.
@@ -681,6 +723,15 @@ protected:
 class Queue : public NamedObject
 {
 public:
+    //! @brief Default constructor.
+    Queue() {}
+    
+    //! @brief Constructor.
+    Queue(const char * name, void * storage, unsigned elementSize, unsigned capacity)
+    {
+        init(name, storage, elementSize, capacity);
+    }
+    
     //! @brief Queue initialiser.
     //!
     //! @param name The new queue's name.
@@ -774,6 +825,15 @@ template <typename T, unsigned N>
 class StaticQueue : public Queue
 {
 public:
+    //! @brief Default constructor.
+    StaticQueue() {}
+    
+    //! @brief Constructor.
+    StaticQueue(const char * name)
+    {
+        Queue::init(name, m_storage, sizeof(T), N);
+    }
+    
     //! @brief Initialiser method.
     status_t init(const char * name)
     {
