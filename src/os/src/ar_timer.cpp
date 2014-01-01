@@ -49,6 +49,12 @@ Timer * Timer::s_activeTimers = NULL;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
+Timer::~Timer()
+{
+    stop();
+}
+
+// See ar_kernel.h for documentation of this function.
 void Timer::init(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay)
 {
     NamedObject::init(name);
@@ -84,8 +90,25 @@ void Timer::start()
 }
 
 // See ar_kernel.h for documentation of this function.
+void Timer::start(uint32_t newDelay)
+{
+    if (m_isActive)
+    {
+        stop();
+    }
+    
+    setDelay(newDelay);
+    start();
+}
+
+// See ar_kernel.h for documentation of this function.
 void Timer::stop()
 {
+    if (!m_isActive)
+    {
+        return;
+    }
+    
     IrqDisableAndRestore irqDisable;
     
     removeFromList();
@@ -100,9 +123,11 @@ void Timer::setDelay(uint32_t delay)
     
     m_delay = Time::millisecondsToTicks(delay);
     
-    // If the timer is running, we need to resort the list.
-    if (m_next)
+    // If the timer is running, we need to update the wakeup time and resort the list.
+    if (m_isActive)
     {
+        m_wakeupTime = Kernel::getTickCount() + m_delay;
+        
         removeFromList();
         addToList();
     }

@@ -881,11 +881,11 @@ public:
     
     //! @brief Modes of operation for timers.
     typedef enum _timer_modes {
-        kOneShotTimer,
-        kPeriodicTimer
+        kOneShotTimer,      //!< Timer fires a single time.
+        kPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
     } timer_mode_t;
     
-    //! @brief
+    //! @brief Callback routine for timer expiration.
     typedef void (*timer_entry_t)(Timer * timer, void * param);
     
     //! @brief Default constructor.
@@ -898,37 +898,49 @@ public:
     }
     
     //! @brief Destructor.
-    virtual ~Timer() {}
+    virtual ~Timer();
     
-    //! @brief
+    //! @brief Initialize the timer.
     void init(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay);
     
-    //! @brief
+    //! @brief Start the timer running.
     void start();
     
-    //! @brief
+    //! @brief Start the timer running with a new delay value.
+    void start(uint32_t newDelay);
+    
+    //! @brief Stop the timer.
     void stop();
     
-    //! @brief
+    //! @brief Returns whether the timer is currently running.
+    bool isActive() const { return m_isActive; }
+    
+    //! @brief Adjust the timer's delay.
     void setDelay(uint32_t delay);
 
-    //! @brief
+    //! @brief Get the current delay for the timer.
     uint32_t getDelay() const { return m_delay; }
     
 protected:
     
-    timer_entry_t m_callback;
-    Timer * m_next;
-    void * m_param;
-    timer_mode_t m_mode;
-    uint32_t m_delay;
-    uint32_t m_wakeupTime;
-    bool m_isActive;
+    Timer * m_next;             //!< Next pointer for the active timer linked list.
+    timer_entry_t m_callback;   //!< Timer expiration callback.
+    void * m_param;             //!< Arbitrary parameter for the callback.
+    timer_mode_t m_mode;        //!< One-shot or periodic mode.
+    uint32_t m_delay;           //!< Delay in ticks.
+    uint32_t m_wakeupTime;      //!< Expiration time in ticks.
+    bool m_isActive;            //!< Whether the timer is running and on the active timers list.
     
-    static Timer * s_activeTimers;
+    static Timer * s_activeTimers;  //!< List of currently running timers. Sorted ascending by wakup time.
 
+    //! @name List management
+    //@{
+    //! @brief Add the timer to the active list.
     void addToList();
+    
+    //! @brief Remove the timer from the active list.
     void removeFromList();
+    //@}
     
     friend class Thread;
     friend class Kernel;
