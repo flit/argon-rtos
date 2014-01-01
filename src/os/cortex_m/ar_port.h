@@ -53,14 +53,6 @@ enum
     kSchedulerQuanta_ms = 10
 };
 
-//! @brief Priorities for kernel exceptions.
-enum _exception_priorities
-{
-    kSVCallPriority = 2,
-    kPendSVPriority = 2,
-    kSysTickPriority = 2
-};
-
 /*!
  * @brief Context for a thread saved on the stack.
  */

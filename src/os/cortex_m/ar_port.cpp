@@ -46,6 +46,13 @@ enum
     kInitialLR = 0xfffffffeu    //!< Lockup address.
 };
 
+//! @brief Priorities for kernel exceptions.
+enum _exception_priorities
+{
+    //! All handlers use the same, lowest priority.
+    kHandlerPriority = 0xff
+};
+
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
@@ -68,9 +75,9 @@ void Kernel::initTimerInterrupt()
     SysTick_Config(ticks);
     
     // Set priorities for the exceptions we use in the kernel.
-    NVIC_SetPriority(SVCall_IRQn, kSVCallPriority);
-    NVIC_SetPriority(PendSV_IRQn, kPendSVPriority);
-    NVIC_SetPriority(SysTick_IRQn, kSysTickPriority);
+    NVIC_SetPriority(SVCall_IRQn, kHandlerPriority);
+    NVIC_SetPriority(PendSV_IRQn, kHandlerPriority);
+    NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
 }
 
 //! A total of 64 bytes of stack space is required to hold the initial
