@@ -299,39 +299,41 @@ bool Thread::incrementTickCount(unsigned ticks)
     Thread * thread = s_sleepingList;
     bool wasThreadWoken = false;
     
-    while (thread)
+    if (thread)
     {
-        Thread * next = thread->m_next;
+        do {
+            Thread * next = thread->m_next;
         
-        // Is it time to wake this thread?
-        if (Kernel::s_tickCount >= thread->m_wakeupTime)
-        {
-            wasThreadWoken = true;
-            
-            // State-specific actions
-            switch (thread->m_state)
+            // Is it time to wake this thread?
+            if (Kernel::s_tickCount >= thread->m_wakeupTime)
             {
-                case kThreadSleeping:
-                    // The thread was just sleeping.
-                    break;
-                
-                case kThreadBlocked:
-                    // The thread has timed out waiting for a resource.
-                    thread->m_unblockStatus = kTimeoutError;
-                    break;
-                
-                default:
-                    // Should not have threads in other states on this list!
-                    _halt();
-            }
+                wasThreadWoken = true;
             
-            // Put thread in ready state.
-            thread->removeFromList(s_sleepingList);
-            thread->m_state = kThreadReady;
-            thread->addToList(s_readyList);
-        }
+                // State-specific actions
+                switch (thread->m_state)
+                {
+                    case kThreadSleeping:
+                        // The thread was just sleeping.
+                        break;
+                
+                    case kThreadBlocked:
+                        // The thread has timed out waiting for a resource.
+                        thread->m_unblockStatus = kTimeoutError;
+                        break;
+                
+                    default:
+                        // Should not have threads in other states on this list!
+                        _halt();
+                }
+            
+                // Put thread in ready state.
+                thread->removeFromList(s_sleepingList);
+                thread->m_state = kThreadReady;
+                thread->addToList(s_readyList);
+            }
         
-        thread = next;
+            thread = next;
+        } while (s_sleepingList && thread != s_sleepingList);
     }
     
     // Check for an active timer whose wakeup time has expired.
@@ -435,17 +437,21 @@ void Thread::addToList(Thread * & listHead)
             break;
         }
         thread = thread->m_next;
-    } // while (thread != listHead);
+    }
 }
 
-//! The list is not allowed to be empty.
+//! If the thread is not on the list, nothing happens. In fact, the list may be empty, indicated
+//! by a NULL @a listHead.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. May
-//!     not be NULL.
+//!     be NULL.
 void Thread::removeFromList(Thread * & listHead)
 {
     // the list must not be empty
-    assert(listHead != NULL);
+    if (listHead == NULL)
+    {
+        return;
+    }
 
     Thread * item = listHead;
     do {
@@ -457,7 +463,16 @@ void Thread::removeFromList(Thread * & listHead)
             // Special case for removing the list head.
             if (listHead == this)
             {
-                listHead = m_next;
+                // Handle a single item list by clearing the list head.
+                if (m_next == this)
+                {
+                    listHead = NULL;
+                }
+                // Otherwise just update the list head to the second list element.
+                else
+                {
+                    listHead = m_next;
+                }
             }
             
             m_next = NULL;
