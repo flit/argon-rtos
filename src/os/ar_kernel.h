@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Immo Software
+ * Copyright (c) 2007-2014 Immo Software
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -450,6 +450,11 @@ private:
     Thread(const Thread & other) {}
 };
 
+/*!
+ * @brief Template to create a thread whose entry point is a member of a class.
+ *
+ * @ingroup ar
+ */
 template <typename T>
 class ThreadToMemberFunction : public Thread
 {
@@ -484,6 +489,8 @@ protected:
 
 /*!
  * @brief Template to create a thread and its stack.
+ *
+ * @ingroup ar
  */
 template <uint32_t S>
 class ThreadWithStack : public Thread
@@ -506,7 +513,9 @@ protected:
 };
 
 /*!
- * @brief Template to create a thread and its stack.
+ * @brief Template to create a thread and its stack, with a member function entry point.
+ *
+ * @ingroup ar
  */
 template <uint32_t S, typename T>
 class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
@@ -874,6 +883,8 @@ protected:
 
 /*!
  * @brief Timer object.
+ *
+ * @ingroup ar
  */
 class Timer : public NamedObject
 {
@@ -1076,15 +1087,23 @@ inline uint32_t millisecondsToTicks(uint32_t millisecs) { return millisecs / get
 namespace Atomic {
 
 //! @brief %Atomic add.
+//!
+//! @ingroup ar
 void add(uint32_t * value, uint32_t delta);
 
 //! @brief %Atomic increment.
+//!
+//! @ingroup ar
 inline void increment(uint32_t * value) { add(value, 1); }
 
 //! @brief %Atomic decrement.
+//!
+//! @ingroup ar
 inline void decrement(uint32_t * value) { add(value, -1); }
 
 //! @brief %Atomic compare-and-swap operation.
+//!
+//! @ingroup ar
 bool compareAndSwap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
 
 } // namespace Atomic
@@ -1107,7 +1126,7 @@ public:
 #if AR_GLOBAL_OBJECT_LISTS
 
 /*!
- * \brief Linked lists of each Ar object type.
+ * @brief Linked lists of each Ar object type.
  */
 struct ObjectLists
 {
@@ -1117,7 +1136,7 @@ struct ObjectLists
     Queue * m_queues;
 };
 
-//! \brief Global containing lists of all Ar objects.
+//! @brief Global containing lists of all Ar objects.
 extern ObjectLists g_allObjects;
 
 #endif // AR_GLOBAL_OBJECT_LISTS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2013 Immo Software
+ * Copyright (c) 2007-2014 Immo Software
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -409,7 +409,7 @@ void Thread::scheduler()
     }
 }
 
-//! The thread is added to the end of the linked list.
+//! The thread is added to the end of the circularly linked list.
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. Will be
 //!     NULL if the list is empty, in which case it is set to the thread instance.

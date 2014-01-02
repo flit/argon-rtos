@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2013 Immo Software
+ * Copyright (c) 2007-2014 Immo Software
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -112,6 +112,11 @@ status_t Mutex::get(uint32_t timeout)
             m_owner = Thread::getCurrent();
             ++m_ownerLockCount;
         }
+        else if (result == kTimeoutError)
+        {
+            //! @todo Need to handle timeout after hoisting the owner thread.
+            
+        }
         
         return result;
     }
@@ -159,3 +164,6 @@ status_t Mutex::put()
     return result;
 }
 
+//------------------------------------------------------------------------------
+// EOF
+//------------------------------------------------------------------------------

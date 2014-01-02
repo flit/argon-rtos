@@ -24,12 +24,13 @@ The resources provided by Argon are those most important for building a threaded
 - Semaphore
 - Mutex
 - Queue
+- Timer
 
 ### Licensing
 
 The Argon RTOS is released with a BSD three-clause license. See the included LICENSE.txt file for details.
 
-Copyright © 2007-2013 Immo Software. All rights reserved.
+Copyright © 2007-2014 Immo Software. All rights reserved.
 
 The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br/>
 Portions copyright © 2013 Freescale Semiconductor, Inc.<br/>
