@@ -131,10 +131,10 @@ typedef struct _ar_thread {
     status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
 } ar_thread_t;
 
-typedef struct _ar_sem {
+typedef struct _ar_semaphore {
     volatile unsigned m_count;  //!< Current semaphore count. Value of 0 means the semaphore is owned.
     ar_thread_t * m_blockedList; //!< Linked list of threads blocked on this semaphore.
-} ar_sem_t;
+} ar_semaphore_t;
 
 typedef struct _ar_mutex {
     ar_sem_t m_sem;
@@ -177,11 +177,11 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread);
 status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
 ar_thread_t * ar_thread_get_current(void);
 
-status_t ar_sem_create(ar_sem_t * sem, const char * name, unsigned count);
-status_t ar_sem_delete(ar_sem_t * sem);
-status_t ar_sem_get(ar_sem_t * sem, uint32_t timeout);
-status_t ar_sem_put(ar_sem_t * sem);
-uint32_t ar_sem_get_count(ar_sem_t * sem);
+status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
+status_t ar_semaphore_delete(ar_semaphore_t * sem);
+status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout);
+status_t ar_semaphore_put(ar_semaphore_t * sem);
+uint32_t ar_semaphore_get_count(ar_semaphore_t * sem);
 
 status_t ar_mutex_create(ar_mutex_t * mutex, const char * name);
 status_t ar_mutex_delete(ar_mutex_t * mutex);
