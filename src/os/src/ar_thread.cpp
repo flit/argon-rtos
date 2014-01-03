@@ -37,16 +37,16 @@
 #include <string.h>
 #include <stdio.h>
 
-using namespace Ar;
+// using namespace Ar;
 
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
 
-Thread * Thread::s_readyList = NULL;
-Thread * Thread::s_suspendedList = NULL;
-Thread * Thread::s_sleepingList = NULL;
-Thread * Thread::s_currentThread = NULL;
+// Thread * Thread::s_readyList = NULL;
+// Thread * Thread::s_suspendedList = NULL;
+// Thread * Thread::s_sleepingList = NULL;
+// Thread * Thread::s_currentThread = NULL;
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -65,119 +65,119 @@ void THREAD_STACK_OVERFLOW_DETECTED()
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Thread::init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
     // Assertions.
     if (priority == 0)
     {
-        return kInvalidPriorityError;
+        return kArInvalidPriorityError;
     }
-    if (stackSize < sizeof(ThreadContext))
+    if (stackSize < sizeof(ar_thread_context_t))
     {
-        return kStackSizeTooSmallError;
+        return kArStackSizeTooSmallError;
     }
     
-    NamedObject::init(name);
+    thread->m_name = name;
     
     // init member variables
-    m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
-    m_stackSize = stackSize;
-    m_stackPointer = m_stackTop;
-    m_priority = priority;
-    m_state = kThreadSuspended;
-    m_entry = entry;
-    m_next = NULL;
-    m_wakeupTime = 0;
-    m_unblockStatus = 0;
+    thread->m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
+    thread->m_stackSize = stackSize;
+    thread->m_stackPointer = thread->m_stackTop;
+    thread->m_priority = priority;
+    thread->m_state = kArThreadSuspended;
+    thread->m_entry = entry;
+    thread->m_next = NULL;
+    thread->m_wakeupTime = 0;
+    thread->m_unblockStatus = 0;
 
     // prepare top of stack
-    prepareStack(param);
+    ar_port_prepare_stack(thread, param);
 
     {
         // disable interrupts
         IrqDisableAndRestore disableIrq;
         
         // add to suspended list
-        addToList(s_suspendedList);
+        ar_thread_list_add(g_ar.suspendedList, thread);
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_allObjects.m_threads);
+    addToCreatedList(thread, g_allObjects.m_threads);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-Thread::~Thread()
+status_t ar_thread_delete(ar_thread_t * thread)
 {
-    if (m_state != kThreadDone)
+    if (thread->m_state != kArThreadDone)
     {
         // Remove from ready list if it's on there, and switch to another thread
         // if we're disposing of our own thread.
-        suspend();
+        ar_thread_suspend(thread);
         
         // Now remove from the suspended list
         {
             IrqDisableAndRestore disableIrq;
-            removeFromList(s_suspendedList);
+            ar_thread_list_remove(g_ar.suspendedList, thread);
         }
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_allObjects.m_threads);
+    removeFromCreatedList(thread, g_allObjects.m_threads);
 #endif // AR_GLOBAL_OBJECT_LISTS
 }
 
 // See ar_kernel.h for documentation of this function.
-void Thread::resume()
+void ar_thread_resume(ar_thread_t * thread)
 {
     {
         IrqDisableAndRestore disableIrq;
     
-        if (m_state == kThreadReady)
+        if (thread->m_state == kArThreadReady)
         {
             return;
         }
-        else if (m_state == kThreadSuspended)
+        else if (thread->m_state == kArThreadSuspended)
         {
-            removeFromList(s_suspendedList);
-            m_state = kThreadReady;
-            addToList(s_readyList);
+            ar_thread_list_remove(g_ar.suspendedList, thread);
+            thread->m_state = kArThreadReady;
+            ar_thread_list_add(g_ar.readyList, thread);
         }
     }
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
-    if (Kernel::isRunning() && m_priority > s_currentThread->m_priority)
+    if (g_ar.isRunning && thread->m_priority > g_ar.currentThread->m_priority)
     {
-        Kernel::enterScheduler();
+        ar_kernel_enter_scheduler();
     }
 }
 
 // See ar_kernel.h for documentation of this function.
-void Thread::suspend()
+void ar_thread_suspend(ar_thread_t * thread)
 {
     {
         IrqDisableAndRestore disableIrq;
     
-        if (m_state == kThreadSuspended)
+        if (thread->m_state == kArThreadSuspended)
         {
             // Nothing needs doing if the thread is already suspended.
             return;
         }
         else
         {
-            removeFromList(s_readyList);
-            m_state = kThreadSuspended;
-            addToList(s_suspendedList);
+            ar_thread_list_remove(g_ar.readyList, thread);
+            thread->m_state = kArThreadSuspended;
+            ar_thread_list_add(g_ar.suspendedList, thread);
         }
     }
 
     // are we suspending the current thread?
-    if (Kernel::isRunning() && this == s_currentThread)
+    if (g_ar.isRunning() && thread == g_ar.currentThread)
     {
-        Kernel::enterScheduler();
+        ar_kernel_enter_scheduler();
     }
 }
 

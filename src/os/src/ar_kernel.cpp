@@ -37,8 +37,6 @@
 #include <string.h>
 #include <stdio.h>
 
-using namespace Ar;
-
 //------------------------------------------------------------------------------
 // Defines
 //------------------------------------------------------------------------------
@@ -64,22 +62,26 @@ using namespace Ar;
 // Variables
 //------------------------------------------------------------------------------
 
-bool Kernel::s_isRunning = false;
-volatile uint32_t Kernel::s_tickCount = 0;
-volatile uint32_t Kernel::s_irqDepth = 0;
+ar_kernel_t g_ar = {0};
+
+static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
+
+// bool Kernel::s_isRunning = false;
+// volatile uint32_t Kernel::s_tickCount = 0;
+// volatile uint32_t Kernel::s_irqDepth = 0;
 
 //! @internal
 //!
 //! The volatile is necessary so that the IAR optimizer doesn't remove the entire load
 //! calculation loop of the idle_entry() function.
-volatile unsigned Kernel::s_systemLoad = 0;
+// volatile unsigned Kernel::s_systemLoad = 0;
 
 //! The stack for the idle thread.
-uint8_t Kernel::s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
+// uint8_t Kernel::s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 
 //! The lowest priority thread in the system. Executes only when no other
 //! threads are ready.
-Thread Kernel::s_idleThread;
+// Thread Kernel::s_idleThread;
 
 #if AR_GLOBAL_OBJECT_LISTS
 //! This global contains linked lists of all the various Ar object
@@ -101,7 +103,7 @@ ObjectLists g_allObjects;
 //! accessible with the Kernel::getSystemLoad() static member.
 //!
 //! @param param Ignored.
-void Kernel::idle_entry(void * param)
+void idle_entry(void * param)
 {
 #if AR_ENABLE_SYSTEM_LOAD
     uint32_t start;
@@ -109,16 +111,16 @@ void Kernel::idle_entry(void * param)
     uint32_t ticks;
     uint32_t skipped = 0;
     
-    start = Kernel::getTickCount();
+    start = g_ar.tickCount;
     last = start;
 #endif // AR_ENABLE_SYSTEM_LOAD
     
     while (1)
     {
         // Check if we need to handle a timer.
-        Timer * timer = Timer::s_activeTimers;
+        ar_timer_t * timer = g_ar.activeTimers;
         bool handledTimer = false;
-        while (timer && timer->m_wakeupTime <= Kernel::s_tickCount)
+        while (timer && timer->m_wakeupTime <= g_ar.tickCount)
         {
             // Invoke the timer callback.
             assert(timer->m_callback);
@@ -126,12 +128,12 @@ void Kernel::idle_entry(void * param)
             
             switch (timer->m_mode)
             {
-                case Timer::kOneShotTimer:
+                case kArOneShotTimer:
                     // Stop a one shot timer after it has fired.
                     timer->stop();
                     break;
                     
-                case Timer::kPeriodicTimer:
+                case kArPeriodicTimer:
                     // Restart a periodic timer.
                     timer->start();
                     break;
@@ -146,12 +148,12 @@ void Kernel::idle_entry(void * param)
         // the expired timers.
         if (handledTimer)
         {
-            s_idleThread.setPriority(0);
+            ar_thread_set_priority(&s_idleThread, 0);
         }
         
         // Compute system load.
 #if AR_ENABLE_SYSTEM_LOAD
-        ticks = Kernel::getTickCount();
+        ticks = g_ar.tickCount;
         
         if (ticks != last)
         {
@@ -202,64 +204,64 @@ void Kernel::idle_entry(void * param)
 //! Uses a "swi" instruction to yield to the scheduler when in user mode. If
 //! the CPU is in IRQ mode then we can just call the scheduler() method
 //! directly and any change will take effect when the ISR exits.
-void Kernel::enterScheduler()
+void ar_kernel_enter_scheduler(void)
 {
-    if (s_irqDepth == 0)
+    if (g_ar.irqDepth == 0)
     {
         // In user mode we must SWI into the scheduler.
-        service_call();
+        ar_port_service_call();
     }
     else
     {
         // We're in IRQ mode so just call the scheduler directly
-        Thread::scheduler();
+        ar_kernel_scheduler();
     }
 }
 
 // See ar_kernel.h for documentation of this function.
-void Kernel::run()
+void ar_kernel_run(void)
 {
     // Assert if there is no thread ready to run.
-    assert(Thread::s_readyList);
+    assert(g_ar.readyList);
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
-    s_idleThread.init("idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
+    ar_thread_create(&s_idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
     s_idleThread.m_priority = 0;
-    s_idleThread.resume();
+    ar_thread_resume(&s_idleThread);
     
     // Set up system tick timer
-    initTimerInterrupt();
+    ar_port_init_timer_interrupt();
     
-    initSystem();
+    ar_port_init_system();
     
     // We're now ready to run
-    s_isRunning = true;
+    g_ar.isRunning = true;
     
     // Enter into the scheduler. The yieldIsr() will see that s_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
     // runs, we return from the scheduler to a ready thread.
-    enterScheduler();
+    ar_kernel_enter_scheduler();
 
     // should never reach here
     _halt();
 }
 
-void Kernel::periodicTimerIsr()
+void ar_kernel_periodic_timer_isr()
 {
     // Exit immediately if the kernel isn't running.
-    if (!s_isRunning)
+    if (!g_ar.isRunning)
     {
         return;
     }
     
-    Thread::incrementTickCount(1);
+    ar_kernel_increment_tick_count(1);
 
     // Run the scheduler. It will modify s_currentThread if switching threads.
-    service_call();
+    ar_port_service_call();
 
     // This case should never happen because of the idle thread.
-    assert(Thread::getCurrent());
+    assert(g_ar.currentThread);
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
@@ -267,44 +269,44 @@ void Kernel::periodicTimerIsr()
 //! @return The value of the current thread's stack pointer is returned. If the scheduler
 //!     changed the current thread, this will be a different value from what was passed
 //!     in @a topOfStack.
-uint32_t Kernel::yieldIsr(uint32_t topOfStack)
+uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 {
     // save top of stack for the thread we interrupted
-    if (Thread::getCurrent())
+    if (g_ar.currentThread)
     {
-        Thread::getCurrent()->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
+        g_ar.currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
     
     // Run the scheduler. It will modify s_currentThread if switching threads.
-    Thread::scheduler();
+    ar_kernel_scheduler();
 
     // The idle thread prevents this condition.
-    assert(Thread::getCurrent());
+    assert(g_ar.currentThread);
 
     // return the new thread's stack pointer
-    return (uint32_t)Thread::getCurrent()->m_stackPointer;
+    return (uint32_t)g_ar.currentThread->m_stackPointer;
 }
 
 // See ar_kernel.h for documentation of this function.
-void Kernel::enterInterrupt()
+void ar_kernel_enter_interrupt()
 {
-    ++Kernel::s_irqDepth;
+    ++g_ar.irqDepth;
 }
 
 // See ar_kernel.h for documentation of this function.
-void Kernel::exitInterrupt()
+void ar_kernel_exit_interrupt()
 {
-    --Kernel::s_irqDepth;
+    --g_ar.irqDepth;
 }
 
 void * ar_yield(void * topOfStack)
 {
-    return (void *)Kernel::yieldIsr((uint32_t)topOfStack);
+    return (void *)ar_kernel_yield_isr((uint32_t)topOfStack);
 }
 
 void ar_periodic_timer(void)
 {
-    return Kernel::periodicTimerIsr();
+    return ar_kernel_periodic_timer_isr();
 }
 
 //------------------------------------------------------------------------------
