@@ -164,7 +164,24 @@ typedef struct _ar_timer {
     bool m_isActive;            //!< Whether the timer is running and on the active timers list.
 } ar_timer_t;
 
-void ar_run(void);
+typedef struct _ar_kernel {
+    ar_thread_t * readyList;    //!< Head of a linked list of ready threads.
+    ar_thread_t * suspendedList;    //!< Head of linked list of suspended threads.
+    ar_thread_t * sleepingList; //!< Head of linked list of sleeping threads.
+    ar_thread_t * currentThread;    //!< The currently running thread.
+    at_timer_t * activeTimers;  //!< List of currently running timers. Sorted ascending by wakup time.
+    bool isRunning;    //!< True if the kernel has been started.
+    volatile uint32_t tickCount;   //!< Current tick count.
+    volatile uint32_t irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
+    volatile unsigned systemLoad;   //!< Percent of system load from 0-100.
+    ar_thread_t idleThread;
+} ar_kernel_t;
+
+void ar_kernel_run(void);
+bool ar_kernel_is_running(void);
+
+uint32_t ar_get_tick_count(void);
+uint32_t ar_get_system_load(void);
 
 status_t ar_sleep(uint32_t milliseconds);
 
@@ -205,6 +222,31 @@ bool ar_timer_is_active(ar_timer_t * timer);
 status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t newDelay);
 uint32_t ar_timer_get_delay(ar_timer_t * timer);
 
+uint32_t ar_get_milliseconds_per_tick(void);
+uint32_t ar_ticks_to_milliseconds(uint32_t ticks);
+uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds);
+
+void ar_port_init_system(void);
+void ar_port_init_tick_timer(void);
+void ar_port_prepare_stack(void * param);
+
+void ar_kernel_periodic_timer_isr(void);
+uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
+bool ar_kernel_increment_tick_count(unsigned ticks);
+void ar_kernel_scheduler(void);
+
+void ar_thread_wrapper(ar_thread_t * thread, void * param);
+
+void ar_thread_list_add(ar_thread_t ** listHead);
+void ar_thread_list_remove(ar_thread_t ** listHead);
+
+void ar_thread_blocked_list_add(ar_thread_t ** listHead);
+void ar_thread_blocked_list_remove(ar_thread_t ** listHead);
+void ar_thread_block(ar_thread_t ** blockedList, uint32_t timeout);
+void ar_thread_unblock_with_status(at_thread_t ** blockedList, status_t unblockStatus);
+
+void ar_timer_list_add(ar_timer_t ** listHead);
+void ar_timer_list_remove(ar_timer_t ** listHead);
 
 
 
