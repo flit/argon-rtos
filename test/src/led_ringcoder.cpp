@@ -36,22 +36,6 @@
 // Definitions
 //------------------------------------------------------------------------------
 
-//   LED Ringcoder Board          Arduino
-//   -------------------          -------
-//    GND (ground)                  GND
-//     B (Encoder B)                2 - External interrupt 0
-//     A (Encoder A)                3 - External interrupt 1
-// RED (Encoder Red LED)            5 - PWM enabled
-// BLU (Encoder Blue LED)           6 - PWM enabled
-// GRN (Encoder Green LED)          9 - PWM endabled
-// SW (Encoder push button)         7
-//    DAT (shift data)              8
-//    CLR (shift clear)             10
-//    CLK (shift clock)             11
-//   LATCH (shift latch)            12
-//    EN (shift enable)             13
-//      VCC (power)                 5V
-
 enum
 {
     kEncoderAPin = D2,  // PTD4
@@ -60,11 +44,11 @@ enum
     kBlueLEDPin = D6,   // PTC8
     kGreenLEDPin = D9,  // PTD5
     kEncoderSwitchPin = D7, // PTC9
-    kRingDataPin = D14, // PTE0
+    kRingDataPin = A4, //D14, // PTE0
     kRingClearPin = D10,    // PTD0
     kRingClockPin = D11,    // PTD2
     kRingLatchPin = D12,    // PTD3
-    kRingEnablePin = D13    // PTD1
+    kRingEnablePin = D15    // PTD1
 };
 
 enum
@@ -118,6 +102,13 @@ private:
     DigitalOut m_dat;
 };
 
+enum
+{
+    kRedChannel,
+    kGreenChannel,
+    kBlueChannel
+};
+
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
@@ -143,6 +134,10 @@ Ar::Timer g_blinker("blinker", blinker, 0, Ar::Timer::kPeriodicTimer, 1000);
 Ar::Timer g_green_blinker("green_blinker", green_blinker, 0, Ar::Timer::kPeriodicTimer, 1500);
 
 Ar::Timer g_encoderDebounceTimer("encoder_debounce", encoder_debounce, 0, Ar::Timer::kOneShotTimer, 5);
+
+PwmOut g_r(LED_RED);
+PwmOut g_g(LED_GREEN);
+PwmOut g_bl(LED_BLUE);
 
 PwmOut g_red((PinName)kRedLEDPin);
 PwmOut g_green((PinName)kGreenLEDPin);
@@ -246,6 +241,31 @@ void green_blinker(Ar::Timer * timer, void * arg)
     g_green = !g_green;
 }
 
+void update_led_ring(unsigned value)
+{
+    unsigned n = value * 16 / 100;
+    uint32_t bits = 0;
+    unsigned i;
+    for (i=0; i < n; ++i)
+    {
+        bits = (bits << 1) | 1;
+    }
+    
+//    bits = ((bits & 0xff) << 8) | ((bits & 0xff00) >> 8);
+    g_ledRing.set<16>(bits);
+}
+
+void update_rgb_led(unsigned r, unsigned g, unsigned b)
+{
+    g_r = 1.0f - ((float)r / 100.0f);
+    g_g = 1.0f - ((float)g / 100.0f);
+    g_bl = 1.0f - ((float)b / 100.0f);
+
+//     g_red = 1.0f - ((float)r / 100.0f);
+//     g_green = 1.0f - ((float)g / 100.0f);
+//     g_blue = 1.0f - ((float)b / 100.0f);
+}
+
 void init_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
@@ -257,8 +277,8 @@ void init_thread(void * arg)
     g_green = 1;
     g_blue = 1;
     
-    g_blinker.start();
-    g_green_blinker.start();
+//     g_blinker.start();
+//     g_green_blinker.start();
     
     g_a.mode(PullUp);
     g_b.mode(PullUp);
@@ -267,36 +287,73 @@ void init_thread(void * arg)
     g_b.rise(encoder_handler);
     g_b.fall(encoder_handler);
     
+    g_r.period_us(20);
+    g_g.period_us(20);
+    
     g_ledRing.clear();
 //     g_ledRing.set<16>(0x5555);
     
+    int colorChannel = kRedChannel;
+    g_red = 0;
+    int colorValues[3] = {0};
+    update_rgb_led(colorValues[kRedChannel], colorValues[kGreenChannel], colorValues[kBlueChannel]);
+    
     DigitalIn switchPin((PinName)kEncoderSwitchPin);
-    int lastValue = g_value;
+//     int lastValue = g_value;
     while (true)
     {
+//         if (switchPin)
+//         {
+//             g_red = 0; //1.0f;
+//         }
+//         else
+//         {
+//             g_red = 1; //0.0f;
+//         }
+
         if (switchPin)
         {
-            g_red = 0; //1.0f;
-        }
-        else
-        {
-            g_red = 1; //0.0f;
+            ++colorChannel;
+            if (colorChannel > kBlueChannel)
+            {
+                colorChannel = kRedChannel;
+            }
+            
+            switch (colorChannel)
+            {
+                case kRedChannel:
+                    g_red = 0;
+                    g_green = 1;
+                    g_blue = 1;
+                    break;
+                case kGreenChannel:
+                    g_red = 1;
+                    g_green = 0;
+                    g_blue = 1;
+                    break;
+                case kBlueChannel:
+                    g_red = 1;
+                    g_green = 1;
+                    g_blue = 0;
+                    break;
+            }
+
+            g_value = colorValues[colorChannel];
+            update_led_ring(g_value);
+            
+            while (switchPin)
+            {
+                Ar::Thread::sleep(100);
+            }
         }
 
-        if (lastValue != g_value)
+        if (colorValues[colorChannel] != g_value)
         {
             printf("value=%d\r\n", g_value);
-            lastValue = g_value;
+            colorValues[colorChannel] = g_value;
+            update_led_ring(g_value);
             
-            unsigned n = g_value * 16 / 100;
-            uint32_t bits = 0;
-            unsigned i;
-            for (i=0; i < n; ++i)
-            {
-                bits = (bits << 1) | 1;
-            }
-//             bits = ((bits & 0xff) << 8) | ((bits & 0xff00) >> 8);
-            g_ledRing.set<16>(bits);
+            update_rgb_led(colorValues[kRedChannel], colorValues[kGreenChannel], colorValues[kBlueChannel]);
         }
     }
     
@@ -360,6 +417,12 @@ void encoder_handler()
 void main(void)
 {
 //     debug_init();
+
+    SIM->SCGC5 |= ( SIM_SCGC5_PORTA_MASK
+                  | SIM_SCGC5_PORTB_MASK
+                  | SIM_SCGC5_PORTC_MASK
+                  | SIM_SCGC5_PORTD_MASK
+                  | SIM_SCGC5_PORTE_MASK );
     
     printf("Running test...\r\n");
     
