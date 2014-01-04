@@ -46,11 +46,7 @@
 typedef bool (*ar_list_predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
 
 typedef struct _ar_kernel {
-//     ar_thread_t * readyList;    //!< Head of a linked list of ready threads.
-//     ar_thread_t * suspendedList;    //!< Head of linked list of suspended threads.
-//     ar_thread_t * sleepingList; //!< Head of linked list of sleeping threads.
     ar_thread_t * currentThread;    //!< The currently running thread.
-//     ar_timer_t * activeTimers;  //!< List of currently running timers. Sorted ascending by wakeup time.
     ar_list_node_t * readyList;
     ar_list_node_t * suspendedList;
     ar_list_node_t * sleepingList;
@@ -60,6 +56,15 @@ typedef struct _ar_kernel {
     volatile uint32_t irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100.
     ar_thread_t idleThread;
+#if AR_GLOBAL_OBJECT_LISTS
+    struct {
+        ar_list_node_t * threads;
+        ar_list_node_t * semaphores;
+        ar_list_node_t * mutexes;
+        ar_list_node_t * queues;
+        ar_list_node_t * timers;
+    } allObjects;
+#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_kernel_t;
 
 extern ar_kernel_t g_ar;
@@ -76,26 +81,28 @@ void ar_port_service_call(void);
 void ar_kernel_periodic_timer_isr(void);
 uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
 bool ar_kernel_increment_tick_count(unsigned ticks);
+void ar_kernel_enter_scheduler(void);
 void ar_kernel_scheduler(void);
 void ar_kernel_enter_interrupt();
 void ar_kernel_exit_interrupt();
 
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
 
-// void ar_thread_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
-// void ar_thread_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
+void ar_thread_block(ar_thread_t * thread, ar_list_node_t *& blockedList, uint32_t timeout);
+void ar_thread_unblock_with_status(ar_thread_t * thread, ar_list_node_t *& blockedList, status_t unblockStatus);
 
-// void ar_thread_blocked_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
-// void ar_thread_blocked_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
-void ar_thread_block(ar_thread_t * thread, ar_thread_t ** blockedList, uint32_t timeout);
-void ar_thread_unblock_with_status(ar_thread_t * thread, ar_thread_t ** blockedList, status_t unblockStatus);
-
-// void ar_timer_list_add(ar_timer_t ** listHead, ar_timer_t * timer);
-// void ar_timer_list_remove(ar_timer_t ** listHead, ar_timer_t * timer);
-
-void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item);
-void ar_list_add_sorted(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate);
+void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate=NULL);
 void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item);
+
+inline void ar_thread_list_add(ar_list_node_t *& listHead, ar_thread_t * thread)
+{
+    ar_list_add(listHead, &thread->m_threadList);
+}
+
+inline void ar_thread_list_remove(ar_list_node_t *& listHead, ar_thread_t * thread)
+{
+    ar_list_remove(listHead, &thread->m_threadList);
+}
 
 bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b);
 

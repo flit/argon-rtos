@@ -103,6 +103,13 @@ typedef enum _ar_thread_state {
     kArThreadDone         //!< Thread has exited.
 } ar_thread_state_t;
 
+//! Range of priorities for threads.
+enum _ar_thread_priorities
+{
+    kArMinThreadPriority = 1,
+    kArMaxThreadPriority = 255
+};
+
 //! @brief Modes of operation for timers.
 typedef enum _ar_timer_modes {
     kArOneShotTimer,      //!< Timer fires a single time.
@@ -125,6 +132,13 @@ typedef struct _ar_list_node {
     ar_list_node_t * m_next;
     ar_list_node_t * m_prev;
     void * m_obj;
+
+#if defined(__cplusplus)
+    template <typename T>
+    T * getObject() { return reinterpret_cast<T *>(m_obj); }
+    
+    void insertBefore(ar_list_node_t * node);
+#endif // __cplusplus
 } ar_list_node_t;
 
 /*!
@@ -138,8 +152,6 @@ typedef struct _ar_thread {
     uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
     ar_thread_state_t m_state; //!< Current thread state.
     ar_thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-//     ar_thread_t * m_next;    //!< Linked list node.
-//     ar_thread_t * m_nextBlocked; //!< Linked list node for blocked threads.
     ar_list_node_t m_threadList;
     ar_list_node_t m_createdList;
     ar_list_node_t m_blockedList;
@@ -152,7 +164,6 @@ typedef struct _ar_thread {
  */
 typedef struct _ar_semaphore {
     volatile unsigned m_count;  //!< Current semaphore count. Value of 0 means the semaphore is owned.
-//     ar_thread_t * m_blockedList; //!< Linked list of threads blocked on this semaphore.
     ar_list_node_t * m_blockedListHead;
     ar_list_node_t m_createdList;
 } ar_semaphore_t;
@@ -177,8 +188,6 @@ typedef struct _ar_queue {
     unsigned m_head;    //!< Index of queue head.
     unsigned m_tail;    //!< Index of queue tail.
     unsigned m_count;   //!< Current number of elements in the queue.
-//     ar_thread_t * m_sendBlockedList; //!< Linked list of threads blocked waiting to send.
-//     ar_thread_t * m_receiveBlockedList;  //!< Linked list of threads blocked waiting to receive.
     ar_list_node_t * m_sendBlockedListHead;
     ar_list_node_t * m_receiveBlockedListHead;
     ar_list_node_t m_createdList;
@@ -191,7 +200,6 @@ typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
  * @brief Timer.
  */
 typedef struct _ar_timer {
-//     ar_timer_t * m_next;             //!< Next pointer for the active timer linked list.
     ar_list_node_t m_activeList;
     ar_list_node_t m_createdList;
     ar_timer_entry_t m_callback;   //!< Timer expiration callback.
@@ -224,7 +232,7 @@ ar_thread_state_t ar_thread_get_state(ar_thread_t * thread);
 uint8_t ar_thread_get_priority(ar_thread_t * thread);
 status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
 ar_thread_t * ar_thread_get_current(void);
-status_t ar_thread_sleep(uint32_t milliseconds);
+void ar_thread_sleep(uint32_t milliseconds);
 
 status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
 status_t ar_semaphore_delete(ar_semaphore_t * sem);
@@ -274,24 +282,6 @@ bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32
 #if defined(__cplusplus)
 }
 #endif
-
-#if AR_GLOBAL_OBJECT_LISTS
-
-/*!
- * @brief Linked lists of each Ar object type.
- */
-struct ObjectLists
-{
-    ar_thread_t * m_threads;
-    ar_semaphore_t * m_semaphores;
-    ar_mutex_t * m_mutexes;
-    ar_queue_t * m_queues;
-};
-
-//! @brief Global containing lists of all Ar objects.
-extern ObjectLists g_allObjects;
-
-#endif // AR_GLOBAL_OBJECT_LISTS
 
 //! @}
 

@@ -126,7 +126,7 @@ void idle_entry(void * param)
             bool handledTimer = false;
             while (timerNode)
             {
-                ar_timer_t * timer = reinterpret_cast<ar_timer_t *>(timerNode->m_obj);
+                ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
                 assert(timer);
                 
                 if (timer->m_wakeupTime > g_ar.tickCount)
