@@ -36,25 +36,37 @@
 #if !defined(_AR_INTERNAL_H_)
 #define _AR_INTERNAL_H_
 
-#include "fsl_platform_common.h"
-#include "fsl_device_registers.h"
+#include "os/ar_c_api.h"
+#include "ar_port.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
+typedef bool (*ar_list_predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
+
 typedef struct _ar_kernel {
-    ar_thread_t * readyList;    //!< Head of a linked list of ready threads.
-    ar_thread_t * suspendedList;    //!< Head of linked list of suspended threads.
-    ar_thread_t * sleepingList; //!< Head of linked list of sleeping threads.
+//     ar_thread_t * readyList;    //!< Head of a linked list of ready threads.
+//     ar_thread_t * suspendedList;    //!< Head of linked list of suspended threads.
+//     ar_thread_t * sleepingList; //!< Head of linked list of sleeping threads.
     ar_thread_t * currentThread;    //!< The currently running thread.
-    at_timer_t * activeTimers;  //!< List of currently running timers. Sorted ascending by wakup time.
+//     ar_timer_t * activeTimers;  //!< List of currently running timers. Sorted ascending by wakeup time.
+    ar_list_node_t * readyList;
+    ar_list_node_t * suspendedList;
+    ar_list_node_t * sleepingList;
+    ar_list_node_t * activeTimers;
     bool isRunning;    //!< True if the kernel has been started.
     volatile uint32_t tickCount;   //!< Current tick count.
     volatile uint32_t irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100.
     ar_thread_t idleThread;
 } ar_kernel_t;
+
+extern ar_kernel_t g_ar;
+
+//------------------------------------------------------------------------------
+// API
+//------------------------------------------------------------------------------
 
 void ar_port_init_system(void);
 void ar_port_init_tick_timer(void);
@@ -70,17 +82,33 @@ void ar_kernel_exit_interrupt();
 
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
 
-void ar_thread_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
-void ar_thread_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
+// void ar_thread_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
+// void ar_thread_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
 
-void ar_thread_blocked_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
-void ar_thread_blocked_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
+// void ar_thread_blocked_list_add(ar_thread_t ** listHead, ar_thread_t * thread);
+// void ar_thread_blocked_list_remove(ar_thread_t ** listHead, ar_thread_t * thread);
 void ar_thread_block(ar_thread_t * thread, ar_thread_t ** blockedList, uint32_t timeout);
-void ar_thread_unblock_with_status(ar_thread_t * thread, at_thread_t ** blockedList, status_t unblockStatus);
+void ar_thread_unblock_with_status(ar_thread_t * thread, ar_thread_t ** blockedList, status_t unblockStatus);
 
-void ar_timer_list_add(ar_timer_t ** listHead, ar_timer_t * timer);
-void ar_timer_list_remove(ar_timer_t ** listHead, ar_timer_t * timer);
+// void ar_timer_list_add(ar_timer_t ** listHead, ar_timer_t * timer);
+// void ar_timer_list_remove(ar_timer_t ** listHead, ar_timer_t * timer);
 
+void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item);
+void ar_list_add_sorted(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate);
+void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item);
+
+bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b);
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void * ar_yield(void * topOfStack);
+void ar_periodic_timer(void);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif // _AR_INTERNAL_H_
 //------------------------------------------------------------------------------

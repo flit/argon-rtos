@@ -36,27 +36,18 @@
 #if !defined(_AR_KERNEL_H_)
 #define _AR_KERNEL_H_
 
-#include "ar_port.h"
+#include "fsl_platform_common.h"
 
 //! @addtogroup ar
 //! @{
 
-extern "C" {
-void * ar_yield(void * topOfStack);
-void ar_periodic_timer(void);
-}
-
-//! @}
-
 //------------------------------------------------------------------------------
-// Definitions
+// Constants
 //------------------------------------------------------------------------------
 
 #define AR_GLOBAL_OBJECT_LISTS (0)
 
 //! @brief Timeout constants.
-//!
-//! @ingroup ar
 enum _ar_timeouts
 {
     //! Return immediately if a resource cannot be acquired.
@@ -67,8 +58,6 @@ enum _ar_timeouts
 };
 
 //! @brief Ar microkernel error codes.
-//!
-//! @ingroup ar
 enum _ar_errors
 {
     //! Operation was successful.
@@ -103,12 +92,6 @@ enum _ar_errors
     kArAlreadyUnlockedError
 };
 
-//! @}
-
-//------------------------------------------------------------------------------
-// Classes
-//------------------------------------------------------------------------------
-
 //! Potential thread states.
 typedef enum _ar_thread_state {
     kArThreadUnknown,     //!< Hopefully a thread is never in this state.
@@ -120,9 +103,33 @@ typedef enum _ar_thread_state {
     kArThreadDone         //!< Thread has exited.
 } ar_thread_state_t;
 
-//! Prototype for the thread entry point.
-typedef void (*thread_entry_t)(void * param);
+//! @brief Modes of operation for timers.
+typedef enum _ar_timer_modes {
+    kArOneShotTimer,      //!< Timer fires a single time.
+    kArPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
+} ar_timer_mode_t;
 
+//------------------------------------------------------------------------------
+// Types
+//------------------------------------------------------------------------------
+
+// Forward declarations.
+typedef struct _ar_thread ar_thread_t;
+typedef struct _ar_timer ar_timer_t;
+typedef struct _ar_list_node ar_list_node_t;
+
+//! Prototype for the thread entry point.
+typedef void (*ar_thread_entry_t)(void * param);
+
+typedef struct _ar_list_node {
+    ar_list_node_t * m_next;
+    ar_list_node_t * m_prev;
+    void * m_obj;
+} ar_list_node_t;
+
+/*!
+ * @brief Thread.
+ */
 typedef struct _ar_thread {
     volatile uint8_t * m_stackPointer; //!< Current stack pointer.
     const char * m_name;
@@ -131,24 +138,38 @@ typedef struct _ar_thread {
     uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
     ar_thread_state_t m_state; //!< Current thread state.
     ar_thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-    ar_thread_t * m_next;    //!< Linked list node.
-    ar_thread_t * m_nextBlocked; //!< Linked list node for blocked threads.
+//     ar_thread_t * m_next;    //!< Linked list node.
+//     ar_thread_t * m_nextBlocked; //!< Linked list node for blocked threads.
+    ar_list_node_t m_threadList;
+    ar_list_node_t m_createdList;
+    ar_list_node_t m_blockedList;
     uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
     status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
 } ar_thread_t;
 
+/*!
+ * @brief Semaphore.
+ */
 typedef struct _ar_semaphore {
     volatile unsigned m_count;  //!< Current semaphore count. Value of 0 means the semaphore is owned.
-    ar_thread_t * m_blockedList; //!< Linked list of threads blocked on this semaphore.
+//     ar_thread_t * m_blockedList; //!< Linked list of threads blocked on this semaphore.
+    ar_list_node_t * m_blockedListHead;
+    ar_list_node_t m_createdList;
 } ar_semaphore_t;
 
+/*!
+ * @brief Mutex.
+ */
 typedef struct _ar_mutex {
-    ar_sem_t m_sem;
+    ar_semaphore_t m_sem;
     volatile ar_thread_t * m_owner;  //!< Current owner thread of the mutex.
     volatile unsigned m_ownerLockCount; //!< Number of times the owner thread has locked the mutex.
     uint8_t m_originalPriority; //!< Original priority of the owner thread before its priority was raised.
 } ar_mutex_t;
 
+/*!
+ * @brief Queue.
+ */
 typedef struct _ar_queue {
     uint8_t * m_elements;   //!< Pointer to element storage.
     unsigned m_elementSize; //!< Number of bytes occupied by each element.
@@ -156,21 +177,23 @@ typedef struct _ar_queue {
     unsigned m_head;    //!< Index of queue head.
     unsigned m_tail;    //!< Index of queue tail.
     unsigned m_count;   //!< Current number of elements in the queue.
-    ar_thread_t * m_sendBlockedList; //!< Linked list of threads blocked waiting to send.
-    ar_thread_t * m_receiveBlockedList;  //!< Linked list of threads blocked waiting to receive.
+//     ar_thread_t * m_sendBlockedList; //!< Linked list of threads blocked waiting to send.
+//     ar_thread_t * m_receiveBlockedList;  //!< Linked list of threads blocked waiting to receive.
+    ar_list_node_t * m_sendBlockedListHead;
+    ar_list_node_t * m_receiveBlockedListHead;
+    ar_list_node_t m_createdList;
 } ar_queue_t;
 
-//! @brief Modes of operation for timers.
-typedef enum _ar_timer_modes {
-    kArOneShotTimer,      //!< Timer fires a single time.
-    kArPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
-} ar_timer_mode_t;
-
 //! @brief Callback routine for timer expiration.
-typedef void (*timer_entry_t)(Timer * timer, void * param);
+typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
 
+/*!
+ * @brief Timer.
+ */
 typedef struct _ar_timer {
-    ar_timer_t * m_next;             //!< Next pointer for the active timer linked list.
+//     ar_timer_t * m_next;             //!< Next pointer for the active timer linked list.
+    ar_list_node_t m_activeList;
+    ar_list_node_t m_createdList;
     ar_timer_entry_t m_callback;   //!< Timer expiration callback.
     void * m_param;             //!< Arbitrary parameter for the callback.
     ar_timer_mode_t m_mode;        //!< One-shot or periodic mode.
@@ -179,14 +202,19 @@ typedef struct _ar_timer {
     bool m_isActive;            //!< Whether the timer is running and on the active timers list.
 } ar_timer_t;
 
+//------------------------------------------------------------------------------
+// API
+//------------------------------------------------------------------------------
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 void ar_kernel_run(void);
 bool ar_kernel_is_running(void);
 
 uint32_t ar_get_tick_count(void);
 uint32_t ar_get_system_load(void);
-
-status_t ar_sleep(uint32_t milliseconds);
 
 status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 status_t ar_thread_delete(ar_thread_t * thread);
@@ -196,6 +224,7 @@ ar_thread_state_t ar_thread_get_state(ar_thread_t * thread);
 uint8_t ar_thread_get_priority(ar_thread_t * thread);
 status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
 ar_thread_t * ar_thread_get_current(void);
+status_t ar_thread_sleep(uint32_t milliseconds);
 
 status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
 status_t ar_semaphore_delete(ar_semaphore_t * sem);
@@ -231,24 +260,20 @@ uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds);
 
 
 //! @brief %Atomic add.
-//!
-//! @ingroup ar
 void ar_atomic_add(uint32_t * value, int32_t delta);
 
 //! @brief %Atomic increment.
-//!
-//! @ingroup ar
 inline void ar_atomic_increment(uint32_t * value) { ar_atomic_add(value, 1); }
 
 //! @brief %Atomic decrement.
-//!
-//! @ingroup ar
 inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
 
 //! @brief %Atomic compare-and-swap operation.
-//!
-//! @ingroup ar
 bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #if AR_GLOBAL_OBJECT_LISTS
 
@@ -267,6 +292,8 @@ struct ObjectLists
 extern ObjectLists g_allObjects;
 
 #endif // AR_GLOBAL_OBJECT_LISTS
+
+//! @}
 
 #endif // _AR_KERNEL_H_
 //------------------------------------------------------------------------------

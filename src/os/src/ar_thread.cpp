@@ -29,15 +29,15 @@
  */
 /*!
  * @file
- * @brief Source for Ar microkernel threads.
+ * @brief Source for Ar threads.
  */
 
-#include "os/ar_kernel.h"
+#include "ar_internal.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
-// using namespace Ar;
+using namespace Ar;
 
 //------------------------------------------------------------------------------
 // Variables
@@ -72,23 +72,27 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
     {
         return kArInvalidPriorityError;
     }
-    if (stackSize < sizeof(ar_thread_context_t))
+    if (stackSize < sizeof(ThreadContext))
     {
         return kArStackSizeTooSmallError;
     }
     
-    thread->m_name = name;
+    // Clear thread structure.
+    memset(thread, 0, sizeof(ar_thread_t));
     
     // init member variables
+    thread->m_name = name ? name : "";
     thread->m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
     thread->m_stackSize = stackSize;
     thread->m_stackPointer = thread->m_stackTop;
     thread->m_priority = priority;
     thread->m_state = kArThreadSuspended;
     thread->m_entry = entry;
-    thread->m_next = NULL;
-    thread->m_wakeupTime = 0;
-    thread->m_unblockStatus = 0;
+    
+    // Set list node references back to the thread object.
+    thread->m_threadList.m_obj = thread;
+    thread->m_createdList.m_obj = thread;
+    thread->m_blockedList.m_obj = thread;
 
     // prepare top of stack
     ar_port_prepare_stack(thread, param);
@@ -98,7 +102,9 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
         IrqDisableAndRestore disableIrq;
         
         // add to suspended list
-        ar_thread_list_add(g_ar.suspendedList, thread);
+//         ar_thread_list_add(g_ar.suspendedList, thread);
+        
+        ar_list_add(g_ar.suspendedList, &thread->m_thread_list);
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
@@ -127,10 +133,12 @@ status_t ar_thread_delete(ar_thread_t * thread)
 #if AR_GLOBAL_OBJECT_LISTS
     removeFromCreatedList(thread, g_allObjects.m_threads);
 #endif // AR_GLOBAL_OBJECT_LISTS
+    
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-void ar_thread_resume(ar_thread_t * thread)
+status_t ar_thread_resume(ar_thread_t * thread)
 {
     {
         IrqDisableAndRestore disableIrq;
@@ -153,10 +161,12 @@ void ar_thread_resume(ar_thread_t * thread)
     {
         ar_kernel_enter_scheduler();
     }
+    
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-void ar_thread_suspend(ar_thread_t * thread)
+status_t ar_thread_suspend(ar_thread_t * thread)
 {
     {
         IrqDisableAndRestore disableIrq;
@@ -179,39 +189,33 @@ void ar_thread_suspend(ar_thread_t * thread)
     {
         ar_kernel_enter_scheduler();
     }
+    
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Thread::setPriority(uint8_t priority)
+status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
 {
-    if (priority == 0 && this != &Kernel::s_idleThread)
+    if (priority == 0 && thread != &g_ar.idleThread)
     {
-        return kInvalidPriorityError;
+        return kAtInvalidPriorityError;
     }
     
-    if (priority != m_priority)
+    if (priority != thread->m_priority)
     {
-        m_priority = priority;
+        thread->m_priority = priority;
 
-        if (Kernel::isRunning())
+        if (g_ar.isRunning)
         {
-            Kernel::enterScheduler();
+            ar_kernel_enter_scheduler();
         }
     }
     
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Thread::join(uint32_t timeout)
-{
-    // Not yet implemented!
-    assert(0);
-    return kSuccess;
-}
-
-// See ar_kernel.h for documentation of this function.
-void Thread::sleep(unsigned ticks)
+void ar_thread_sleep(unsigned ticks)
 {
     // bail if there is not a running thread to put to sleep
     if (ticks == 0 || !s_currentThread)
@@ -223,14 +227,19 @@ void Thread::sleep(unsigned ticks)
         IrqDisableAndRestore disableIrq;
         
         // put the current thread on the sleeping list
-        s_currentThread->m_wakeupTime = Kernel::getTickCount() + Time::millisecondsToTicks(ticks);
-        s_currentThread->removeFromList(s_readyList);
-        s_currentThread->m_state = kThreadSleeping;
-        s_currentThread->addToList(s_sleepingList);
+        g_ar.currentThread->m_wakeupTime = g_ar.tickCount() + ar_milliseconds_to_ticks(ticks);
+        
+//         ar_thread_list_remove(g_ar.readyList, g_ar.currentThread);
+//         g_ar.currentThread->m_state = kArThreadSleeping;
+//         ar_thread_list_add(g_ar.sleepingList, g_ar.currentThread);
+        
+        g_ar.readyList->remove(g_ar.currentThread);
+        g_ar.currentThread->m_state = kArThreadSleeping;
+        g_ar.sleepingList->add(g_ar.currentThread);
     }
     
     // run scheduler and switch to another thread
-    Kernel::enterScheduler();
+    ar_kernel_enter_scheduler();
 }
 
 //! Call the thread entry point function.
@@ -407,6 +416,128 @@ void Thread::scheduler()
     {
         THREAD_STACK_OVERFLOW_DETECTED();
     }
+}
+
+void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item)
+{
+    // handle an empty list
+    if (!listHead)
+    {
+        listHead = item;
+        item->m_next = item;
+        item->m_prev = item;
+    }
+    else
+    {
+        item->m_next = listHead;
+        item->m_prev = listHead->m_prev;
+        listHead->m_prev->m_next = item;
+        listHead->m_prev = item;
+    }
+}
+
+void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item)
+{
+    // the list must not be empty
+    if (listHead == NULL)
+    {
+        return;
+    }
+
+    ar_list_node_t * node = listHead;
+    do {
+        if (node == item)
+        {
+            node->m_prev->m_next = node->m_next;
+            node->m_next->m_prev = node->m_prev;
+            
+            // Special case for removing the list head.
+            if (listHead == node)
+            {
+                // Handle a single item list by clearing the list head.
+                if (node->m_next == listHead)
+                {
+                    listHead = NULL;
+                }
+                // Otherwise just update the list head to the second list element.
+                else
+                {
+                    listHead = node->m_next;
+                }
+            }
+            
+            item->m_next = NULL;
+            item->m_prev = NULL;
+            break;
+        }
+
+        node = node->m_next;
+    } while (node != listHead);
+}
+
+bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b)
+{
+    ar_thread_t * aThread = reinterpret_cast<ar_thread_t *>(a->m_obj);
+    ar_thread_t * bThread = reinterpret_cast<ar_thread_t *>(b->m_obj);
+    return (aThread->m_priority > bThread->m_priority);
+}
+
+void ar_list_add_sorted(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate)
+{
+    // Insert at head of list if our priority is the highest or if the list is empty.
+    if (!listHead)
+    {
+        listHead = item;
+        item->m_next = item;
+        item->m_prev = item;
+        return;
+    }
+    
+    if (predicate(item, listHead))
+    {
+        item->m_next = listHead;
+        item->m_prev = listHead->m_prev;
+        listHead->m_prev->m_next = item;
+        listHead->m_prev = item;
+        listHead = item;
+        return;
+    }
+    
+    if (!predicate(item, listHead->m_prev))
+    {
+        item->m_next = listHead;
+        item->m_prev = node;
+        node->m_next = item;
+        listHead->m_prev = item;
+        return;
+    }
+
+    // Insert sorted by priority.
+    ar_list_node_t * node = listHead;
+    
+    do {
+        if (node->m_next == listHead)
+        {
+            item->m_next = listHead;
+            item->m_prev = node;
+            node->m_next = item;
+            listHead->m_prev = item;
+        }
+        else if (predicate(item, node))
+        {
+            item->m_next = node;
+            item->m_prev = node->m_prev;
+            node->m_prev->m_next = item;
+            node->m_prev = item;
+            
+            if (node == listHead)
+            {
+                listHead = node;
+            }
+        }
+        
+        node = node->m_next;
+    } while (node != listHead)
 }
 
 //! The thread is added to the end of the circularly linked list.

@@ -32,10 +32,12 @@
  * @brief Source for Ar kernel.
  */
 
-#include "os/ar_kernel.h"
+#include "ar_internal.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+
+using namespace Ar;
 
 //------------------------------------------------------------------------------
 // Defines
@@ -64,6 +66,7 @@
 
 ar_kernel_t g_ar = {0};
 
+//! The stack for the idle thread.
 static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 
 // bool Kernel::s_isRunning = false;
@@ -76,7 +79,6 @@ static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 //! calculation loop of the idle_entry() function.
 // volatile unsigned Kernel::s_systemLoad = 0;
 
-//! The stack for the idle thread.
 // uint8_t Kernel::s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 
 //! The lowest priority thread in the system. Executes only when no other
@@ -118,37 +120,48 @@ void idle_entry(void * param)
     while (1)
     {
         // Check if we need to handle a timer.
-        ar_timer_t * timer = g_ar.activeTimers;
-        bool handledTimer = false;
-        while (timer && timer->m_wakeupTime <= g_ar.tickCount)
+        if (g_ar.activeTimers)
         {
-            // Invoke the timer callback.
-            assert(timer->m_callback);
-            timer->m_callback(timer, timer->m_param);
-            
-            switch (timer->m_mode)
+            ar_list_node_t * timerNode = g_ar.activeTimers;
+            bool handledTimer = false;
+            while (timerNode)
             {
-                case kArOneShotTimer:
-                    // Stop a one shot timer after it has fired.
-                    timer->stop();
+                ar_timer_t * timer = reinterpret_cast<ar_timer_t *>(timerNode->m_obj);
+                assert(timer);
+                
+                if (timer->m_wakeupTime > g_ar.tickCount)
+                {
                     break;
-                    
-                case kArPeriodicTimer:
-                    // Restart a periodic timer.
-                    timer->start();
-                    break;
-            }
+                }
+                
+                // Invoke the timer callback.
+                assert(timer->m_callback);
+                timer->m_callback(timer, timer->m_param);
             
-            handledTimer = true;
-            timer = timer->m_next;
-        }
+                switch (timer->m_mode)
+                {
+                    case kArOneShotTimer:
+                        // Stop a one shot timer after it has fired.
+                        ar_timer_stop(timer);
+                        break;
+                    
+                    case kArPeriodicTimer:
+                        // Restart a periodic timer.
+                        ar_timer_start(timer);
+                        break;
+                }
+            
+                handledTimer = true;
+                timerNode = timerNode->m_next;
+            }
         
-        // If we handled any timers, we need to set our priority back to the normal idle thread
-        // priority. The tick handler will have raised our priority to the max in order to handle
-        // the expired timers.
-        if (handledTimer)
-        {
-            ar_thread_set_priority(&s_idleThread, 0);
+            // If we handled any timers, we need to set our priority back to the normal idle thread
+            // priority. The tick handler will have raised our priority to the max in order to handle
+            // the expired timers.
+            if (handledTimer)
+            {
+                ar_thread_set_priority(&g_ar.idleThread, 0);
+            }
         }
         
         // Compute system load.
@@ -172,7 +185,7 @@ void idle_entry(void * param)
                     skipped += diff - 1;
                 }
                 
-                s_systemLoad = skipped;
+                g_ar.systemLoad = skipped;
                 
                 // start over counting
                 if (diff - 1 > s)
@@ -226,12 +239,12 @@ void ar_kernel_run(void)
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
-    ar_thread_create(&s_idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
-    s_idleThread.m_priority = 0;
-    ar_thread_resume(&s_idleThread);
+    ar_thread_create(&g_ar.idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
+    g_ar.idleThread.m_priority = 0;
+    ar_thread_resume(&g_ar.idleThread);
     
     // Set up system tick timer
-    ar_port_init_timer_interrupt();
+    ar_port_init_tick_timer();
     
     ar_port_init_system();
     
