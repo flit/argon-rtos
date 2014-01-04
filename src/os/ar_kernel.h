@@ -33,136 +33,17 @@
  * @ingroup ar
  */
 
-#if !defined(_AR_KERNEL_H_)
-#define _AR_KERNEL_H_
+#if !defined(_AR_KERNELX_H_)
+#define _AR_KERNELX_H_
 
-#include "ar_port.h"
-
-//! @addtogroup ar
-//! @{
-
-extern "C" {
-void * ar_yield(void * topOfStack);
-void ar_periodic_timer(void);
-}
-
-//! @}
+#include "ar_c_api.h"
 
 //! @brief The Argon RTOS namespace.
 namespace Ar {
 
-//! @addtogroup ar
-//! @{
-
-class Thread;
-
-//------------------------------------------------------------------------------
-// Definitions
-//------------------------------------------------------------------------------
-
-#define AR_GLOBAL_OBJECT_LISTS (0)
-
-//! @brief Timeout constants.
-//!
-//! @ingroup ar
-enum _ar_timeouts
-{
-    //! Return immediately if a resource cannot be acquired.
-    kNoTimeout = 0,
-    
-    //! Pass this value to wait forever to acquire a resource.
-    kInfiniteTimeout = 0xffffffffL
-};
-
-//! @brief Ar microkernel error codes.
-//!
-//! @ingroup ar
-enum _ar_errors
-{
-    //! Operation was successful.
-    kSuccess = 0,
-    
-    //! Timeout while blocked on an object.
-    kTimeoutError,
-    
-    //! An object was deleted while a thread was blocked on it. This may be
-    //! a semaphore, mutex, or queue.
-    kObjectDeletedError,
-    
-    //! The queue is at maximum capacity and cannot accept more elements.
-    kQueueFullError,
-    
-    //! No elements are in the queue.
-    kQueueEmptyError,
-    
-    //! The requested thread priority is invalid.
-    kInvalidPriorityError,
-    
-    //! The thread's stack size is too small.
-    kStackSizeTooSmallError,
-    
-    //! The requested operation cannot be performed from interrupt context.
-    kNotFromInterruptError,
-    
-    //! The caller is not the owning thread.
-    kNotOwnerError,
-    
-    //! The mutex is already unlocked.
-    kAlreadyUnlockedError
-};
-
-//! @}
-
 //------------------------------------------------------------------------------
 // Classes
 //------------------------------------------------------------------------------
-
-/*!
- * @brief Base class for Ar classes that have a name associated with them.
- *
- * @ingroup ar
- *
- * This class provides functionality required by all Ar RTOS classes. It keeps a name associated
- * with each object instance. Having one copy of the name handling code makes it easy to disable in
- * order to reduce memory usage, if necessary.
- *
- * For debug builds, this class manages a linked list of object instances.
- */
-class NamedObject
-{
-public:
-    //! @brief Default constructor.
-    NamedObject() {}
-    
-    //! @brief Constructor.
-    NamedObject(const char * name) { init(name); }
-    
-    //! @brief Destructor.
-    virtual ~NamedObject() {}
-    
-    //! @brief Initialiser.
-    //!
-    //! @param name The object's name. The pointer to the name is saved in the object.
-    //!
-    //! @retval kSuccess Initialisation was successful.
-    status_t init(const char * name);
-    
-    //! @brief Access the object's name.
-    const char * getName() const { return m_name; }
-    
-protected:
-    const char * m_name;    //!< The object's name.
-
-#if AR_GLOBAL_OBJECT_LISTS
-    NamedObject * m_nextCreated;    //!< Linked list node.
-    
-    //! \brief Add to linked list of all created objects of a type.
-    void addToCreatedList(NamedObject * & listHead);
-
-    //! \brief Remove from linked list of all objects.
-    void removeFromCreatedList(NamedObject * & listHead);
-#endif // AR_GLOBAL_OBJECT_LISTS
-};
 
 /*!
  * @brief Preemptive thread class.
@@ -216,35 +97,20 @@ protected:
  *      };
  * @endcode
  */
-class Thread : public NamedObject
+class Thread : public _ar_thread
 {
-public:
-    //! Potential thread states.
-    typedef enum _thread_state {
-        kThreadUnknown,     //!< Hopefully a thread is never in this state.
-        kThreadSuspended,   //!< Thread is not eligible for execution.
-        kThreadReady,       //!< Thread is eligible to be run.
-        kThreadRunning,     //!< The thread is currently running.
-        kThreadBlocked,     //!< The thread is blocked on another object.
-        kThreadSleeping,    //!< Thread is sleeping.
-        kThreadDone         //!< Thread has exited.
-    } thread_state_t;
-
-    //! Prototype for the thread entry point.
-    typedef void (*thread_entry_t)(void * param);
-
 public:
     //! @brief Constructor.
     Thread() {}
     
     //! @brief Constructor.
-    Thread(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    Thread(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
         init(name, entry, param, stack, stackSize, priority);
     }
     
     //! @brief Destructor.
-    virtual ~Thread();
+    virtual ~Thread() { ar_thread_delete(this); }
     
     //! @name Thread init and cleanup
     //@{
@@ -265,8 +131,14 @@ public:
     //!     reserved for the idle thread.
     //!
     //! @return kSuccess The thread was initialised without error.
-    status_t init(const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+    status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    {
+        return ar_thread_create(this, name, entry, param, stack, stackSize, priority);
+    }
     //@}
+    
+    //! @brief Get the thread's name.
+    const char * getName() const { return m_name; }
 
     //! @name Thread state
     //!
@@ -282,7 +154,7 @@ public:
     //! suspended.
     //!
     //! @todo Deal with all thread states properly.
-    void suspend();
+    void suspend() { ar_thread_suspend(this); }
 
     //! @brief Make the thread eligible for execution.
     //!
@@ -296,31 +168,18 @@ public:
     //! the ready list.
     //!
     //! @todo Deal with all thread states properly.
-    void resume();
+    void resume() { ar_thread_resume(this); }
 
     //! @brief Return the current state of the thread.
-    thread_state_t getState() const { return m_state; }
+    ar_thread_state_t getState() const { return m_state; }
 
     //! @brief Put the current thread to sleep for a certain amount of time.
     //!
     //! Does nothing if Ar is not running.
     //!
-    //! @param ticks The number of operating system ticks to sleep the calling thread. A sleep time
+    //! @param ticks The number of milliseconds to sleep the calling thread. A sleep time
     //!     of 0 is ignored.
-    static void sleep(unsigned ticks);
-    
-    //! @brief Block the current thread until this thread completes.
-    //!
-    //! The thread of the caller is put to sleep for as long as the thread referenced by this thread
-    //! object is running. Once this thread completes and its state is kThreadDone, the caller's
-    //! thread is woken and this method call returns. If this thread takes longer than @a timeout to
-    //! finish running, then #kTimeoutError is returned.
-    //!
-    //! @param timeout Timeout value in operating system ticks.
-    //!
-    //! @retval kSuccess
-    //! @retval kTimeoutError
-    status_t join(uint32_t timeout=kInfiniteTimeout);
+    static void sleep(unsigned milliseconds) { ar_thread_sleep(milliseconds); }
     //@}
 
     //! @name Thread priority
@@ -343,7 +202,7 @@ public:
     //!     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
     //!
     //! @retval kInvalidPriorityError
-    status_t setPriority(uint8_t priority);
+    status_t setPriority(uint8_t priority) { return ar_thread_set_priority(this, priority); }
     //@}
 
     //! @name Accessors
@@ -351,100 +210,14 @@ public:
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return s_currentThread; }
+    static Thread * getCurrent() { return reinterpret_cast<Thread *>(ar_thread_get_current()); }
     //@}
     
 protected:
     
     //! @brief Virtual thread entry point.
-    virtual void threadEntry(void * param);
+//     virtual void threadEntry(void * param);
 
-protected:
-    
-    volatile uint8_t * m_stackPointer; //!< Current stack pointer.
-    uint8_t * m_stackTop;  //!< Original top of stack.
-    unsigned m_stackSize;   //!< Stack size in bytes.
-    uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
-    thread_state_t m_state; //!< Current thread state.
-    thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-    Thread * m_next;    //!< Linked list node.
-    Thread * m_nextBlocked; //!< Linked list node for blocked threads.
-    uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
-    status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
-
-    static Thread * s_readyList;    //!< Head of a linked list of ready threads.
-    static Thread * s_suspendedList;    //!< Head of linked list of suspended threads.
-    static Thread * s_sleepingList; //!< Head of linked list of sleeping threads.
-    static Thread * s_currentThread;    //!< The currently running thread.
-    
-protected:
-    //
-    // Protected member functions
-    //
-    
-    //! @name Thread setup
-    //!
-    //! Utilities for getting a thread ready to run.
-    //@{
-    //! @brief Fill the thread's stack with it's initial contents.
-    void prepareStack(void * param);
-    //@}
-
-    //! @name List management
-    //!
-    //! Methods to manipulate the thread object as a linked list node.
-    //@{
-    //! @brief Utility to add this thread to a null terminated linked list.
-    void addToList(Thread * & listHead);
-
-    //! @brief Removes this thread from a linked list.
-    void removeFromList(Thread * & listHead);
-    
-    //! @brief Utility to add this thread to a null terminated linked list.
-    void addToBlockedList(Thread * & listHead);
-
-    //! @brief Removes this thread from a linked list.
-    void removeFromBlockedList(Thread * & listHead);
-    //@}
-
-    //! @name Blocking
-    //!
-    //! Methods to manage the blocking and unblocking of a thread on some
-    //! sort of resource. These methods are called by friend classes such
-    //! as Queue or Mutex.
-    //@{
-    //! @brief Blocks the thread with a timeout.
-    void block(Thread * & blockedList, uint32_t timeout);
-    
-    //! @brief Restores a thread to ready status.
-    void unblockWithStatus(Thread * & blockedList, status_t unblockStatus);
-    //@}
-    
-    //
-    // Protected static member functions
-    //
-    
-    //! @name Operating system internals
-    //!
-    //! Functions that implement the low-level parts of the operating system.
-    //@{
-    //! @brief Bumps the system tick count and updates sleeping threads.
-    static bool incrementTickCount(unsigned ticks);
-    
-    //! @brief Selects the next thread to run.
-    static void scheduler();
-
-    //! @brief Function to wrap the thread entry point.
-    static void thread_wrapper(Thread * thread, void * param);
-    //@}
-
-    // Friends have access to all protected members for efficiency.
-    friend class Kernel;
-    friend class Semaphore;     //!< Needs access to protected member functions.
-    friend class Mutex;     //!< Needs access to protected member functions.
-    friend class Queue; //!< Needs access to protected member functions.
-    friend class Timer;
-    
 private:
     //! @brief The copy constructor is disabled for thread objects.
     Thread(const Thread & other) {}
@@ -498,12 +271,12 @@ class ThreadWithStack : public Thread
 public:
     ThreadWithStack() {}
     
-    ThreadWithStack(const char * name, thread_entry_t entry, void * param, uint8_t priority)
+    ThreadWithStack(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         Thread::init(name, entry, param, m_stack, S, priority);
     }
     
-    status_t init(const char * name, thread_entry_t entry, void * param, uint8_t priority)
+    status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
     }
@@ -548,7 +321,7 @@ protected:
  *
  * @see LockHolder
  */
-class Semaphore : public NamedObject
+class Semaphore : public _ar_semaphore
 {
 public:
     //! @brief Default constructor.
@@ -569,13 +342,16 @@ public:
     //!     calls to get() to succeed.
     //!
     //! @retval kSuccess Semaphore initialised successfully.
-    status_t init(const char * name, unsigned count=1);
+    status_t init(const char * name, unsigned count=1) { return ar_semaphore_create(this, name, count); }
 
     //! @brief Destructor.
     //!
     //! Any threads on the blocked list will be unblocked immediately. Their return status  from the
     //! get() method will be #kObjectDeletedError.
-    virtual ~Semaphore();
+    virtual ~Semaphore() { ar_semaphore_delete(this); }
+
+    //! @brief Get the semaphore's name.
+    const char * getName() const { return m_name; }
 
     //! @brief Acquire the semaphore.
     //!
@@ -600,21 +376,18 @@ public:
     //!     blocked on it.
     //! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
     //!     context.
-    virtual status_t get(uint32_t timeout=kInfiniteTimeout);
+    virtual status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
 
     //! @brief Release the semaphore.
     //!
     //! The semaphore count is incremented.
     //!
     //! @note This call is safe from interrupt context.
-    virtual status_t put();
+    virtual status_t put() { return ar_semaphore_put(this); }
 
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
 
-protected:
-    volatile unsigned m_count;  //!< Current semaphore count. Value of 0 means the semaphore is owned.
-    Thread * m_blockedList; //!< Linked list of threads blocked on this semaphore.
 };
 
 /*!
@@ -633,7 +406,7 @@ public:
     //!
     //! Like the Semaphore::get() method, this constructor takes an optional timeout value which
     //! defaults to never timeout.
-    LockHolder(Semaphore & sem, uint32_t timeout=kInfiniteTimeout)
+    LockHolder(Semaphore & sem, uint32_t timeout=kArInfiniteTimeout)
     :   m_sem(sem)
     {
         m_sem.get(timeout);
@@ -660,7 +433,7 @@ protected:
  * Because Mutex is a sublcass of Semaphore, it can be used anywhere that accepts a Semaphore
  * object. For instance, LockHolder works equally well for a Mutex.
  */
-class Mutex : public Semaphore
+class Mutex : public _ar_mutex
 {
 public:
     //! @brief Default constructor.
@@ -679,11 +452,14 @@ public:
     //! @param name The name of the mutex.
     //!
     //! @retval SUCCCESS
-    status_t init(const char * name);
+    status_t init(const char * name) { return ar_mutex_create(this, name); }
 
     //! @brief Cleanup.
-    virtual ~Mutex();
+    virtual ~Mutex() { ar_mutex_delete(this); }
     
+    //! @brief Get the mutex's name.
+    const char * getName() const { return m_sem.m_name; }
+
     //! @brief Lock the mutex.
     //!
     //! If the thread that already owns the mutex calls get() more than once, a count is incremented
@@ -702,7 +478,7 @@ public:
     //!     obtained.
     //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
-    virtual status_t get(uint32_t timeout=kInfiniteTimeout);
+    virtual status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
     
     //! @brief Unlock the mutex.
     //!
@@ -713,15 +489,11 @@ public:
     //!
     //! @retval kAlreadyUnlockedError The mutex is not locked.
     //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
-    virtual status_t put();
+    virtual status_t put() { return ar_mutex_put(this); }
     
     //! @brief Returns the current owning thread, if there is one.
-    Thread * getOwner() { return (Thread *)m_owner; }
+    ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }
 
-protected:
-    volatile Thread * m_owner;  //!< Current owner thread of the mutex.
-    volatile unsigned m_ownerLockCount; //!< Number of times the owner thread has locked the mutex.
-    uint8_t m_originalPriority; //!< Original priority of the owner thread before its priority was raised.
 };
 
 /*!
@@ -729,7 +501,7 @@ protected:
  *
  * @ingroup ar
  */
-class Queue : public NamedObject
+class Queue : public _ar_queue
 {
 public:
     //! @brief Default constructor.
@@ -750,11 +522,17 @@ public:
     //! @param capacity The number of elements that the buffer pointed to by @a storage will hold.
     //!
     //! @retval kSuccess The queue was initialised.
-    status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity);
+    status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
+    {
+        return ar_queue_create(this, name, storage, elementSize, capacity);
+    }
     
     //! @brief Queue cleanup.
-    virtual ~Queue();
+    virtual ~Queue() { ar_queue_delete(this); }
     
+    //! @brief Get the queue's name.
+    const char * getName() const { return m_name; }
+
     //! @brief Add an item to the queue.
     //!
     //! The caller will block if the queue is full.
@@ -768,7 +546,7 @@ public:
     //!
     //! @retval kSuccess
     //! @retval kQueueFullError
-    status_t send(const void * element, uint32_t timeout=kInfiniteTimeout);
+    status_t send(const void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_send(this, element, timeout); }
 
     //! @brief Remove an item from the queue.
     //!
@@ -780,7 +558,7 @@ public:
     //!
     //! @retval kSuccess
     //! @retval kQueueEmptyError
-    status_t receive(void * element, uint32_t timeout=kInfiniteTimeout);
+    status_t receive(void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_receive(this, element, timeout); }
     
     //! @brief Returns whether the queue is currently empty.
     bool isEmpty() const { return m_count == 0; }
@@ -788,15 +566,6 @@ public:
     //! @brief Returns the current number of elements in the queue.
     unsigned getCount() const { return m_count; }
 
-protected:
-    uint8_t * m_elements;   //!< Pointer to element storage.
-    unsigned m_elementSize; //!< Number of bytes occupied by each element.
-    unsigned m_capacity;    //!< Maximum number of elements the queue can hold.
-    unsigned m_head;    //!< Index of queue head.
-    unsigned m_tail;    //!< Index of queue tail.
-    unsigned m_count;   //!< Current number of elements in the queue.
-    Thread * m_sendBlockedList; //!< Linked list of threads blocked waiting to send.
-    Thread * m_receiveBlockedList;  //!< Linked list of threads blocked waiting to receive.
 };
 
 /*!
@@ -850,13 +619,13 @@ public:
     }
     
     //! @copydoc Queue::send()
-    status_t send(T element, uint32_t timeout=kInfiniteTimeout)
+    status_t send(T element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::send((const void *)&element, timeout);
     }
     
     //! @copydoc Queue::receive()
-    status_t receive(T * element, uint32_t timeout=kInfiniteTimeout)
+    status_t receive(T * element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::receive((void *)element, timeout);
     }
@@ -866,7 +635,7 @@ public:
     //! @param[out] resultStatus The status of the receive operation is placed here.
     //!     May be NULL, in which case no status is returned.
     //! @param timeout Maximum time in ticks to wait for a queue element.
-    T receive(uint32_t timeout=kInfiniteTimeout, status_t * resultStatus=NULL)
+    T receive(uint32_t timeout=kArInfiniteTimeout, status_t * resultStatus=NULL)
     {
         T element;
         status_t status = Queue::receive((void *)&element, timeout);
@@ -886,227 +655,47 @@ protected:
  *
  * @ingroup ar
  */
-class Timer : public NamedObject
+class Timer : public _ar_timer
 {
 public:
-    
-    //! @brief Modes of operation for timers.
-    typedef enum _timer_modes {
-        kOneShotTimer,      //!< Timer fires a single time.
-        kPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
-    } timer_mode_t;
-    
-    //! @brief Callback routine for timer expiration.
-    typedef void (*timer_entry_t)(Timer * timer, void * param);
     
     //! @brief Default constructor.
     Timer() {}
     
     //! @brief Constructor.
-    Timer(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay)
+    Timer(const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
     {
         init(name, callback, param, timerMode, delay);
     }
     
     //! @brief Destructor.
-    virtual ~Timer();
+    virtual ~Timer() { ar_timer_delete(this); }
     
     //! @brief Initialize the timer.
-    void init(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay);
+    status_t init(const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+    {
+        return ar_timer_create(this, name, callback, param, timerMode, delay);
+    }
     
+    //! @brief Get the timer's name.
+    const char * getName() const { return m_name; }
+
     //! @brief Start the timer running.
-    void start();
-    
-    //! @brief Start the timer running with a new delay value.
-    void start(uint32_t newDelay);
+    void start() { ar_timer_start(this); }
     
     //! @brief Stop the timer.
-    void stop();
+    void stop() { ar_timer_stop(this); }
     
     //! @brief Returns whether the timer is currently running.
     bool isActive() const { return m_isActive; }
     
     //! @brief Adjust the timer's delay.
-    void setDelay(uint32_t delay);
+    void setDelay(uint32_t delay) { ar_timer_set_delay(this, delay); }
 
     //! @brief Get the current delay for the timer.
     uint32_t getDelay() const { return m_delay; }
     
-protected:
-    
-    Timer * m_next;             //!< Next pointer for the active timer linked list.
-    timer_entry_t m_callback;   //!< Timer expiration callback.
-    void * m_param;             //!< Arbitrary parameter for the callback.
-    timer_mode_t m_mode;        //!< One-shot or periodic mode.
-    uint32_t m_delay;           //!< Delay in ticks.
-    uint32_t m_wakeupTime;      //!< Expiration time in ticks.
-    bool m_isActive;            //!< Whether the timer is running and on the active timers list.
-    
-    static Timer * s_activeTimers;  //!< List of currently running timers. Sorted ascending by wakup time.
-
-    //! @name List management
-    //@{
-    //! @brief Add the timer to the active list.
-    void addToList();
-    
-    //! @brief Remove the timer from the active list.
-    void removeFromList();
-    //@}
-    
-    friend class Thread;
-    friend class Kernel;
-    
 };
-
-/*!
- * @brief RTOS core.
- *
- * @ingroup ar
- */
-class Kernel
-{
-public:
-    
-    //! @name RTOS control
-    //@{
-    //! @brief Enables the tick timer and switches to a ready thread.
-    //!
-    //! The system idle thread is created here. Its priority is set to 0, the lowest
-    //! possible priority. The idle thread will run when there are no other ready threads.
-    //!
-    //! At least one user thread must have been created and resumed before
-    //! calling run(). Usually this will be an initialisation thread that itself
-    //! creates the other threads of the application.
-    //!
-    //! @pre Interrupts must not be enabled prior to calling this routine.
-    //!
-    //! @note Control will never return from this method.
-    static void run();
-    //@}
-
-    //! @name Accessors
-    //@{
-    //! @brief Returns the current tick count.
-    static uint32_t getTickCount() { return s_tickCount; }
-    
-    //! @brief Returns the current system load average.
-    static unsigned getSystemLoad() { return s_systemLoad; }
-    
-    //! @brief Whether the scheduler is running.
-    static bool isRunning() { return s_isRunning; }
-    //@}
-    
-    //! @name Interrupt handling
-    //!
-    //! Routines to inform the kernel of user interrupt handler execution.
-    //@{
-    //! @brief Inform the kernel that an interrupt handler is running.
-    static void enterInterrupt();
-    
-    //! @brief Inform the kernel that an interrupt handler is exiting.
-    static void exitInterrupt();
-    //@}
-
-    //! @brief Handles the periodic timer tick interrupt.
-    static void periodicTimerIsr();
-
-    //! @brief Handles the software interrupt to invoke the scheduler.
-    static uint32_t yieldIsr(uint32_t topOfStack);
-
-protected:
-
-    static bool s_isRunning;    //!< True if the kernel has been started.
-    static volatile uint32_t s_tickCount;   //!< Current tick count.
-    static volatile uint32_t s_irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
-    static volatile unsigned s_systemLoad;   //!< Percent of system load from 0-100.
-
-    //! @name Idle thread members
-    //@{
-    //! The stack for the idle thread.
-    static uint8_t s_idleThreadStack[];
-    
-    //! The lowest priority thread in the system. Executes only when no other
-    //! threads are ready.
-    static Thread s_idleThread;
-    //@}
-    
-    static uint32_t getIrqDepth() { return s_irqDepth; }
-
-    //! @brief Force entry into the scheduler.
-    static void enterScheduler();
-    
-    //! @brief Sets up the periodic system tick timer.
-    static void initTimerInterrupt();
-    
-    //! @brief
-    static void initSystem();
-
-    //! @brief Idle thread entry point.
-    static void idle_entry(void * param);
-
-    friend class Thread;
-    friend class Semaphore;
-    friend class Queue;
-    friend class Timer;
-    friend class InterruptWrapper;
-
-private:
-
-    //! @brief The constructor is private so nobody can create an instance.
-    Kernel() {}
-
-    //! @brief The copy constructor is disabled by being private.
-    Kernel(const Kernel & other) {}
-    
-};
-
-//! @brief %Time related utilities.
-namespace Time {
-
-//! @brief Get the number of milliseconds per tick.
-//!
-//! @ingroup ar
-uint32_t getMillisecondsPerTick();
-
-//! @name Time conversion
-//@{
-//! @brief Convert ticks to milliseconds.
-//!
-//! @ingroup ar
-inline uint32_t ticksToMilliseconds(uint32_t ticks) { return ticks * getMillisecondsPerTick(); }
-
-//! @brief Convert milliseconds to ticks.
-//!
-//! @ingroup ar
-inline uint32_t millisecondsToTicks(uint32_t millisecs) { return millisecs / getMillisecondsPerTick(); }
-//@}
-
-} // namespace Time
-
-//! @brief %Atomic operations.
-namespace Atomic {
-
-//! @brief %Atomic add.
-//!
-//! @ingroup ar
-void add(uint32_t * value, uint32_t delta);
-
-//! @brief %Atomic increment.
-//!
-//! @ingroup ar
-inline void increment(uint32_t * value) { add(value, 1); }
-
-//! @brief %Atomic decrement.
-//!
-//! @ingroup ar
-inline void decrement(uint32_t * value) { add(value, -1); }
-
-//! @brief %Atomic compare-and-swap operation.
-//!
-//! @ingroup ar
-bool compareAndSwap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
-
-} // namespace Atomic
 
 /*!
  * @brief Helper class for managing user interrupt handlers.
@@ -1116,30 +705,12 @@ class InterruptWrapper
 public:
 
     //! @brief Increments interrupt depth.
-    InterruptWrapper() { Kernel::enterInterrupt(); }
+    InterruptWrapper() { ar_kernel_enter_interrupt(); }
     
     //! @brief Decrements interrupt depth.
-    ~InterruptWrapper() { Kernel::exitInterrupt(); }
+    ~InterruptWrapper() { ar_kernel_exit_interrupt(); }
     
 };
-
-#if AR_GLOBAL_OBJECT_LISTS
-
-/*!
- * @brief Linked lists of each Ar object type.
- */
-struct ObjectLists
-{
-    Thread * m_threads;
-    Semaphore * m_semaphores;
-    Mutex * m_mutexes;
-    Queue * m_queues;
-};
-
-//! @brief Global containing lists of all Ar objects.
-extern ObjectLists g_allObjects;
-
-#endif // AR_GLOBAL_OBJECT_LISTS
 
 } // namespace Ar
 

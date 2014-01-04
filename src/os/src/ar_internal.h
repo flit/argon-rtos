@@ -51,22 +51,23 @@
  */
 typedef struct _ar_kernel {
     ar_thread_t * currentThread;    //!< The currently running thread.
-    ar_list_t readyList;
-    ar_list_t suspendedList;
-    ar_list_t sleepingList;
-    ar_list_t activeTimers;
-    bool isRunning;    //!< True if the kernel has been started.
-    volatile uint32_t tickCount;   //!< Current tick count.
-    volatile uint32_t irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
-    volatile unsigned systemLoad;   //!< Percent of system load from 0-100.
-    ar_thread_t idleThread;
+    ar_list_t readyList;            //!< List of threads ready to run.
+    ar_list_t suspendedList;        //!< List of suspended threads.
+    ar_list_t sleepingList;         //!< List of sleeping threads.
+    ar_list_t activeTimers;         //!< List of running timers
+    bool isRunning;                 //!< True if the kernel has been started.
+    volatile uint32_t tickCount;    //!< Current tick count.
+    volatile uint32_t irqDepth;     //!< Current level of nested IRQs, or 0 if in user mode.
+    volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
+    ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
 #if AR_GLOBAL_OBJECT_LISTS
+    //! Contains linked lists of all the various Ar object types that have been created during runtime.
     struct {
-        ar_list_t threads;
-        ar_list_t semaphores;
-        ar_list_t mutexes;
-        ar_list_t queues;
-        ar_list_t timers;
+        ar_list_t threads;          //!< All existing threads.
+        ar_list_t semaphores;       //!< All existing semaphores.
+        ar_list_t mutexes;          //!< All existing mutexes.
+        ar_list_t queues;           //!< All existing queues.
+        ar_list_t timers;           //!< All existing timers.
     } allObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 } ar_kernel_t;
@@ -87,12 +88,11 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
 bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler(void);
 void ar_kernel_scheduler(void);
-void ar_kernel_enter_interrupt();
-void ar_kernel_exit_interrupt();
 
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
 
 bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b);
+bool ar_timer_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b);
 
 #if defined(__cplusplus)
 extern "C" {

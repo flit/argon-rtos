@@ -40,15 +40,6 @@
 using namespace Ar;
 
 //------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-// Thread * Thread::s_readyList = NULL;
-// Thread * Thread::s_suspendedList = NULL;
-// Thread * Thread::s_sleepingList = NULL;
-// Thread * Thread::s_currentThread = NULL;
-
-//------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
@@ -68,7 +59,11 @@ void THREAD_STACK_OVERFLOW_DETECTED()
 status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
     // Assertions.
-    if (priority == 0)
+    if (!thread)
+    {
+        return kArInvalidParameterError;
+    }
+    if (priority < kArMinThreadPriority)
     {
         return kArInvalidPriorityError;
     }
@@ -115,6 +110,11 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
 // See ar_kernel.h for documentation of this function.
 status_t ar_thread_delete(ar_thread_t * thread)
 {
+    if (!thread)
+    {
+        return kArInvalidParameterError;
+    }
+
     if (thread->m_state != kArThreadDone)
     {
         // Remove from ready list if it's on there, and switch to another thread
@@ -138,6 +138,11 @@ status_t ar_thread_delete(ar_thread_t * thread)
 // See ar_kernel.h for documentation of this function.
 status_t ar_thread_resume(ar_thread_t * thread)
 {
+    if (!thread)
+    {
+        return kArInvalidParameterError;
+    }
+
     {
         IrqDisableAndRestore disableIrq;
     
@@ -166,6 +171,11 @@ status_t ar_thread_resume(ar_thread_t * thread)
 // See ar_kernel.h for documentation of this function.
 status_t ar_thread_suspend(ar_thread_t * thread)
 {
+    if (!thread)
+    {
+        return kArInvalidParameterError;
+    }
+
     {
         IrqDisableAndRestore disableIrq;
     
@@ -194,6 +204,11 @@ status_t ar_thread_suspend(ar_thread_t * thread)
 // See ar_kernel.h for documentation of this function.
 status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
 {
+    if (!thread)
+    {
+        return kArInvalidParameterError;
+    }
+
     if (priority == 0 && thread != &g_ar.idleThread)
     {
         return kArInvalidPriorityError;
@@ -338,7 +353,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
         {
             // Raise the idle thread priority to maximum so it can execute the timer.
             // The idle thread will reduce its own priority when done.
-            ar_thread_set_priority(&g_ar.idleThread, 255);
+            ar_thread_set_priority(&g_ar.idleThread, kArMaxThreadPriority);
         }
     }
     
@@ -535,7 +550,6 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
     assert(timeout != 0);
     
     // Remove this thread from the ready list.
-//     ar_thread_list_remove(g_ar.readyList, thread);
     g_ar.readyList.remove(&m_threadNode);
     
     // Update its state.
@@ -543,14 +557,12 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
     m_unblockStatus = kArSuccess;
     
     // Add to blocked list.
-//     ar_list_add(blockedList, &thread->m_blockedNode);
     blockedList.add(&m_blockedNode);
     
     // If a valid timeout was given, put the thread on the sleeping list.
     if (timeout != kArInfiniteTimeout)
     {
         m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(timeout);
-//         ar_thread_list_add(g_ar.sleepingList, thread);
         g_ar.sleepingList.add(&m_threadNode);
     }
     else
@@ -579,19 +591,31 @@ void _ar_thread::unblockWithStatus(ar_list_t & blockedList, status_t unblockStat
     // the thread is not on that list.
     if (m_wakeupTime && g_ar.sleepingList.m_head)
     {
-//         ar_thread_list_remove(g_ar.sleepingList, thread);
         g_ar.sleepingList.remove(&m_threadNode);
     }
     
     // Remove this thread from the blocked list.
-//     ar_list_remove(blockedList, &thread->m_blockedNode);
     blockedList.remove(&m_blockedNode);
 
     // Put the unblocked thread back onto the ready list.
     m_state = kArThreadReady;
     m_unblockStatus = unblockStatus;
-//     ar_thread_list_add(g_ar.readyList, thread);
     g_ar.readyList.add(&m_threadNode);
+}
+
+ar_thread_state_t ar_thread_get_state(ar_thread_t * thread)
+{
+    return thread ? thread->m_state : kArThreadUnknown;
+}
+
+ar_thread_t * ar_thread_get_current(void)
+{
+    return g_ar.currentThread;
+}
+
+const char * ar_thread_get_name(ar_thread_t * thread)
+{
+    return thread ? thread->m_name : NULL;
 }
 
 //------------------------------------------------------------------------------

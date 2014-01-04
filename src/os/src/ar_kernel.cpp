@@ -57,40 +57,17 @@ using namespace Ar;
 #if !defined(AR_IDLE_THREAD_STACK_SIZE)
     //! Size in bytes of the idle thread's stack.
     #define AR_IDLE_THREAD_STACK_SIZE 256 
-    //(sizeof(ThreadContext) + 32)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
 
+//! Global kernel state.
 ar_kernel_t g_ar = {0};
 
 //! The stack for the idle thread.
 static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
-
-// bool Kernel::s_isRunning = false;
-// volatile uint32_t Kernel::s_tickCount = 0;
-// volatile uint32_t Kernel::s_irqDepth = 0;
-
-//! @internal
-//!
-//! The volatile is necessary so that the IAR optimizer doesn't remove the entire load
-//! calculation loop of the idle_entry() function.
-// volatile unsigned Kernel::s_systemLoad = 0;
-
-// uint8_t Kernel::s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
-
-//! The lowest priority thread in the system. Executes only when no other
-//! threads are ready.
-// Thread Kernel::s_idleThread;
-
-// #if AR_GLOBAL_OBJECT_LISTS
-// //! This global contains linked lists of all the various Ar object
-// //! types that have been created during runtime. This makes it much
-// //! easier to examine objects of interest.
-// ObjectLists g_allObjects;
-// #endif // AR_GLOBAL_OBJECT_LISTS
 
 //------------------------------------------------------------------------------
 // Code
@@ -160,7 +137,7 @@ void idle_entry(void * param)
             // the expired timers.
             if (handledTimer)
             {
-                ar_thread_set_priority(&g_ar.idleThread, 0);
+                ar_thread_set_priority(&g_ar.idleThread, kArIdleThreadPriority);
             }
         }
         

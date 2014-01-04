@@ -37,6 +37,7 @@
 #define _AR_KERNEL_H_
 
 #include "fsl_platform_common.h"
+#include "ar_port.h"
 
 //! @addtogroup ar
 //! @{
@@ -89,7 +90,13 @@ enum _ar_errors
     kArNotOwnerError,
     
     //! The mutex is already unlocked.
-    kArAlreadyUnlockedError
+    kArAlreadyUnlockedError,
+    
+    //! An invalid parameter value was passed to the function.
+    kArInvalidParameterError,
+    
+    //! The timer is not running.
+    kArTimerNotRunningError
 };
 
 //! Potential thread states.
@@ -106,6 +113,7 @@ typedef enum _ar_thread_state {
 //! Range of priorities for threads.
 enum _ar_thread_priorities
 {
+    kArIdleThreadPriority = 0,
     kArMinThreadPriority = 1,
     kArMaxThreadPriority = 255
 };
@@ -259,19 +267,22 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread);
 status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
 ar_thread_t * ar_thread_get_current(void);
 void ar_thread_sleep(uint32_t milliseconds);
+const char * ar_thread_get_name(ar_thread_t * thread);
 
 status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
 status_t ar_semaphore_delete(ar_semaphore_t * sem);
 status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout);
 status_t ar_semaphore_put(ar_semaphore_t * sem);
 uint32_t ar_semaphore_get_count(ar_semaphore_t * sem);
+const char * ar_semaphore_get_name(ar_semaphore_t * sem);
 
 status_t ar_mutex_create(ar_mutex_t * mutex, const char * name);
 status_t ar_mutex_delete(ar_mutex_t * mutex);
 status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
 status_t ar_mutex_put(ar_mutex_t * mutex);
-bool ar_sem_is_locked(ar_mutex_t * mutex);
-ar_thread_t * ar_sem_get_owner(ar_mutex_t * mutex);
+bool ar_mutex_is_locked(ar_mutex_t * mutex);
+ar_thread_t * ar_mutex_get_owner(ar_mutex_t * mutex);
+const char * ar_mutex_get_name(ar_mutex_t * mutex);
 
 status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity);
 status_t ar_queue_delete(ar_queue_t * queue);
@@ -279,6 +290,7 @@ status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeou
 status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout);
 bool ar_queue_is_empty(ar_queue_t * queue);
 uint32_t ar_queue_get_count(ar_queue_t * queue);
+const char * ar_queue_get_name(ar_queue_t * queue);
 
 status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
 status_t ar_timer_delete(ar_timer_t * timer);
@@ -287,11 +299,14 @@ status_t ar_timer_stop(ar_timer_t * timer);
 bool ar_timer_is_active(ar_timer_t * timer);
 status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t newDelay);
 uint32_t ar_timer_get_delay(ar_timer_t * timer);
+const char * ar_timer_get_name(ar_timer_t * timer);
 
 uint32_t ar_get_milliseconds_per_tick(void);
-uint32_t ar_ticks_to_milliseconds(uint32_t ticks);
-uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds);
+static inline uint32_t ar_ticks_to_milliseconds(uint32_t ticks) { return ticks * ar_get_milliseconds_per_tick(); }
+static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return milliseconds / ar_get_milliseconds_per_tick(); }
 
+void ar_kernel_enter_interrupt();
+void ar_kernel_exit_interrupt();
 
 //! @brief %Atomic add.
 void ar_atomic_add(uint32_t * value, int32_t delta);

@@ -39,6 +39,8 @@
 #include "fsl_platform_common.h"
 #include "fsl_device_registers.h"
 
+#if defined(__cplusplus)
+
 namespace Ar {
 
 //! @addtogroup ar_port
@@ -139,25 +141,25 @@ inline void _halt()
     asm volatile ("bkpt #0");
 }
 
+//! @}
+
+} // namespace Ar
+
+#endif // defined(__cplusplus)
+
 //! @brief Make the PendSV exception pending.
-inline void service_call()
+inline void ar_port_service_call()
 {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
-namespace Time {
+extern "C" inline uint32_t ar_get_milliseconds_per_tick();
 
 //! @brief Returns the number of milliseconds per tick.
-inline uint32_t getMillisecondsPerTick()
+inline uint32_t ar_get_milliseconds_per_tick()
 {
-    return kSchedulerQuanta_ms;
+    return Ar::kSchedulerQuanta_ms;
 }
-
-} // namespace Time
-
-//! @}
-
-} // namespace Ar
 
 #endif // _AR_PORT_H_
 //------------------------------------------------------------------------------

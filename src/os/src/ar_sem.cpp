@@ -45,9 +45,15 @@ using namespace Ar;
 // See ar_kernel.h for documentation of this function.
 status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count)
 {
+    if (!sem)
+    {
+        return kArInvalidParameterError;
+    }
+    
     memset(sem, 0, sizeof(ar_semaphore_t));
     sem->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     sem->m_count = count;
+    sem->m_createdNode.m_obj = sem;
 
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.semaphores.add(&sem->m_createdNode);
@@ -59,6 +65,11 @@ status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned c
 // See ar_kernel.h for documentation of this function.
 status_t ar_semaphore_delete(ar_semaphore_t * sem)
 {
+    if (!sem)
+    {
+        return kArInvalidParameterError;
+    }
+    
     // Unblock all threads blocked on this semaphore.
     while (sem->m_blockedList.m_head)
     {
@@ -75,6 +86,11 @@ status_t ar_semaphore_delete(ar_semaphore_t * sem)
 // See ar_kernel.h for documentation of this function.
 status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 {
+    if (!sem)
+    {
+        return kArInvalidParameterError;
+    }
+    
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
     if (g_ar.irqDepth > 0 && timeout != 0)
     {
@@ -123,6 +139,11 @@ status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 // See ar_kernel.h for documentation of this function.
 status_t ar_semaphore_put(ar_semaphore_t * sem)
 {
+    if (!sem)
+    {
+        return kArInvalidParameterError;
+    }
+    
     IrqDisableAndRestore disableIrq;
 
     // Increment count.
@@ -145,6 +166,17 @@ status_t ar_semaphore_put(ar_semaphore_t * sem)
     }
     
     return kArSuccess;
+}
+
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_semaphore_get_count(ar_semaphore_t * sem)
+{
+    return sem ? sem->m_count : 0;
+}
+
+const char * ar_semaphore_get_name(ar_semaphore_t * sem)
+{
+    return sem ? sem->m_name : NULL;
 }
 
 //------------------------------------------------------------------------------
