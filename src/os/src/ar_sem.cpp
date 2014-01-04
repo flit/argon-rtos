@@ -32,7 +32,7 @@
  * @brief Source for Ar microkernel semaphores.
  */
 
-#include "os/ar_kernel.h"
+#include "ar_internal.h"
 #include <string.h>
 #include <assert.h>
 
@@ -43,106 +43,108 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t Semaphore::init(const char * name, unsigned count)
+status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count)
 {
-    NamedObject::init(name);
-    
-    m_count = count;
+    memset(sem, 0, sizeof(ar_semaphore_t));
+    sem->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
+    sem->m_count = count;
 
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_allObjects.m_semaphores);
+    g_ar.allObjects.semaphores.add(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-Semaphore::~Semaphore()
+status_t ar_semaphore_delete(ar_semaphore_t * sem)
 {
     // Unblock all threads blocked on this semaphore.
-    while (m_blockedList)
+    while (sem->m_blockedList.m_head)
     {
-        m_blockedList->unblockWithStatus(m_blockedList, kObjectDeletedError);
+        sem->m_blockedList.m_head->getObject<ar_thread_t>()->unblockWithStatus(sem->m_blockedList, kArObjectDeletedError);
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_allObjects.m_semaphores);
+    g_ar.allObjects.semaphores.remove(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
+    
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Semaphore::get(uint32_t timeout)
+status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    if (Kernel::getIrqDepth() > 0 && timeout != 0)
+    if (g_ar.irqDepth > 0 && timeout != 0)
     {
-        return kNotFromInterruptError;
+        return kArNotFromInterruptError;
     }
     
     IrqDisableAndRestore disableIrq;
 
-    if (m_count == 0)
+    if (sem->m_count == 0)
     {
         // Count is 0, so we must block. Return immediately if the timeout is 0.
-        if (timeout == kNoTimeout)
+        if (timeout == kArNoTimeout)
         {
-            return kTimeoutError;
+            return kArTimeoutError;
         }
 
         // Block this thread on the semaphore.
-        Thread * thread = Thread::getCurrent();
-        thread->block(m_blockedList, timeout);
+        ar_thread_t * thread = g_ar.currentThread;
+        thread->block(sem->m_blockedList, timeout);
 
         disableIrq.enable();
         
         // Yield to the scheduler. We'll return when a call to put()
         // wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
-        Kernel::enterScheduler();
+        ar_kernel_enter_scheduler();
 
         disableIrq.disable();
         
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kSuccess)
+        if (thread->m_unblockStatus != kArSuccess)
         {
             // Failed to gain the semaphore, probably due to a timeout.
-            thread->removeFromBlockedList(m_blockedList);
+            sem->m_blockedList.remove(&thread->m_blockedNode);
             return thread->m_unblockStatus;
         }
     }
     
     // Take ownership of the semaphore.
-    --m_count;
+    --sem->m_count;
 
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Semaphore::put()
+status_t ar_semaphore_put(ar_semaphore_t * sem)
 {
     IrqDisableAndRestore disableIrq;
 
     // Increment count.
-    ++m_count;
+    ++sem->m_count;
 
     // Are there any threads waiting on this semaphore?
-    if (m_blockedList)
+    if (sem->m_blockedList.m_head)
     {
         // Unblock the head of the blocked list.
-        Thread * thread = m_blockedList;
-        thread->unblockWithStatus(m_blockedList, kSuccess);
+        ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::getCurrent()->m_priority)
+        if (thread->m_priority > g_ar.currentThread->m_priority)
         {
             disableIrq.enable();
         
-            Kernel::enterScheduler();
+            ar_kernel_enter_scheduler();
         }
     }
     
-    return kSuccess;
+    return kArSuccess;
 }
 
 //------------------------------------------------------------------------------

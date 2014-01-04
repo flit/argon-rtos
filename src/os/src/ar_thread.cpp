@@ -81,7 +81,7 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
     memset(thread, 0, sizeof(ar_thread_t));
     
     // init member variables
-    thread->m_name = name ? name : "";
+    thread->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     thread->m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
     thread->m_stackSize = stackSize;
     thread->m_stackPointer = thread->m_stackTop;
@@ -90,9 +90,9 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
     thread->m_entry = entry;
     
     // Set list node references back to the thread object.
-    thread->m_threadList.m_obj = thread;
-    thread->m_createdList.m_obj = thread;
-    thread->m_blockedList.m_obj = thread;
+    thread->m_threadNode.m_obj = thread;
+    thread->m_createdNode.m_obj = thread;
+    thread->m_blockedNode.m_obj = thread;
 
     // prepare top of stack
     ar_port_prepare_stack(thread, param);
@@ -102,11 +102,11 @@ status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_ent
         IrqDisableAndRestore disableIrq;
         
         // add to suspended list
-        ar_thread_list_add(g_ar.suspendedList, thread);
+        g_ar.suspendedList.add(&thread->m_threadNode);
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    ar_list_add(g_ar.allObjects.threads, &thread->m_createdList);
+    g_ar.allObjects.threads.add(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
     return kArSuccess;
@@ -124,12 +124,12 @@ status_t ar_thread_delete(ar_thread_t * thread)
         // Now remove from the suspended list
         {
             IrqDisableAndRestore disableIrq;
-            ar_thread_list_remove(g_ar.suspendedList, thread);
+            g_ar.suspendedList.remove(&thread->m_threadNode);
         }
     }
     
 #if AR_GLOBAL_OBJECT_LISTS
-    ar_list_remove(g_ar.allObjects.threads, &thread->m_createdList);
+    g_ar.allObjects.threads.remove(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     
     return kArSuccess;
@@ -147,9 +147,9 @@ status_t ar_thread_resume(ar_thread_t * thread)
         }
         else if (thread->m_state == kArThreadSuspended)
         {
-            ar_thread_list_remove(g_ar.suspendedList, thread);
+            g_ar.suspendedList.remove(&thread->m_threadNode);
             thread->m_state = kArThreadReady;
-            ar_thread_list_add(g_ar.readyList, thread);
+            g_ar.readyList.add(&thread->m_threadNode);
         }
     }
 
@@ -176,9 +176,9 @@ status_t ar_thread_suspend(ar_thread_t * thread)
         }
         else
         {
-            ar_thread_list_remove(g_ar.readyList, thread);
+            g_ar.readyList.remove(&thread->m_threadNode);
             thread->m_state = kArThreadSuspended;
-            ar_thread_list_add(g_ar.suspendedList, thread);
+            g_ar.suspendedList.add(&thread->m_threadNode);
         }
     }
 
@@ -227,9 +227,9 @@ void ar_thread_sleep(uint32_t milliseconds)
         // put the current thread on the sleeping list
         g_ar.currentThread->m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(milliseconds);
         
-        ar_thread_list_remove(g_ar.readyList, g_ar.currentThread);
+        g_ar.readyList.remove(&g_ar.currentThread->m_threadNode);
         g_ar.currentThread->m_state = kArThreadSleeping;
-        ar_thread_list_add(g_ar.sleepingList, g_ar.currentThread);
+        g_ar.sleepingList.add(&g_ar.currentThread->m_threadNode);
     }
     
     // run scheduler and switch to another thread
@@ -262,7 +262,7 @@ void ar_thread_wrapper(ar_thread_t * thread, void * param)
         
         // This thread must be in the running state for this code to execute,
         // so we know it is on the ready list.
-        ar_thread_list_remove(g_ar.readyList, thread);
+        g_ar.readyList.remove(&thread->m_threadNode);
         
         // Mark this thread as finished
         thread->m_state = kArThreadDone;
@@ -290,7 +290,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
     g_ar.tickCount += ticks;
 
     // Scan list of sleeping threads to see if any should wake up.
-    ar_list_node_t * node = g_ar.sleepingList;
+    ar_list_node_t * node = g_ar.sleepingList.m_head;
     bool wasThreadWoken = false;
     
     if (node)
@@ -322,19 +322,19 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
                 }
             
                 // Put thread in ready state.
-                ar_thread_list_remove(g_ar.sleepingList, thread);
+                g_ar.sleepingList.remove(&thread->m_threadNode);
                 thread->m_state = kArThreadReady;
-                ar_thread_list_add(g_ar.readyList, thread);
+                g_ar.readyList.add(&thread->m_threadNode);
             }
         
             node = next;
-        } while (g_ar.sleepingList && node != g_ar.sleepingList);
+        } while (g_ar.sleepingList.m_head && node != g_ar.sleepingList.m_head);
     }
     
     // Check for an active timer whose wakeup time has expired.
-    if (g_ar.activeTimers)
+    if (g_ar.activeTimers.m_head)
     {
-        if (g_ar.activeTimers->getObject<ar_timer_t>()->m_wakeupTime <= g_ar.tickCount)
+        if (g_ar.activeTimers.m_head->getObject<ar_timer_t>()->m_wakeupTime <= g_ar.tickCount)
         {
             // Raise the idle thread priority to maximum so it can execute the timer.
             // The idle thread will reduce its own priority when done.
@@ -349,7 +349,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
 void ar_kernel_scheduler()
 {
     // There must always be at least one thread on the ready list.
-    assert(g_ar.readyList);
+    assert(g_ar.readyList.m_head);
     
     // Find the next ready thread using a round-robin search algorithm.
     ar_list_node_t * start;
@@ -359,11 +359,11 @@ void ar_kernel_scheduler()
     // of the ready list. Otherwise start searching at the current thread.
     if (!g_ar.currentThread || g_ar.currentThread->m_state != kArThreadRunning)
     {
-        start = g_ar.readyList;
+        start = g_ar.readyList.m_head;
     }
     else
     {
-        start = &g_ar.currentThread->m_threadList;
+        start = &g_ar.currentThread->m_threadNode;
     }
     
     assert(start);
@@ -426,67 +426,67 @@ void _ar_list_node::insertBefore(ar_list_node_t * node)
 //!
 //! @param[in,out] listHead Reference to the head of the linked list. Will be
 //!     NULL if the list is empty, in which case it is set to the thread instance.
-void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate)
+void _ar_list::add(ar_list_node_t * item, predicate_t predicate)
 {
     // Handle an empty list.
-    if (!listHead)
+    if (!m_head)
     {
-        listHead = item;
+        m_head = item;
         item->m_next = item;
         item->m_prev = item;
     }
     // Insert at end of list if there is no sorting predicate, or if the item sorts after the
     // last item in the list.
-    else if (!predicate || !predicate(item, listHead->m_prev))
+    else if (!predicate || !predicate(item, m_head->m_prev))
     {
-        item->insertBefore(listHead);
+        item->insertBefore(m_head);
     }
     // Otherwise, search for the sorted position in the list for the item to be inserted.
     else
     {
         // Insert sorted by priority.
-        ar_list_node_t * node = listHead;
+        ar_list_node_t * node = m_head;
     
         do {
-//             if (node->m_next == listHead)
+//             if (node->m_next == m_head)
 //             {
-//                 item->m_next = listHead;
+//                 item->m_next = m_head;
 //                 item->m_prev = node;
 //                 node->m_next = item;
-//                 listHead->m_prev = item;
+//                 m_head->m_prev = item;
 //             }
 //             else
             if (predicate(item, node))
             {
                 item->insertBefore(node);
             
-                if (node == listHead)
+                if (node == m_head)
                 {
-                    listHead = node;
+                    m_head = node;
                 }
                 
                 break;
             }
         
             node = node->m_next;
-        } while (node != listHead);
+        } while (node != m_head);
     }
 }
 
 //! If the thread is not on the list, nothing happens. In fact, the list may be empty, indicated
-//! by a NULL @a listHead.
+//! by a NULL @a m_head.
 //!
-//! @param[in,out] listHead Reference to the head of the linked list. May
+//! @param[in,out] m_head Reference to the head of the linked list. May
 //!     be NULL.
-void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item)
+void _ar_list::remove(ar_list_node_t * item)
 {
     // the list must not be empty
-    if (listHead == NULL)
+    if (m_head == NULL)
     {
         return;
     }
 
-    ar_list_node_t * node = listHead;
+    ar_list_node_t * node = m_head;
     do {
         if (node == item)
         {
@@ -494,17 +494,17 @@ void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item)
             node->m_next->m_prev = node->m_prev;
             
             // Special case for removing the list head.
-            if (listHead == node)
+            if (m_head == node)
             {
                 // Handle a single item list by clearing the list head.
-                if (node->m_next == listHead)
+                if (node->m_next == m_head)
                 {
-                    listHead = NULL;
+                    m_head = NULL;
                 }
                 // Otherwise just update the list head to the second list element.
                 else
                 {
-                    listHead = node->m_next;
+                    m_head = node->m_next;
                 }
             }
             
@@ -514,7 +514,7 @@ void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item)
         }
 
         node = node->m_next;
-    } while (node != listHead);
+    } while (node != m_head);
 }
 
 //! The thread is removed from the ready list. It is placed on the blocked list
@@ -530,30 +530,33 @@ void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item)
 //!     blocked. A value of #kArInfiniteTimeout means the thread can be
 //!     blocked forever. A timeout of 0 is not allowed and should be handled
 //!     by the caller.
-void ar_thread_block(ar_thread_t * thread, ar_list_node_t * & blockedList, uint32_t timeout)
+void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
 {
     assert(timeout != 0);
     
     // Remove this thread from the ready list.
-    ar_thread_list_remove(g_ar.readyList, thread);
+//     ar_thread_list_remove(g_ar.readyList, thread);
+    g_ar.readyList.remove(&m_threadNode);
     
     // Update its state.
-    thread->m_state = kArThreadBlocked;
-    thread->m_unblockStatus = kArSuccess;
+    m_state = kArThreadBlocked;
+    m_unblockStatus = kArSuccess;
     
     // Add to blocked list.
-    ar_list_add(blockedList, &thread->m_blockedList);
+//     ar_list_add(blockedList, &thread->m_blockedNode);
+    blockedList.add(&m_blockedNode);
     
     // If a valid timeout was given, put the thread on the sleeping list.
     if (timeout != kArInfiniteTimeout)
     {
-        thread->m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(timeout);
-        ar_thread_list_add(g_ar.sleepingList, thread);
+        m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(timeout);
+//         ar_thread_list_add(g_ar.sleepingList, thread);
+        g_ar.sleepingList.add(&m_threadNode);
     }
     else
     {
         // Signal when unblocking that this thread is not on the sleeping list.
-        thread->m_wakeupTime = 0;
+        m_wakeupTime = 0;
     }
 }
 
@@ -570,22 +573,25 @@ void ar_thread_block(ar_thread_t * thread, ar_list_node_t * & blockedList, uint3
 //!
 //! @todo Conditionalise the removal from the sleeping list to when the thread
 //!     is actually on that list.
-void ar_thread_unblock_with_status(ar_thread_t * thread, ar_list_node_t * & blockedList, status_t unblockStatus)
+void _ar_thread::unblockWithStatus(ar_list_t & blockedList, status_t unblockStatus)
 {
     // Remove from the sleeping list if it was on there. Won't hurt if
     // the thread is not on that list.
-    if (thread->m_wakeupTime && g_ar.sleepingList)
+    if (m_wakeupTime && g_ar.sleepingList.m_head)
     {
-        ar_thread_list_remove(g_ar.sleepingList, thread);
+//         ar_thread_list_remove(g_ar.sleepingList, thread);
+        g_ar.sleepingList.remove(&m_threadNode);
     }
     
     // Remove this thread from the blocked list.
-    ar_list_remove(blockedList, &thread->m_blockedList);
+//     ar_list_remove(blockedList, &thread->m_blockedNode);
+    blockedList.remove(&m_blockedNode);
 
     // Put the unblocked thread back onto the ready list.
-    thread->m_state = kArThreadReady;
-    thread->m_unblockStatus = unblockStatus;
-    ar_thread_list_add(g_ar.readyList, thread);
+    m_state = kArThreadReady;
+    m_unblockStatus = unblockStatus;
+//     ar_thread_list_add(g_ar.readyList, thread);
+    g_ar.readyList.add(&m_threadNode);
 }
 
 //------------------------------------------------------------------------------

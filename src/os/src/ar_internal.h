@@ -43,14 +43,18 @@
 // Definitions
 //------------------------------------------------------------------------------
 
-typedef bool (*ar_list_predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
+//! The string to use for the name of an object that wasn't provided a name.
+#define AR_ANONYMOUS_OBJECT_NAME ("<anon>")
 
+/*!
+ * @brief Argon kernel state.
+ */
 typedef struct _ar_kernel {
     ar_thread_t * currentThread;    //!< The currently running thread.
-    ar_list_node_t * readyList;
-    ar_list_node_t * suspendedList;
-    ar_list_node_t * sleepingList;
-    ar_list_node_t * activeTimers;
+    ar_list_t readyList;
+    ar_list_t suspendedList;
+    ar_list_t sleepingList;
+    ar_list_t activeTimers;
     bool isRunning;    //!< True if the kernel has been started.
     volatile uint32_t tickCount;   //!< Current tick count.
     volatile uint32_t irqDepth;    //!< Current level of nested IRQs, or 0 if in user mode.
@@ -58,11 +62,11 @@ typedef struct _ar_kernel {
     ar_thread_t idleThread;
 #if AR_GLOBAL_OBJECT_LISTS
     struct {
-        ar_list_node_t * threads;
-        ar_list_node_t * semaphores;
-        ar_list_node_t * mutexes;
-        ar_list_node_t * queues;
-        ar_list_node_t * timers;
+        ar_list_t threads;
+        ar_list_t semaphores;
+        ar_list_t mutexes;
+        ar_list_t queues;
+        ar_list_t timers;
     } allObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 } ar_kernel_t;
@@ -87,22 +91,6 @@ void ar_kernel_enter_interrupt();
 void ar_kernel_exit_interrupt();
 
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
-
-void ar_thread_block(ar_thread_t * thread, ar_list_node_t *& blockedList, uint32_t timeout);
-void ar_thread_unblock_with_status(ar_thread_t * thread, ar_list_node_t *& blockedList, status_t unblockStatus);
-
-void ar_list_add(ar_list_node_t *& listHead, ar_list_node_t * item, ar_list_predicate_t predicate=NULL);
-void ar_list_remove(ar_list_node_t *& listHead, ar_list_node_t * item);
-
-inline void ar_thread_list_add(ar_list_node_t *& listHead, ar_thread_t * thread)
-{
-    ar_list_add(listHead, &thread->m_threadList);
-}
-
-inline void ar_thread_list_remove(ar_list_node_t *& listHead, ar_thread_t * thread)
-{
-    ar_list_remove(listHead, &thread->m_threadList);
-}
 
 bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b);
 

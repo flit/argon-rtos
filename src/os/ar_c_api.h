@@ -128,6 +128,9 @@ typedef struct _ar_list_node ar_list_node_t;
 //! Prototype for the thread entry point.
 typedef void (*ar_thread_entry_t)(void * param);
 
+/*!
+ * @brief Linked list node.
+ */
 typedef struct _ar_list_node {
     ar_list_node_t * m_next;
     ar_list_node_t * m_prev;
@@ -142,6 +145,21 @@ typedef struct _ar_list_node {
 } ar_list_node_t;
 
 /*!
+ * @brief Linked list.
+ */
+typedef struct _ar_list {
+    ar_list_node_t * m_head;
+    
+#if defined(__cplusplus)
+    //! Function type used for sorting object lists.
+    typedef bool (*predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
+
+    void add(ar_list_node_t * item, predicate_t predicate=NULL);
+    void remove(ar_list_node_t * item);
+#endif // __cplusplus
+} ar_list_t;
+
+/*!
  * @brief Thread.
  */
 typedef struct _ar_thread {
@@ -152,20 +170,26 @@ typedef struct _ar_thread {
     uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
     ar_thread_state_t m_state; //!< Current thread state.
     ar_thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-    ar_list_node_t m_threadList;
-    ar_list_node_t m_createdList;
-    ar_list_node_t m_blockedList;
+    ar_list_node_t m_threadNode;
+    ar_list_node_t m_createdNode;
+    ar_list_node_t m_blockedNode;
     uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
     status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
+
+#if defined(__cplusplus)
+    void block(ar_list_t & blockedList, uint32_t timeout);
+    void unblockWithStatus(ar_list_t & blockedList, status_t unblockStatus);
+#endif // __cplusplus
 } ar_thread_t;
 
 /*!
  * @brief Semaphore.
  */
 typedef struct _ar_semaphore {
+    const char * m_name;
     volatile unsigned m_count;  //!< Current semaphore count. Value of 0 means the semaphore is owned.
-    ar_list_node_t * m_blockedListHead;
-    ar_list_node_t m_createdList;
+    ar_list_t m_blockedList;
+    ar_list_node_t m_createdNode;
 } ar_semaphore_t;
 
 /*!
@@ -182,15 +206,16 @@ typedef struct _ar_mutex {
  * @brief Queue.
  */
 typedef struct _ar_queue {
+    const char * m_name;
     uint8_t * m_elements;   //!< Pointer to element storage.
     unsigned m_elementSize; //!< Number of bytes occupied by each element.
     unsigned m_capacity;    //!< Maximum number of elements the queue can hold.
     unsigned m_head;    //!< Index of queue head.
     unsigned m_tail;    //!< Index of queue tail.
     unsigned m_count;   //!< Current number of elements in the queue.
-    ar_list_node_t * m_sendBlockedListHead;
-    ar_list_node_t * m_receiveBlockedListHead;
-    ar_list_node_t m_createdList;
+    ar_list_t m_sendBlockedList;
+    ar_list_t m_receiveBlockedList;
+    ar_list_node_t m_createdNode;
 } ar_queue_t;
 
 //! @brief Callback routine for timer expiration.
@@ -200,8 +225,9 @@ typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
  * @brief Timer.
  */
 typedef struct _ar_timer {
-    ar_list_node_t m_activeList;
-    ar_list_node_t m_createdList;
+    const char * m_name;
+    ar_list_node_t m_activeNode;
+    ar_list_node_t m_createdNode;
     ar_timer_entry_t m_callback;   //!< Timer expiration callback.
     void * m_param;             //!< Arbitrary parameter for the callback.
     ar_timer_mode_t m_mode;        //!< One-shot or periodic mode.

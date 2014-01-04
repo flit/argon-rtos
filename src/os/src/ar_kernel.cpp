@@ -85,12 +85,12 @@ static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 //! threads are ready.
 // Thread Kernel::s_idleThread;
 
-#if AR_GLOBAL_OBJECT_LISTS
-//! This global contains linked lists of all the various Ar object
-//! types that have been created during runtime. This makes it much
-//! easier to examine objects of interest.
-ObjectLists g_allObjects;
-#endif // AR_GLOBAL_OBJECT_LISTS
+// #if AR_GLOBAL_OBJECT_LISTS
+// //! This global contains linked lists of all the various Ar object
+// //! types that have been created during runtime. This makes it much
+// //! easier to examine objects of interest.
+// ObjectLists g_allObjects;
+// #endif // AR_GLOBAL_OBJECT_LISTS
 
 //------------------------------------------------------------------------------
 // Code
@@ -120,9 +120,9 @@ void idle_entry(void * param)
     while (1)
     {
         // Check if we need to handle a timer.
-        if (g_ar.activeTimers)
+        if (g_ar.activeTimers.m_head)
         {
-            ar_list_node_t * timerNode = g_ar.activeTimers;
+            ar_list_node_t * timerNode = g_ar.activeTimers.m_head;
             bool handledTimer = false;
             while (timerNode)
             {
@@ -235,7 +235,7 @@ void ar_kernel_enter_scheduler(void)
 void ar_kernel_run(void)
 {
     // Assert if there is no thread ready to run.
-    assert(g_ar.readyList);
+    assert(g_ar.readyList.m_head);
     
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
