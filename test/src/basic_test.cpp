@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/ar_kernel.h"
+#include "os/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
@@ -94,6 +94,14 @@ void main(void)
 #endif
     
     printf("Running test...\r\n");
+    
+#if 0
+    printf("sizeof(Thread)=%d\r\n", sizeof(Ar::Thread));
+    printf("sizeof(Semaphore)=%d\r\n", sizeof(Ar::Semaphore));
+    printf("sizeof(Mutex)=%d\r\n", sizeof(Ar::Mutex));
+    printf("sizeof(Queue)=%d\r\n", sizeof(Ar::Queue));
+    printf("sizeof(Timer)=%d\r\n", sizeof(Ar::Timer));
+#endif
     
     // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 //     g_mainThread.init("main", main_thread, 0, 56);
