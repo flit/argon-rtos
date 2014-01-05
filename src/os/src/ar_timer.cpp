@@ -32,172 +32,140 @@
  * @brief Source for Ar microkernel timers.
  */
 
-#include "os/ar_kernel.h"
+#include "ar_internal.h"
 #include <string.h>
 #include <assert.h>
 
 using namespace Ar;
 
 //------------------------------------------------------------------------------
-// Variables
-//------------------------------------------------------------------------------
-
-Timer * Timer::s_activeTimers = NULL;
-
-//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-Timer::~Timer()
+status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
 {
-    stop();
-}
-
-// See ar_kernel.h for documentation of this function.
-void Timer::init(const char * name, timer_entry_t callback, void * param, timer_mode_t timerMode, uint32_t delay)
-{
-    NamedObject::init(name);
-    
-    m_callback = callback;
-    m_param = param;
-    m_mode = timerMode;
-    m_delay = Time::millisecondsToTicks(delay);
-    m_wakeupTime = 0;
-    m_next = NULL;
-    m_isActive = false;
-}
-
-// See ar_kernel.h for documentation of this function.
-void Timer::start()
-{
-    if (!m_callback)
+    if (!timer || !callback || !delay)
     {
-        return;
+        return kArInvalidParameterError;
     }
+    
+    memset(timer, 0, sizeof(ar_timer_t));
+    
+    timer->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
+    timer->m_callback = callback;
+    timer->m_param = param;
+    timer->m_mode = timerMode;
+    timer->m_delay = ar_milliseconds_to_ticks(delay);
+    timer->m_activeNode.m_obj = timer;
+    timer->m_createdNode.m_obj = timer;
+
+#if AR_GLOBAL_OBJECT_LISTS
+    g_ar.allObjects.timers.add(&timer->m_createdNode);
+#endif
+
+    return kArSuccess;
+}
+
+// See ar_kernel.h for documentation of this function.
+status_t ar_timer_delete(ar_timer_t * timer)
+{
+    if (!timer)
+    {
+        return kArInvalidParameterError;
+    }
+    
+    ar_timer_stop(timer);
+    
+#if AR_GLOBAL_OBJECT_LISTS
+    g_ar.allObjects.timers.remove(&timer->m_createdNode);
+#endif
+
+    return kArSuccess;
+}
+
+// See ar_kernel.h for documentation of this function.
+status_t ar_timer_start(ar_timer_t * timer)
+{
+    if (!timer)
+    {
+        return kArInvalidParameterError;
+    }
+    
+    // The callback should have been verified by the create function.
+    assert(timer->m_callback);
     
     IrqDisableAndRestore irqDisable;
     
     // Handle a timer that is already active.
-    if (m_isActive)
+    if (timer->m_isActive)
     {
-        removeFromList();
+        g_ar.activeTimers.remove(&timer->m_activeNode);
     }
     
-    m_wakeupTime = Kernel::getTickCount() + m_delay;
-    m_isActive = true;
-    addToList();
+    timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
+    timer->m_isActive = true;
+    g_ar.activeTimers.add(&timer->m_activeNode, ar_timer_sort_by_wakeup);
+
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-void Timer::start(uint32_t newDelay)
+status_t ar_timer_stop(ar_timer_t * timer)
 {
-    if (m_isActive)
+    if (!timer)
     {
-        stop();
+        return kArInvalidParameterError;
     }
-    
-    setDelay(newDelay);
-    start();
-}
-
-// See ar_kernel.h for documentation of this function.
-void Timer::stop()
-{
-    if (!m_isActive)
+    if (!timer->m_isActive)
     {
-        return;
+        return kArTimerNotRunningError;
     }
     
     IrqDisableAndRestore irqDisable;
     
-    removeFromList();
-    m_wakeupTime = 0;
-    m_isActive = false;
+    g_ar.activeTimers.remove(&timer->m_activeNode);
+    timer->m_wakeupTime = 0;
+    timer->m_isActive = false;
+
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-void Timer::setDelay(uint32_t delay)
+status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
 {
+    if (!timer)
+    {
+        return kArInvalidParameterError;
+    }
+    
     IrqDisableAndRestore irqDisable;
     
-    m_delay = Time::millisecondsToTicks(delay);
+    timer->m_delay = ar_milliseconds_to_ticks(delay);
     
     // If the timer is running, we need to update the wakeup time and resort the list.
-    if (m_isActive)
+    if (timer->m_isActive)
     {
-        m_wakeupTime = Kernel::getTickCount() + m_delay;
+        timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
         
-        removeFromList();
-        addToList();
+        g_ar.activeTimers.remove(&timer->m_activeNode);
+        g_ar.activeTimers.add(&timer->m_activeNode, ar_timer_sort_by_wakeup);
     }
+
+    return kArSuccess;
 }
 
-//! The timer is added in sorted order by wakeup time.
-void Timer::addToList()
+//! @brief Sort timers ascending by wakeup time.
+bool ar_timer_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b)
 {
-    Timer * & listHead = s_activeTimers;
-    m_next = NULL;
-
-    // Insert at head of list if our wakeup time is the earliest or if the list is empty.
-    if (!listHead || m_wakeupTime < listHead->m_wakeupTime)
-    {
-        m_next = listHead;
-        listHead = this;
-        return;
-    }
-
-    // Insert sorted by wakeup time.
-    Timer * timer = listHead;
-    
-    while (timer)
-    {
-        // Insert at end if we've reached the end of the list and there were no timers with later
-        // wakeup times.
-        if (!timer->m_next)
-        {
-            timer->m_next = this;
-            break;
-        }
-        // If our wakeup time is earlier than the next timer in the list, insert here.
-        else if (m_wakeupTime < timer->m_next->m_wakeupTime)
-        {
-            m_next = timer->m_next;
-            timer->m_next = this;
-            break;
-        }
-        
-        timer = timer->m_next;
-    }
+    ar_timer_t * timerA = a->getObject<ar_timer_t>();
+    ar_timer_t * timerB = b->getObject<ar_timer_t>();
+    return timerA->m_wakeupTime < timerB->m_wakeupTime;
 }
 
-//! The list is not allowed to be empty.
-void Timer::removeFromList()
+const char * ar_timer_get_name(ar_timer_t * timer)
 {
-    Timer * & listHead = s_activeTimers;
-    
-    // the list must not be empty
-    assert(listHead != NULL);
-
-    if (listHead == this)
-    {
-        // special case for removing the list head
-        listHead = m_next;
-    }
-    else
-    {
-        Timer * item = listHead;
-        while (item)
-        {
-            if (item->m_next == this)
-            {
-                item->m_next = m_next;
-                return;
-            }
-
-            item = item->m_next;
-        }
-    }
+    return timer ? timer->m_name : NULL;
 }
 
 //------------------------------------------------------------------------------

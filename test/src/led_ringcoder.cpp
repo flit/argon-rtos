@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/ar_kernel.h"
+#include "os/argon.h"
 #include "debug_uart.h"
 #include "mbed.h"
 
@@ -117,10 +117,10 @@ void init_thread(void * arg);
 void encoder_handler();
 // void blue_thread(void * arg);
 
-void blinker(Ar::Timer * timer, void * arg);
-void green_blinker(Ar::Timer * timer, void * arg);
+void blinker(ar_timer_t * timer, void * arg);
+void green_blinker(ar_timer_t * timer, void * arg);
 
-void encoder_debounce(Ar::Timer * timer, void * arg);
+void encoder_debounce(ar_timer_t * timer, void * arg);
 
 //------------------------------------------------------------------------------
 // Variables
@@ -130,10 +130,10 @@ const int RotaryDecoder::s_encoderStates[] = { 0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 
 
 Ar::ThreadWithStack<512> g_initThread("main", init_thread, 0, 56);
 
-Ar::Timer g_blinker("blinker", blinker, 0, Ar::Timer::kPeriodicTimer, 1000);
-Ar::Timer g_green_blinker("green_blinker", green_blinker, 0, Ar::Timer::kPeriodicTimer, 1500);
+Ar::Timer g_blinker("blinker", blinker, 0, kArPeriodicTimer, 1000);
+Ar::Timer g_green_blinker("green_blinker", green_blinker, 0, kArPeriodicTimer, 1500);
 
-Ar::Timer g_encoderDebounceTimer("encoder_debounce", encoder_debounce, 0, Ar::Timer::kOneShotTimer, 5);
+Ar::Timer g_encoderDebounceTimer("encoder_debounce", encoder_debounce, 0, kArOneShotTimer, 5);
 
 PwmOut g_r(LED_RED);
 PwmOut g_g(LED_GREEN);
@@ -231,12 +231,12 @@ void ShiftRegister::set(uint32_t bits)
     m_latch = 0;
 }
 
-void blinker(Ar::Timer * timer, void * arg)
+void blinker(ar_timer_t * timer, void * arg)
 {
     g_blue = !g_blue;
 }
 
-void green_blinker(Ar::Timer * timer, void * arg)
+void green_blinker(ar_timer_t * timer, void * arg)
 {
     g_green = !g_green;
 }
@@ -391,7 +391,7 @@ int RotaryDecoder::decode(uint8_t a, uint8_t b)
 //     oldEncoderState |= newEncoderState; // add filteredport value
 }
 
-void encoder_debounce(Ar::Timer * timer, void * arg)
+void encoder_debounce(ar_timer_t * timer, void * arg)
 {
     int a = g_a;
     int b = g_b;
@@ -428,7 +428,7 @@ void main(void)
     
     g_initThread.resume();
     
-    Ar::Kernel::run();
+    ar_kernel_run();
 
     Ar::_halt();
 }

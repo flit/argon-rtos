@@ -32,7 +32,7 @@
  * @brief Implementation of Ar microkernel queue.
  */
 
-#include "os/ar_kernel.h"
+#include "ar_internal.h"
 #include <string.h>
 
 using namespace Ar;
@@ -43,61 +43,69 @@ using namespace Ar;
 
 //! Returns a uint8_t * to the first byte of element @a i of the queue.
 //!
+//! @param q The queue object.
 //! @param i Index of the queue element, base 0.
-#define QUEUE_ELEMENT(i) (&m_elements[m_elementSize * (i)])
+#define QUEUE_ELEMENT(q, i) (&(q)->m_elements[(q)->m_elementSize * (i)])
 
 //------------------------------------------------------------------------------
 // Implementation
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t Queue::init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
+status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity)
 {
-    NamedObject::init(name);
+    if (!queue || !storage || !elementSize || !capacity)
+    {
+        return kArInvalidParameterError;
+    }
     
-    m_elements = reinterpret_cast<uint8_t *>(storage);
-    m_elementSize = elementSize;
-    m_capacity = capacity;
+    memset(queue, 0, sizeof(ar_queue_t));
     
-    m_head = 0;
-    m_tail = 0;
-    m_count = 0;
-    
-    m_sendBlockedList = NULL;
-    m_receiveBlockedList = NULL;
+    queue->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
+    queue->m_elements = reinterpret_cast<uint8_t *>(storage);
+    queue->m_elementSize = elementSize;
+    queue->m_capacity = capacity;
+    queue->m_createdNode.m_obj = queue;
     
 #if AR_GLOBAL_OBJECT_LISTS
-    addToCreatedList(g_allObjects.m_queues);
+    g_ar.allObjects.queues.add(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-Queue::~Queue()
+status_t ar_queue_delete(ar_queue_t * queue)
 {
 #if AR_GLOBAL_OBJECT_LISTS
-    removeFromCreatedList(g_allObjects.m_queues);
+    g_ar.allObjects.queues.remove(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
+
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Queue::send(const void * element, uint32_t timeout)
+status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout)
 {
+    if (!queue || !element)
+    {
+        return kArInvalidParameterError;
+    }
+    
     IrqDisableAndRestore disableIrq;
     
     // Check for full queue
-    if (m_count >= m_capacity)
+    if (queue->m_count >= queue->m_capacity)
     {
         // If the queue is full and a zero timeout was given, return immediately.
-        if (timeout == kNoTimeout)
+        if (timeout == kArNoTimeout)
         {
-            return kQueueFullError;
+            return kArQueueFullError;
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = Thread::getCurrent();
-        thread->block(m_sendBlockedList, timeout);
+        ar_thread_t * thread = g_ar.currentThread;
+        thread->block(queue->m_sendBlockedList, timeout);
         
         // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
@@ -105,64 +113,69 @@ status_t Queue::send(const void * element, uint32_t timeout)
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
-        Kernel::enterScheduler();
+        ar_kernel_enter_scheduler();
         
         disableIrq.disable();
         
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kSuccess)
+        if (thread->m_unblockStatus != kArSuccess)
         {
             // Failed to gain the semaphore, probably due to a timeout.
-            thread->removeFromBlockedList(m_sendBlockedList);
+            queue->m_sendBlockedList.remove(&thread->m_blockedNode);
             return thread->m_unblockStatus;
         }
     }
     
     // fill element
-    uint8_t * elementSlot = QUEUE_ELEMENT(m_tail);
-    memcpy(elementSlot, element, m_elementSize);
+    uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
+    memcpy(elementSlot, element, queue->m_elementSize);
     
     // Update queue pointers
-    m_tail = (m_tail + 1) % m_capacity;
-    m_count++;
+    queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
+    queue->m_count++;
     
     // Are there any threads waiting to receive?
-    if (m_receiveBlockedList)
+    if (queue->m_receiveBlockedList.m_head)
     {
         // Unblock the head of the blocked list.
-        Thread * thread = m_receiveBlockedList;
-        thread->unblockWithStatus(m_receiveBlockedList, kSuccess);
+        ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::getCurrent()->m_priority)
+        if (thread->m_priority > g_ar.currentThread->m_priority)
         {
             // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
         
-            Kernel::enterScheduler();
+            ar_kernel_enter_scheduler();
         }
     }
     
-    return kSuccess;
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t Queue::receive(void * element, uint32_t timeout)
+status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
 {
+    if (!queue || !element)
+    {
+        return kArInvalidParameterError;
+    }
+    
     IrqDisableAndRestore disableIrq;
     
     // Check for empty queue
-    if (m_count == 0)
+    if (queue->m_count == 0)
     {
-        if (timeout == kNoTimeout)
+        if (timeout == kArNoTimeout)
         {
-            return kQueueEmptyError;
+            return kArQueueEmptyError;
         }
         
         // Otherwise block until the queue has room.
-        Thread * thread = Thread::getCurrent();
-        thread->block(m_receiveBlockedList, timeout);
+        ar_thread_t * thread = g_ar.currentThread;
+        thread->block(queue->m_receiveBlockedList, timeout);
         
         // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
@@ -170,46 +183,51 @@ status_t Queue::receive(void * element, uint32_t timeout)
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
-        Kernel::enterScheduler();
+        ar_kernel_enter_scheduler();
         
         disableIrq.disable();
         
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kSuccess)
+        if (thread->m_unblockStatus != kArSuccess)
         {
             // Failed to gain the semaphore, probably due to a timeout.
-            thread->removeFromBlockedList(m_receiveBlockedList);
+            queue->m_receiveBlockedList.remove(&thread->m_blockedNode);
             return thread->m_unblockStatus;
         }
     }
     
     // read out data
-    uint8_t * elementSlot = QUEUE_ELEMENT(m_head);
-    memcpy(element, elementSlot, m_elementSize);
+    uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
+    memcpy(element, elementSlot, queue->m_elementSize);
     
     // update queue
-    m_head = (m_head + 1) % m_capacity;
-    m_count--;
+    queue->m_head = (queue->m_head + 1) % queue->m_capacity;
+    queue->m_count--;
     
     // Are there any threads waiting to send?
-    if (m_sendBlockedList)
+    if (queue->m_sendBlockedList.m_head)
     {
         // Unblock the head of the blocked list.
-        Thread * thread = m_sendBlockedList;
-        thread->unblockWithStatus(m_sendBlockedList, kSuccess);
+        ar_thread_t * thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(queue->m_sendBlockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > Thread::getCurrent()->m_priority)
+        if (thread->m_priority > g_ar.currentThread->m_priority)
         {
             // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
         
-            Kernel::enterScheduler();
+            ar_kernel_enter_scheduler();
         }
     }
     
-    return kSuccess;
+    return kArSuccess;
+}
+
+const char * ar_queue_get_name(ar_queue_t * queue)
+{
+    return queue ? queue->m_name : NULL;
 }
 
 //------------------------------------------------------------------------------

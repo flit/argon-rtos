@@ -31,7 +31,7 @@
 #if !defined(_KERNEL_TESTS_H_)
 #define _KERNEL_TESTS_H_
 
-#include "os/ar_kernel.h"
+#include "os/argon.h"
 
 //------------------------------------------------------------------------------
 // Definitions

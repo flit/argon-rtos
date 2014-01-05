@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Immo Software
+ * Copyright (c) 2007-2014 Immo Software
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -27,84 +27,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*!
+ * @file
+ * @brief Main header for the Argon RTOS.
+ * @ingroup ar
+ */
 
-#include "os/argon.h"
-#include "debug_uart.h"
-#include "kernel_tests.h"
+#if !defined(_ARGON_H_)
+#define _ARGON_H_
 
-//------------------------------------------------------------------------------
-// Code
-//------------------------------------------------------------------------------
+#include "ar_kernel.h"
+#include "ar_classes.h"
 
-void TestQueue1::run()
-{
-    m_q.init("q");
-
-    m_producerThread.init("producer", _producer_thread, this, 20);
-    m_producerThread.resume();
-
-    m_consumerAThread.init("consumerA", _consumer_a_thread, this, 30);
-    m_consumerAThread.resume();
-
-    m_consumerBThread.init("consumerB", _consumer_b_thread, this, 31);
-    m_consumerBThread.resume();
-}
-
-void TestQueue1::_producer_thread(void * arg)
-{
-    TestQueue1 * _this = (TestQueue1 *)arg;
-    _this->producer_thread();
-}
-
-void TestQueue1::_consumer_a_thread(void * arg)
-{
-    TestQueue1 * _this = (TestQueue1 *)arg;
-    _this->consumer_a_thread();
-}
-
-void TestQueue1::_consumer_b_thread(void * arg)
-{
-    TestQueue1 * _this = (TestQueue1 *)arg;
-    _this->consumer_b_thread();
-}
-
-void TestQueue1::producer_thread()
-{
-    printHello();
-    
-    int counter = 0;
-    while (1)
-    {
-        int value = ++counter;
-        printf("%s sending %d\r\n", threadIdString(), value);
-        m_q.send(value);
-        
-        Ar::Thread::sleep(2000);
-    }
-}
-
-void TestQueue1::consumer_a_thread()
-{
-    printHello();
-    
-    while (1)
-    {
-        int value = m_q.receive();
-        printf("%s received %d\r\n", threadIdString(), value);
-    }
-}
-
-void TestQueue1::consumer_b_thread()
-{
-    printHello();
-    
-    while (1)
-    {
-        int value = m_q.receive();
-        printf("%s received %d\r\n", threadIdString(), value);
-    }
-}
-
+#endif // _ARGON_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
