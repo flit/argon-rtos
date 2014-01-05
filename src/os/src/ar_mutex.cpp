@@ -60,7 +60,7 @@ status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
         mutex->m_originalPriority = 0;
         
 #if AR_GLOBAL_OBJECT_LISTS
-        g_ar.allObjects.mutexes.remove(&mutex->m_sem.m_createdNode);
+        g_ar.allObjects.semaphores.remove(&mutex->m_sem.m_createdNode);
         g_ar.allObjects.mutexes.add(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     }

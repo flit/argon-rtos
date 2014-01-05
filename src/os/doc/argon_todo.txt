@@ -23,5 +23,5 @@ Argon RTOS Todo List
 - Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
 - Support tickless idle.
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
-
+- Use MSP for idle thread and timers, as well as exceptions.
 

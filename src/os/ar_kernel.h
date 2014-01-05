@@ -131,10 +131,7 @@ public:
     //!     reserved for the idle thread.
     //!
     //! @return kSuccess The thread was initialised without error.
-    status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
-    {
-        return ar_thread_create(this, name, entry, param, stack, stackSize, priority);
-    }
+    status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
     //@}
     
     //! @brief Get the thread's name.
@@ -210,13 +207,17 @@ public:
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return reinterpret_cast<Thread *>(ar_thread_get_current()); }
+    static Thread * getCurrent() { return reinterpret_cast<Thread *>(ar_thread_get_current()->m_ref); }
     //@}
     
 protected:
+
+    ar_thread_entry_t m_userEntry;
     
     //! @brief Virtual thread entry point.
-//     virtual void threadEntry(void * param);
+    virtual void threadEntry(void * param);
+
+    static void thread_entry(void * param);
 
 private:
     //! @brief The copy constructor is disabled for thread objects.
@@ -246,7 +247,7 @@ public:
     {
         m_object = obj;
         m_entryMember = entry;
-        return Thread::init(name, NULL, param, stack, stackSize, priority);
+        return Thread::init(name, thread_entry, param, stack, stackSize, priority);
     }
 
 protected:
@@ -376,14 +377,14 @@ public:
     //!     blocked on it.
     //! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
     //!     context.
-    virtual status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
+    status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
 
     //! @brief Release the semaphore.
     //!
     //! The semaphore count is incremented.
     //!
     //! @note This call is safe from interrupt context.
-    virtual status_t put() { return ar_semaphore_put(this); }
+    status_t put() { return ar_semaphore_put(this); }
 
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
@@ -478,7 +479,7 @@ public:
     //!     obtained.
     //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
-    virtual status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
+    status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
     
     //! @brief Unlock the mutex.
     //!
@@ -489,7 +490,7 @@ public:
     //!
     //! @retval kAlreadyUnlockedError The mutex is not locked.
     //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
-    virtual status_t put() { return ar_mutex_put(this); }
+    status_t put() { return ar_mutex_put(this); }
     
     //! @brief Returns the current owning thread, if there is one.
     ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }

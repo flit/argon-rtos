@@ -68,7 +68,7 @@ status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, 
     queue->m_createdNode.m_obj = queue;
     
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.addObjects.queues.add(&queue->m_createdNode);
+    g_ar.allObjects.queues.add(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;
@@ -78,7 +78,7 @@ status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, 
 status_t ar_queue_delete(ar_queue_t * queue)
 {
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.addObjects.queues.remove(&queue->m_createdNode);
+    g_ar.allObjects.queues.remove(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;

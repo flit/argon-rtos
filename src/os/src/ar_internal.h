@@ -37,6 +37,7 @@
 #define _AR_INTERNAL_H_
 
 #include "os/ar_c_api.h"
+#include "os/ar_kernel.h"
 #include "ar_port.h"
 
 //------------------------------------------------------------------------------

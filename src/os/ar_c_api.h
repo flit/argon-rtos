@@ -46,7 +46,7 @@
 // Constants
 //------------------------------------------------------------------------------
 
-#define AR_GLOBAL_OBJECT_LISTS (0)
+#define AR_GLOBAL_OBJECT_LISTS (1)
 
 //! @brief Timeout constants.
 enum _ar_timeouts
@@ -133,9 +133,6 @@ typedef struct _ar_thread ar_thread_t;
 typedef struct _ar_timer ar_timer_t;
 typedef struct _ar_list_node ar_list_node_t;
 
-//! Prototype for the thread entry point.
-typedef void (*ar_thread_entry_t)(void * param);
-
 /*!
  * @brief Linked list node.
  */
@@ -167,22 +164,26 @@ typedef struct _ar_list {
 #endif // __cplusplus
 } ar_list_t;
 
+//! Prototype for the thread entry point.
+typedef void (*ar_thread_entry_t)(void * param);
+
 /*!
  * @brief Thread.
  */
 typedef struct _ar_thread {
     volatile uint8_t * m_stackPointer; //!< Current stack pointer.
-    const char * m_name;
+    const char * m_name;    //!< Thread name.
     uint8_t * m_stackTop;  //!< Original top of stack.
     uint32_t m_stackSize;   //!< Stack size in bytes.
     uint8_t m_priority; //!< Thread priority. 0 is the lowest priority.
     ar_thread_state_t m_state; //!< Current thread state.
     ar_thread_entry_t m_entry; //!< Function pointer for the thread's entry point.
-    ar_list_node_t m_threadNode;
-    ar_list_node_t m_createdNode;
-    ar_list_node_t m_blockedNode;
+    ar_list_node_t m_threadNode;    //!< Main thread list node.
+    ar_list_node_t m_createdNode;   //!< Created list node.
+    ar_list_node_t m_blockedNode;   //!< Blocked list node.
     uint32_t m_wakeupTime;  //!< Tick count when a sleeping thread will awaken.
     status_t m_unblockStatus;   //!< Status code to return from a blocking function upon unblocking.
+    void * m_ref;   //!< Arbitrary reference value.
 
 #if defined(__cplusplus)
     void block(ar_list_t & blockedList, uint32_t timeout);

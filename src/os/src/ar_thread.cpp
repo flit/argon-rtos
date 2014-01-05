@@ -618,6 +618,28 @@ const char * ar_thread_get_name(ar_thread_t * thread)
     return thread ? thread->m_name : NULL;
 }
 
+status_t Thread::init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+{
+    status_t result = ar_thread_create(this, name, thread_entry, param, stack, stackSize, priority);
+    m_ref = this;
+    m_userEntry = entry;
+    return result;
+}
+
+void Thread::threadEntry(void * param)
+{
+    if (m_userEntry)
+    {
+        m_userEntry(param);
+    }
+}
+
+void Thread::thread_entry(void * param)
+{
+    Thread * thread = getCurrent();
+    thread->threadEntry(param);
+}
+
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
