@@ -4,10 +4,10 @@
 @brief Tiny embedded kernel.
 
 The Argon RTOS provides the basic components required to have a useful embedded
-operating system. It is almost entirely written in C++, with some assembler
-for handling interrupts and context switching. The five basic objects that are
-provided by Argon are:
-    - Thread: thread class
+operating system. It provides both a simple C API, plus a well-integrated C++ API. Internally, it
+is written in C++, with some assembler for handling interrupts and context switching. The five
+basic objects that are provided by Argon are:
+    - Thread: thread object
     - Semaphore: counting semaphore
     - Mutex: mutually exclusive lock
     - Queue: message passing queue
@@ -15,21 +15,13 @@ provided by Argon are:
 
 In addition, there are several utility helper classes and functions.
 
-The internals of the operating system are split between the Ar::Kernel and Ar::Thread classes.
-The scheduler and thread related data are static members of Ar::Thread. While kernel startup, interrupt
-handlers, and related utilities are static members of Ar::Kernel. See the description for
-Ar::Thread for details about the threading implementation.
-
 @section Startup
 
 There are several steps involved in starting the RTOS running.
     -   Create at least one thread and resume it. If a thread is not created
         then only the idle thread will exist and the system will do nothing.
-    -   Finally call Ar::Kernel::run() to start the scheduler. This call will
+    -   Finally call ar_kernel_run() to start the scheduler. This call will
         not return.
-
-@todo Refactor the linked list management code into its own class. Right now
-there are three copies of basically the same add/remove node code!
 
  */
 

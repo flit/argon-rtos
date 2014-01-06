@@ -29,7 +29,7 @@
  */
 /*!
  * @file
- * @brief Header for the Argon RTOS.
+ * @brief Header for the Argon RTOS wrapper classes.
  * @ingroup ar
  */
 
