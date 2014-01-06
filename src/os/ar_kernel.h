@@ -46,11 +46,6 @@
 // Constants
 //------------------------------------------------------------------------------
 
-#if !defined(AR_GLOBAL_OBJECT_LISTS)
-//! Set to 1 to enable the lists of all created kernel objects.
-#define AR_GLOBAL_OBJECT_LISTS (1)
-#endif
-
 //! @brief Timeout constants.
 enum _ar_timeouts
 {
@@ -261,10 +256,30 @@ typedef struct _ar_timer {
 extern "C" {
 #endif
 
-//! @name Kernel start
+//! @name Kernel
 //@{
+/*!
+ * @brief Start the kernel running.
+ *
+ * Once this function is called, the kernel will begin scheduling threads.
+ *
+ * @note This call will not return.
+ */
 void ar_kernel_run(void);
+
+/*!
+ * @brief Returns whether the kernel is running or not.
+ */
 bool ar_kernel_is_running(void);
+
+/*!
+ * @brief Returns the current system load.
+ *
+ * The system load is calculated by the idle thread, if the #AR_ENABLE_SYSTEM_LOAD configuration
+ * setting is enabled. If this setting is disabled, the load will always be zero.
+ *
+ * @return The current system load percentage from 0-100.
+ */
 uint32_t ar_get_system_load(void);
 //@}
 
@@ -721,30 +736,67 @@ const char * ar_timer_get_name(ar_timer_t * timer);
 
 //! @name Time
 //@{
+/*!
+ * @brief Return the current time in ticks.
+ */
 uint32_t ar_get_tick_count(void);
+
+/*!
+ * @brief Return the current time in milliseconds.
+ *
+ * @return Elapsed time since the kernel was started in milliseconds. Has a resolution of one tick.
+ */
+uint32_t ar_get_millisecond_count(void);
+
+/*!
+ * @brief Get the number of milliseconds per tick.
+ */
 uint32_t ar_get_milliseconds_per_tick(void);
+
+/*!
+ * @brief Convert ticks to milliseconds.
+ */
 static inline uint32_t ar_ticks_to_milliseconds(uint32_t ticks) { return ticks * ar_get_milliseconds_per_tick(); }
+
+/*!
+ * @brief Convert milliseconds to ticks.
+ */
 static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return milliseconds / ar_get_milliseconds_per_tick(); }
 //@}
 
 //! @name Interrupts
 //@{
+/*!
+ * @brief Inform the kernel that an interrupt handler is executing.
+ */
 void ar_kernel_enter_interrupt();
+
+/*!
+ * @brief Tell the kernel that an interupt handler is exiting.
+ */
 void ar_kernel_exit_interrupt();
 //@}
 
 //! @name Atomic operations
 //@{
-//! @brief Atomic add.
+/*!
+ * @brief Atomic add.
+ */
 void ar_atomic_add(uint32_t * value, int32_t delta);
 
-//! @brief Atomic increment.
+/*!
+ * @brief Atomic increment.
+ */
 inline void ar_atomic_increment(uint32_t * value) { ar_atomic_add(value, 1); }
 
-//! @brief Atomic decrement.
+/*!
+ * @brief Atomic decrement.
+ */
 inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
 
-//! @brief Atomic compare-and-swap operation.
+/*!
+ * @brief Atomic compare-and-swap operation.
+ */
 bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
 //@}
 

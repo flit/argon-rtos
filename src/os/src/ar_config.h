@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 Immo Software
+ * Copyright (c) 2013-2014 Immo Software
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -28,84 +28,56 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*!
- * @file
- * @brief Source for Ar base class.
+ * @file ar_config.h
+ * @ingroup ar_port
+ * @brief Configuration settings for the Argon RTOS.
  */
 
-#include "os/ar_kernel.h"
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-
-using namespace Ar;
+#if !defined(_AR_CONFIG_H_)
+#define _AR_CONFIG_H_
 
 //------------------------------------------------------------------------------
-// Code
+// Definitions
 //------------------------------------------------------------------------------
 
-// See ar_kernel.h for documentation of this function.
-status_t NamedObject::init(const char * name)
-{
-    m_name = name;
-    
-    return kSuccess;
-}
+// Determine whether this is a debug or release build.
+#if !defined(AR_DEBUG_ENABLED)
+    #if DEBUG
+        #define AR_DEBUG_ENABLED (1)
+    #else
+        #define AR_DEBUG_ENABLED (0)
+    #endif
+#endif
 
-#if AR_GLOBAL_OBJECT_LISTS
+#if !defined(AR_ANONYMOUS_OBJECT_NAME)
+    //! The string to use for the name of an object that wasn't provided a name.
+    #define AR_ANONYMOUS_OBJECT_NAME ("<anon>")
+#endif
 
-void NamedObject::addToCreatedList(NamedObject * & listHead)
-{
-    m_nextCreated = NULL;
+#if !defined(AR_GLOBAL_OBJECT_LISTS)
+    //! Set to 1 to enable the lists of all created kernel objects. Default is enabled for
+    //! debug builds, disabled for release builds.
+    #define AR_GLOBAL_OBJECT_LISTS (AR_DEBUG_ENABLED)
+#endif
 
-    // handle an empty list
-    if (!listHead)
-    {
-        listHead = this;
-        return;
-    }
-    
-    // find the end of the list
-    NamedObject * thread = listHead;
+#if !defined(AR_ENABLE_IDLE_SLEEP)
+    //! Controls whether the idle thread puts the processor to sleep until the next interrupt. Set
+    //! to 1 to enable. The default is to disable idle sleep for debug builds, enabled for release
+    //! builds.
+    #define AR_ENABLE_IDLE_SLEEP (!(AR_DEBUG_ENABLED))
+#endif
 
-    while (thread)
-    {
-        if (!thread->m_nextCreated)
-        {
-            thread->m_nextCreated = this;
-            break;
-        }
-        thread = thread->m_nextCreated;
-    }
-}
+#if !defined(AR_ENABLE_SYSTEM_LOAD)
+    //! When set to 1 the idle thread will compute the system load percentage.
+    #define AR_ENABLE_SYSTEM_LOAD (1)
+#endif
 
-void NamedObject::removeFromCreatedList(NamedObject * & listHead)
-{
-    // the list must not be empty
-    assert(listHead != NULL);
+#if !defined(AR_IDLE_THREAD_STACK_SIZE)
+    //! Size in bytes of the idle and timer thread's stack.
+    #define AR_IDLE_THREAD_STACK_SIZE (512)
+#endif // AR_IDLE_THREAD_STACK_SIZE
 
-    if (listHead == this)
-    {
-        // special case for removing the list head
-        listHead = m_nextCreated;
-    }
-    else
-    {
-        NamedObject * item = listHead;
-        while (item)
-        {
-            if (item->m_nextCreated == this)
-            {
-                item->m_nextCreated = m_nextCreated;
-                return;
-            }
-
-            item = item->m_nextCreated;
-        }
-    }
-}
-
-#endif // AR_GLOBAL_OBJECT_LISTS
-
+#endif // _AR_CONFIG_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

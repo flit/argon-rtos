@@ -36,7 +36,7 @@ EXC_RETURN  equ 0xfffffffd
         section .text:CODE
         thumb
 
-        import ar_yield
+        import ar_kernel_yield_isr
 
         public SVC_Handler
         public PendSV_Handler
@@ -66,7 +66,7 @@ PendSV_Handler
         subs    r0, r0, #32
         
         // Invoke scheduler. On return, r0 contains the stack pointer for the new thread.
-        ldr     r1, =ar_yield
+        ldr     r1, =ar_kernel_yield_isr
         blx     r1
         
         // Unstack saved registers.

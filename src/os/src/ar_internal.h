@@ -38,13 +38,11 @@
 
 #include "os/argon.h"
 #include "ar_port.h"
+#include "ar_config.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
-
-//! The string to use for the name of an object that wasn't provided a name.
-#define AR_ANONYMOUS_OBJECT_NAME ("<anon>")
 
 /*!
  * @brief Argon kernel state.
@@ -78,32 +76,41 @@ extern ar_kernel_t g_ar;
 // API
 //------------------------------------------------------------------------------
 
+//! @name Porting
+//@{
 void ar_port_init_system(void);
 void ar_port_init_tick_timer(void);
 void ar_port_prepare_stack(ar_thread_t * thread, void * param);
 void ar_port_service_call(void);
+//@}
 
-void ar_kernel_periodic_timer_isr(void);
-uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
+//! @name Kernel internals
+//@{
 bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler(void);
 void ar_kernel_scheduler(void);
+//@}
 
+//! @brief Thread entry point.
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
 
+//! @name List sorting predicates
+//@{
+//! @brief Sort thread list by descending priority.
 bool ar_thread_sort_by_priority(ar_list_node_t * a, ar_list_node_t * b);
+
+//! @brief Sort thread list by ascending wakeup time.
+bool ar_thread_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b);
+
+//! @brief Sort timer list by ascending wakeup time.
 bool ar_timer_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b);
+//@}
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-void * ar_yield(void * topOfStack);
-void ar_periodic_timer(void);
-
-#if defined(__cplusplus)
-}
-#endif
+//! @name Interrupt handlers
+//@{
+extern "C" void ar_kernel_periodic_timer_isr(void);
+extern "C" uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
+//@}
 
 #endif // _AR_INTERNAL_H_
 //------------------------------------------------------------------------------

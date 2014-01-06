@@ -149,7 +149,7 @@ bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32
 
 void SysTick_Handler(void)
 {
-    ar_periodic_timer();
+    ar_kernel_periodic_timer_isr();
 }
 
 //------------------------------------------------------------------------------

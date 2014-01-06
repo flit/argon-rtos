@@ -40,24 +40,10 @@
 using namespace Ar;
 
 //------------------------------------------------------------------------------
-// Defines
+// Prototypes
 //------------------------------------------------------------------------------
 
-#if !defined(AR_ENABLE_IDLE_SLEEP)
-    //! Controls whether the idle thread puts the processor to sleep
-    //! until the next interrupt. Set to 1 to enable.
-    #define AR_ENABLE_IDLE_SLEEP (0)
-#endif
-
-#if !defined(AR_ENABLE_SYSTEM_LOAD)
-    //! When set to 1 the idle thread will compute the system load percentage.
-    #define AR_ENABLE_SYSTEM_LOAD (1)
-#endif
-
-#if !defined(AR_IDLE_THREAD_STACK_SIZE)
-    //! Size in bytes of the idle thread's stack.
-    #define AR_IDLE_THREAD_STACK_SIZE 256 
-#endif // AR_IDLE_THREAD_STACK_SIZE
+static void THREAD_STACK_OVERFLOW_DETECTED();
 
 //------------------------------------------------------------------------------
 // Variables
@@ -277,6 +263,144 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
     return (uint32_t)g_ar.currentThread->m_stackPointer;
 }
 
+//! Increments the system tick count and wakes any sleeping threads whose wakeup time
+//! has arrived. If the thread's state is #kThreadBlocked then its unblock status
+//! is set to #kTimeoutError.
+//!
+//! @param ticks The number of ticks that have elapsed. Normally this will only be 1, 
+//!     and must be at least 1, but may be higher if interrupts are disabled for a
+//!     long time.
+//! @return Flag indicating whether any threads were modified.
+//!
+//! @todo Keep the list of sleeping threads sorted by next wakeup time.
+bool ar_kernel_increment_tick_count(unsigned ticks)
+{
+    assert(ticks > 0);
+    
+    // Increment tick count.
+    g_ar.tickCount += ticks;
+
+    // Scan list of sleeping threads to see if any should wake up.
+    ar_list_node_t * node = g_ar.sleepingList.m_head;
+    bool wasThreadWoken = false;
+    
+    if (node)
+    {
+        do {
+            ar_thread_t * thread = node->getObject<ar_thread_t>();
+            ar_list_node_t * next = node->m_next;
+        
+            // Is it time to wake this thread?
+            if (g_ar.tickCount >= thread->m_wakeupTime)
+            {
+                wasThreadWoken = true;
+            
+                // State-specific actions
+                switch (thread->m_state)
+                {
+                    case kArThreadSleeping:
+                        // The thread was just sleeping.
+                        break;
+                
+                    case kArThreadBlocked:
+                        // The thread has timed out waiting for a resource.
+                        thread->m_unblockStatus = kArTimeoutError;
+                        break;
+                
+                    default:
+                        // Should not have threads in other states on this list!
+                        _halt();
+                }
+            
+                // Put thread in ready state.
+                g_ar.sleepingList.remove(&thread->m_threadNode);
+                thread->m_state = kArThreadReady;
+                g_ar.readyList.add(&thread->m_threadNode);
+            }
+        
+            node = next;
+        } while (g_ar.sleepingList.m_head && node != g_ar.sleepingList.m_head);
+    }
+    
+    // Check for an active timer whose wakeup time has expired.
+    if (g_ar.activeTimers.m_head)
+    {
+        if (g_ar.activeTimers.m_head->getObject<ar_timer_t>()->m_wakeupTime <= g_ar.tickCount)
+        {
+            // Raise the idle thread priority to maximum so it can execute the timer.
+            // The idle thread will reduce its own priority when done.
+            ar_thread_set_priority(&g_ar.idleThread, kArMaxThreadPriority);
+        }
+    }
+    
+    return wasThreadWoken;
+}
+
+//! @brief Function to make it clear what happened.
+void THREAD_STACK_OVERFLOW_DETECTED()
+{
+    _halt();
+}
+
+void ar_kernel_scheduler()
+{
+    // There must always be at least one thread on the ready list.
+    assert(g_ar.readyList.m_head);
+    
+    // Find the next ready thread using a round-robin search algorithm.
+    ar_list_node_t * start;
+    
+    // Handle both the first time the scheduler runs and g_ar.currentThread is NULL, and the case where
+    // the current thread was suspended. For both cases we want to start searching at the beginning
+    // of the ready list. Otherwise start searching at the current thread.
+    if (!g_ar.currentThread || g_ar.currentThread->m_state != kArThreadRunning)
+    {
+        start = g_ar.readyList.m_head;
+    }
+    else
+    {
+        start = &g_ar.currentThread->m_threadNode;
+    }
+    
+    assert(start);
+    ar_list_node_t * next = start;
+    ar_thread_t * highest = next->getObject<ar_thread_t>();
+    uint8_t priority = highest->m_priority;
+    
+    // Iterate over the ready list, finding the highest priority thread.
+    do {
+        ar_thread_t * nextThread = next->getObject<ar_thread_t>();
+        if (nextThread->m_state == kArThreadReady && nextThread->m_priority > priority)
+        {
+            highest = nextThread;
+            priority = nextThread->m_priority;
+        }
+        
+        next = next->m_next;
+    } while (next != start);
+    
+    // Switch to newly selected thread.
+    assert(highest);
+    if (highest != g_ar.currentThread)
+    {
+        if (g_ar.currentThread && g_ar.currentThread->m_state == kArThreadRunning)
+        {
+            g_ar.currentThread->m_state = kArThreadReady;
+        }
+        
+        highest->m_state = kArThreadRunning;
+        g_ar.currentThread = highest;
+    }
+    
+    // Check for stack overflow on the selected thread.
+    assert(g_ar.currentThread);
+    uint32_t check = *(uint32_t *)((uint32_t)g_ar.currentThread->m_stackTop - g_ar.currentThread->m_stackSize);
+    if (check != 0xdeadbeef)
+    {
+        THREAD_STACK_OVERFLOW_DETECTED();
+    }
+}
+
 // See ar_kernel.h for documentation of this function.
 void ar_kernel_enter_interrupt()
 {
@@ -289,14 +413,136 @@ void ar_kernel_exit_interrupt()
     --g_ar.irqDepth;
 }
 
-void * ar_yield(void * topOfStack)
+// See ar_kernel.h for documentation of this function.
+bool ar_kernel_is_running(void)
 {
-    return (void *)ar_kernel_yield_isr((uint32_t)topOfStack);
+    return g_ar.isRunning;
 }
 
-void ar_periodic_timer(void)
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_get_system_load(void)
 {
-    return ar_kernel_periodic_timer_isr();
+    return g_ar.systemLoad;
+}
+
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_get_tick_count(void)
+{
+    return g_ar.tickCount;
+}
+
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_get_millisecond_count(void)
+{
+    return g_ar.tickCount * ar_get_milliseconds_per_tick();
+}
+
+//! The thread is inserted in either FIFO or sorted order, depending on whether the @a predicate
+//! parameter is provided. If the predicate is NULL, the new list item will be inserted in at the
+//! end of the list, maintaining FIFO order.
+//!
+//! If the predicate function is provided, then it is used to search for the insert position on the
+//! list. The new item will be inserted before the first existing list item for which the predicate
+//! function returns true with called with its first parameter set to the new item and second
+//! parameter set to the existing item.
+//!
+//! The list is maintained as a doubly-linked circular list. The last item in the list has its
+//! next link set to the head of the list, and vice versa for the head's previous link. If there is
+//! only one item in the list, both its next and previous links point to itself.
+//!
+//! @param item The item to insert into the list. The item must not already be on the list.
+//! @param predicate An optional sorting predicate function. If this parameter is NULL, the item
+//!     will be inserted in at the end of the list (FIFO order).
+void _ar_list::add(ar_list_node_t * item, predicate_t predicate)
+{
+    assert(item->m_next == NULL && item->m_prev == NULL);
+    
+    // Handle an empty list.
+    if (!m_head)
+    {
+        m_head = item;
+        item->m_next = item;
+        item->m_prev = item;
+    }
+    // Insert at end of list if there is no sorting predicate, or if the item sorts after the
+    // last item in the list.
+    else if (!predicate || !predicate(item, m_head->m_prev))
+    {
+        item->insertBefore(m_head);
+    }
+    // Otherwise, search for the sorted position in the list for the item to be inserted.
+    else
+    {
+        // Insert sorted by priority.
+        ar_list_node_t * node = m_head;
+    
+        do {
+//             if (node->m_next == m_head)
+//             {
+//                 item->m_next = m_head;
+//                 item->m_prev = node;
+//                 node->m_next = item;
+//                 m_head->m_prev = item;
+//             }
+//             else
+            if (predicate(item, node))
+            {
+                item->insertBefore(node);
+            
+                if (node == m_head)
+                {
+                    m_head = node;
+                }
+                
+                break;
+            }
+        
+            node = node->m_next;
+        } while (node != m_head);
+    }
+}
+
+//! If the specified item is not on the list, nothing happens. In fact, the list may be empty,
+//! indicated by a NULL @a m_head. Items are compared only by pointer value.
+//!
+//! @param item The item to remove from the list.
+void _ar_list::remove(ar_list_node_t * item)
+{
+    // the list must not be empty
+    if (m_head == NULL)
+    {
+        return;
+    }
+
+    ar_list_node_t * node = m_head;
+    do {
+        if (node == item)
+        {
+            node->m_prev->m_next = node->m_next;
+            node->m_next->m_prev = node->m_prev;
+            
+            // Special case for removing the list head.
+            if (m_head == node)
+            {
+                // Handle a single item list by clearing the list head.
+                if (node->m_next == m_head)
+                {
+                    m_head = NULL;
+                }
+                // Otherwise just update the list head to the second list element.
+                else
+                {
+                    m_head = node->m_next;
+                }
+            }
+            
+            item->m_next = NULL;
+            item->m_prev = NULL;
+            break;
+        }
+
+        node = node->m_next;
+    } while (node != m_head);
 }
 
 //------------------------------------------------------------------------------
