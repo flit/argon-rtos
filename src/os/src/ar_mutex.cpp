@@ -59,6 +59,9 @@ status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
         mutex->m_ownerLockCount = 0;
         mutex->m_originalPriority = 0;
         
+        // Set the blocked list to sort by priority.
+        mutex->m_sem.m_blockedList.m_predicate = ar_thread_sort_by_priority;
+        
 #if AR_GLOBAL_OBJECT_LISTS
         g_ar.allObjects.semaphores.remove(&mutex->m_sem.m_createdNode);
         g_ar.allObjects.mutexes.add(&mutex->m_sem.m_createdNode);

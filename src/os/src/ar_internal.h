@@ -45,14 +45,38 @@
 //------------------------------------------------------------------------------
 
 /*!
+ * @brief
+ */
+struct ArThreadList : public _ar_list
+{
+    //! @brief Add a thread to the list, sorting by priority.
+    void add(ar_thread_t * item) { _ar_list::add(&item->m_threadNode); }
+    
+    //! @brief Remove a thread from the list.
+    void remove(ar_thread_t * item) { _ar_list::remove(&item->m_threadNode); }
+};
+
+/*!
+ * @brief
+ */
+struct ArTimerList : public _ar_list
+{
+    //! @brief Add a thread to the list, sorting by priority.
+    void add(ar_timer_t * item) { _ar_list::add(&item->m_activeNode); }
+    
+    //! @brief Remove a thread from the list.
+    void remove(ar_timer_t * item) { _ar_list::remove(&item->m_activeNode); }
+};
+
+/*!
  * @brief Argon kernel state.
  */
 typedef struct _ar_kernel {
     ar_thread_t * currentThread;    //!< The currently running thread.
-    ar_list_t readyList;            //!< List of threads ready to run.
-    ar_list_t suspendedList;        //!< List of suspended threads.
-    ar_list_t sleepingList;         //!< List of sleeping threads.
-    ar_list_t activeTimers;         //!< List of running timers
+    ArThreadList readyList;         //!< List of threads ready to run.
+    ArThreadList suspendedList;     //!< List of suspended threads.
+    ArThreadList sleepingList;      //!< List of sleeping threads.
+    ArTimerList activeTimers;       //!< List of running timers
     bool isRunning;                 //!< True if the kernel has been started.
     volatile uint32_t tickCount;    //!< Current tick count.
     volatile uint32_t irqDepth;     //!< Current level of nested IRQs, or 0 if in user mode.

@@ -131,6 +131,15 @@ typedef struct _ar_thread ar_thread_t;
 typedef struct _ar_timer ar_timer_t;
 typedef struct _ar_list_node ar_list_node_t;
 
+//! Function type used for sorting object lists.
+typedef bool (*ar_sort_predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
+
+//! Prototype for the thread entry point.
+typedef void (*ar_thread_entry_t)(void * param);
+
+//! @brief Callback routine for timer expiration.
+typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
+
 /*!
  * @brief Linked list node.
  */
@@ -154,21 +163,16 @@ typedef struct _ar_list_node {
  */
 typedef struct _ar_list {
     ar_list_node_t * m_head;    //!< Pointer to the head of the list. Will be NULL if the list is empty.
+    ar_sort_predicate_t m_predicate;    //!< Sort predicate to use for this list.
     
 #if defined(__cplusplus)
-    //! Function type used for sorting object lists.
-    typedef bool (*predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
-
     //! @brief Add an item to the list.
-    void add(ar_list_node_t * item, predicate_t predicate=NULL);
+    void add(ar_list_node_t * item);
     
     //! @brief Remove an item from the list.
     void remove(ar_list_node_t * item);
 #endif // __cplusplus
 } ar_list_t;
-
-//! Prototype for the thread entry point.
-typedef void (*ar_thread_entry_t)(void * param);
 
 /*!
  * @brief Thread.
@@ -229,9 +233,6 @@ typedef struct _ar_queue {
     ar_list_t m_receiveBlockedList; //!< List of threads blocked waiting to receive data.
     ar_list_node_t m_createdNode;   //!< Created list node.
 } ar_queue_t;
-
-//! @brief Callback routine for timer expiration.
-typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
 
 /*!
  * @brief Timer.

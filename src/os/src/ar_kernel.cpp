@@ -200,6 +200,12 @@ void ar_kernel_run(void)
     // Assert if there is no thread ready to run.
     assert(g_ar.readyList.m_head);
     
+    // Init list predicates.
+    g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
+    g_ar.suspendedList.m_predicate = NULL;
+    g_ar.sleepingList.m_predicate = ar_thread_sort_by_wakeup;
+    g_ar.activeTimers.m_predicate = ar_timer_sort_by_wakeup;
+    
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
     ar_thread_create(&g_ar.idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
@@ -264,15 +270,16 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 }
 
 //! Increments the system tick count and wakes any sleeping threads whose wakeup time
-//! has arrived. If the thread's state is #kThreadBlocked then its unblock status
-//! is set to #kTimeoutError.
+//! has arrived. If the thread's state is #kArThreadBlocked then its unblock status
+//! is set to #kArTimeoutError.
+//!
+//! This function also checks if any timers have expired. If so, it changes the idle thread's
+//! priority to be the maximum, so it can immediately handle the timers.
 //!
 //! @param ticks The number of ticks that have elapsed. Normally this will only be 1, 
 //!     and must be at least 1, but may be higher if interrupts are disabled for a
 //!     long time.
 //! @return Flag indicating whether any threads were modified.
-//!
-//! @todo Keep the list of sleeping threads sorted by next wakeup time.
 bool ar_kernel_increment_tick_count(unsigned ticks)
 {
     assert(ticks > 0);
@@ -313,9 +320,15 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
                 }
             
                 // Put thread in ready state.
-                g_ar.sleepingList.remove(&thread->m_threadNode);
+                g_ar.sleepingList.remove(thread);
                 thread->m_state = kArThreadReady;
-                g_ar.readyList.add(&thread->m_threadNode);
+                g_ar.readyList.add(thread);
+            }
+            // Exit loop if we hit a thread with a wakeup time in the future. The sleeping list
+            // is sorted, so there will be no further threads to handle in the list.
+            else
+            {
+                break;
             }
         
             node = next;
@@ -437,6 +450,19 @@ uint32_t ar_get_millisecond_count(void)
     return g_ar.tickCount * ar_get_milliseconds_per_tick();
 }
 
+//! Updates the list node's links and those of @a node so that the object is inserted before
+//! @node in the list.
+//!
+//! @note This method does not update the list head. To actually insert a node into the list you
+//!     need to use _ar_list::add().
+void _ar_list_node::insertBefore(ar_list_node_t * node)
+{
+    m_next = node;
+    m_prev = node->m_prev;
+    node->m_prev->m_next = this;
+    node->m_prev = this;
+}
+
 //! The thread is inserted in either FIFO or sorted order, depending on whether the @a predicate
 //! parameter is provided. If the predicate is NULL, the new list item will be inserted in at the
 //! end of the list, maintaining FIFO order.
@@ -453,7 +479,7 @@ uint32_t ar_get_millisecond_count(void)
 //! @param item The item to insert into the list. The item must not already be on the list.
 //! @param predicate An optional sorting predicate function. If this parameter is NULL, the item
 //!     will be inserted in at the end of the list (FIFO order).
-void _ar_list::add(ar_list_node_t * item, predicate_t predicate)
+void _ar_list::add(ar_list_node_t * item)
 {
     assert(item->m_next == NULL && item->m_prev == NULL);
     
@@ -466,7 +492,7 @@ void _ar_list::add(ar_list_node_t * item, predicate_t predicate)
     }
     // Insert at end of list if there is no sorting predicate, or if the item sorts after the
     // last item in the list.
-    else if (!predicate || !predicate(item, m_head->m_prev))
+    else if (!m_predicate || !m_predicate(item, m_head->m_prev))
     {
         item->insertBefore(m_head);
     }
@@ -485,7 +511,7 @@ void _ar_list::add(ar_list_node_t * item, predicate_t predicate)
 //                 m_head->m_prev = item;
 //             }
 //             else
-            if (predicate(item, node))
+            if (m_predicate(item, node))
             {
                 item->insertBefore(node);
             

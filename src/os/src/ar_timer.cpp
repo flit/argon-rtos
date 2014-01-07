@@ -100,12 +100,12 @@ status_t ar_timer_start(ar_timer_t * timer)
     // Handle a timer that is already active.
     if (timer->m_isActive)
     {
-        g_ar.activeTimers.remove(&timer->m_activeNode);
+        g_ar.activeTimers.remove(timer);
     }
     
     timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
     timer->m_isActive = true;
-    g_ar.activeTimers.add(&timer->m_activeNode, ar_timer_sort_by_wakeup);
+    g_ar.activeTimers.add(timer);
 
     return kArSuccess;
 }
@@ -124,7 +124,7 @@ status_t ar_timer_stop(ar_timer_t * timer)
     
     IrqDisableAndRestore irqDisable;
     
-    g_ar.activeTimers.remove(&timer->m_activeNode);
+    g_ar.activeTimers.remove(timer);
     timer->m_wakeupTime = 0;
     timer->m_isActive = false;
 
@@ -148,8 +148,8 @@ status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
     {
         timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
         
-        g_ar.activeTimers.remove(&timer->m_activeNode);
-        g_ar.activeTimers.add(&timer->m_activeNode, ar_timer_sort_by_wakeup);
+        g_ar.activeTimers.remove(timer);
+        g_ar.activeTimers.add(timer);
     }
 
     return kArSuccess;
@@ -160,7 +160,7 @@ bool ar_timer_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b)
 {
     ar_timer_t * timerA = a->getObject<ar_timer_t>();
     ar_timer_t * timerB = b->getObject<ar_timer_t>();
-    return timerA->m_wakeupTime < timerB->m_wakeupTime;
+    return (timerA->m_wakeupTime < timerB->m_wakeupTime);
 }
 
 const char * ar_timer_get_name(ar_timer_t * timer)
