@@ -181,11 +181,12 @@ typedef struct _ar_list {
     
     // Internal utility methods.
 #if defined(__cplusplus)
-    //! @brief Add an item to the list.
-    void add(ar_list_node_t * item);
-    
-    //! @brief Remove an item from the list.
-    void remove(ar_list_node_t * item);
+    void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
+    inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.
+    inline void add(ar_timer_t * item);         //!< @brief Add a timer to the list.
+    void remove(ar_list_node_t * item);         //!< @brief Remove an item from the list.
+    inline void remove(ar_thread_t * item);     //!< @brief Remove a thread from the list.
+    inline void remove(ar_timer_t * item);      //!< @brief Remove a timer from the list.
 #endif // __cplusplus
 } ar_list_t;
 //@}
