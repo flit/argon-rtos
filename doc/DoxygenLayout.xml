@@ -4,8 +4,13 @@
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="pages" visible="yes" title="" intro=""/>
-    <tab type="user" url="@ref ar" title="Documentation"/>
-    <tab type="modules" visible="no" title="" intro=""/>
+<!-- 
+    <tab type="usergroup" visible="yes" url="@ref ar" title="Kernel Documentation">
+        <tab type="user" url="@ref ar_thread" title="Threads"/>
+        <tab type="user" url="@ref ar_sem" title="Threads"/>
+    </tab>
+ -->
+    <tab type="modules" visible="yes" title="Documentation" intro=""/>
     <tab type="namespaces" visible="yes" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>
       <tab type="namespacemembers" visible="yes" title="" intro=""/>
@@ -143,8 +148,16 @@
     <detaileddescription title="Description"/>
     <memberdecl>
       <nestedgroups visible="yes" title=""/>
-      <dirs visible="yes" title=""/>
       <files visible="yes" title=""/>
+    </memberdecl>
+    <memberdef>
+      <pagedocs/>
+    </memberdef>
+    <memberdecl>
+<!-- 
+      <nestedgroups visible="yes" title=""/>
+ -->
+      <dirs visible="yes" title=""/>
       <namespaces visible="yes" title=""/>
       <classes visible="yes" title=""/>
       <defines title=""/>
@@ -163,7 +176,6 @@
       <membergroups visible="yes"/>
     </memberdecl>
     <memberdef>
-      <pagedocs/>
       <inlineclasses title=""/>
       <defines title=""/>
       <typedefs title=""/>

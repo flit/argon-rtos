@@ -3,6 +3,30 @@
 @defgroup ar Argon RTOS
 @brief Tiny embedded kernel.
 
+@defgroup ar_thread Threads
+@ingroup ar
+
+@defgroup ar_sem Semaphores
+@ingroup ar
+
+@defgroup ar_mutex Mutexes
+@ingroup ar
+
+@defgroup ar_queue Queues
+@ingroup ar
+
+@defgroup ar_timer Timers
+@ingroup ar
+
+@defgroup ar_time Time Utilities
+@ingroup ar
+
+@defgroup ar_atomic Atomic Operations
+@ingroup ar
+
+ */
+
+/*
 @defgroup ar_port Argon Port
 @ingroup ar
 @brief Platform porting support for Argon.

@@ -357,9 +357,6 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
 //!     blocked threads.
 //! @param unblockStatus Status code to return from the function that
 //!     the thread had called when it was originally blocked.
-//!
-//! @todo Conditionalise the removal from the sleeping list to when the thread
-//!     is actually on that list.
 void _ar_thread::unblockWithStatus(ar_list_t & blockedList, status_t unblockStatus)
 {
     // Remove from the sleeping list if it was on there. Won't hurt if

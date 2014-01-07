@@ -39,14 +39,13 @@
 #include "fsl_platform_common.h"
 #include "ar_port.h"
 
-//! @addtogroup ar
-//! @{
-
 //------------------------------------------------------------------------------
 // Constants
 //------------------------------------------------------------------------------
 
 //! @brief Timeout constants.
+//!
+//! @ingroup ar
 enum _ar_timeouts
 {
     //! Return immediately if a resource cannot be acquired.
@@ -57,6 +56,8 @@ enum _ar_timeouts
 };
 
 //! @brief Argon error codes.
+//!
+//! @ingroup ar
 enum _ar_errors
 {
     //! Operation was successful.
@@ -98,6 +99,8 @@ enum _ar_errors
 };
 
 //! @brief Potential thread states.
+//!
+//! @ingroup ar_thread
 typedef enum _ar_thread_state {
     kArThreadUnknown,     //!< Hopefully a thread is never in this state.
     kArThreadSuspended,   //!< Thread is not eligible for execution.
@@ -109,6 +112,8 @@ typedef enum _ar_thread_state {
 } ar_thread_state_t;
 
 //! @brief Range of priorities for threads.
+//!
+//! @ingroup ar_thread
 enum _ar_thread_priorities
 {
     kArIdleThreadPriority = 0,  //!< The idle thread's priority. No other thread is allowed to have this priority.
@@ -117,6 +122,8 @@ enum _ar_thread_priorities
 };
 
 //! @brief Modes of operation for timers.
+//!
+//! @ingroup ar_timer
 typedef enum _ar_timer_modes {
     kArOneShotTimer,      //!< Timer fires a single time.
     kArPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
@@ -131,15 +138,24 @@ typedef struct _ar_thread ar_thread_t;
 typedef struct _ar_timer ar_timer_t;
 typedef struct _ar_list_node ar_list_node_t;
 
+//! @name Function types
+//@{
 //! Function type used for sorting object lists.
 typedef bool (*ar_sort_predicate_t)(ar_list_node_t * a, ar_list_node_t * b);
 
-//! Prototype for the thread entry point.
+//! @brief Prototype for the thread entry point.
+//!
+//! @ingroup ar_thread
 typedef void (*ar_thread_entry_t)(void * param);
 
 //! @brief Callback routine for timer expiration.
+//!
+//! @ingroup ar_timer
 typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
+//@}
 
+//! @name Linked lists
+//@{
 /*!
  * @brief Linked list node.
  */
@@ -148,13 +164,11 @@ typedef struct _ar_list_node {
     ar_list_node_t * m_prev;    //!< Previous node in the list.
     void * m_obj;               //!< Pointer to the object on the list.
 
+    // Internal utility methods.
 #if defined(__cplusplus)
     //! @brief Convert the @a m_obj pointer to a particular type.
-    template <typename T>
-    T * getObject() { return reinterpret_cast<T *>(m_obj); }
-    
-    //! @brief Insert this node before another node on the list.
-    void insertBefore(ar_list_node_t * node);
+    template <typename T> T * getObject() { return reinterpret_cast<T *>(m_obj); }
+    void insertBefore(ar_list_node_t * node);   //!< @brief Insert this node before another node on the list.
 #endif // __cplusplus
 } ar_list_node_t;
 
@@ -163,8 +177,9 @@ typedef struct _ar_list_node {
  */
 typedef struct _ar_list {
     ar_list_node_t * m_head;    //!< Pointer to the head of the list. Will be NULL if the list is empty.
-    ar_sort_predicate_t m_predicate;    //!< Sort predicate to use for this list.
+    ar_sort_predicate_t m_predicate;    //!< Sort predicate to use for this list. Items are added to the end if NULL.
     
+    // Internal utility methods.
 #if defined(__cplusplus)
     //! @brief Add an item to the list.
     void add(ar_list_node_t * item);
@@ -173,9 +188,12 @@ typedef struct _ar_list {
     void remove(ar_list_node_t * item);
 #endif // __cplusplus
 } ar_list_t;
+//@}
 
 /*!
  * @brief Thread.
+ *
+ * @ingroup ar_thread
  */
 typedef struct _ar_thread {
     volatile uint8_t * m_stackPointer;  //!< Current stack pointer.
@@ -192,6 +210,7 @@ typedef struct _ar_thread {
     status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_ref;               //!< Arbitrary reference value.
 
+    // Internal utility methods.
 #if defined(__cplusplus)
     void block(ar_list_t & blockedList, uint32_t timeout);
     void unblockWithStatus(ar_list_t & blockedList, status_t unblockStatus);
@@ -200,6 +219,8 @@ typedef struct _ar_thread {
 
 /*!
  * @brief Counting semaphore.
+ *
+ * @ingroup ar_sem
  */
 typedef struct _ar_semaphore {
     const char * m_name;            //!< Name of the semaphore.
@@ -210,6 +231,8 @@ typedef struct _ar_semaphore {
 
 /*!
  * @brief Mutex.
+ *
+ * @ingroup ar_mutex
  */
 typedef struct _ar_mutex {
     ar_semaphore_t m_sem;               //!< Underlying semaphore for the mutex.
@@ -220,6 +243,8 @@ typedef struct _ar_mutex {
 
 /*!
  * @brief Queue.
+ *
+ * @ingroup ar_queue
  */
 typedef struct _ar_queue {
     const char * m_name;    //!< Name of the queue.
@@ -236,6 +261,8 @@ typedef struct _ar_queue {
 
 /*!
  * @brief Timer.
+ *
+ * @ingroup ar_timer
  */
 typedef struct _ar_timer {
     const char * m_name;            //!< Name of the timer.
@@ -256,6 +283,9 @@ typedef struct _ar_timer {
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+//! @addtogroup ar
+//! @{
 
 //! @name Kernel
 //@{
@@ -283,6 +313,11 @@ bool ar_kernel_is_running(void);
  */
 uint32_t ar_get_system_load(void);
 //@}
+
+//! @}
+
+//! @addtogroup ar_thread
+//! @{
 
 //! @name Threads
 //@{
@@ -370,7 +405,7 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread);
  * Does not enter the scheduler if Ar is not running.
  *
  * @param thread Pointer to the thread structure.
- * @param priority Thread priority level from 1 to 255, where lower numbers have a lower
+ * @param newPriority Thread priority level from 1 to 255, where lower numbers have a lower
  *     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
  *
  * @retval kArSuccess
@@ -402,6 +437,11 @@ void ar_thread_sleep(uint32_t milliseconds);
  */
 const char * ar_thread_get_name(ar_thread_t * thread);
 //@}
+
+//! @}
+
+//! @addtogroup ar_sem
+//! @{
 
 //! @name Semaphores
 //@{
@@ -443,9 +483,9 @@ status_t ar_semaphore_delete(ar_semaphore_t * sem);
  *
  * @param sem Pointer to the semaphore.
  * @param timeout The maximum number of milliseconds that the caller is willing to wait in a
- *     blocked state before the semaphore can be obtained. If this value is 0, or #kNoTimeout,
+ *     blocked state before the semaphore can be obtained. If this value is 0, or #kArNoTimeout,
  *     then this method will return immediately if the semaphore cannot be obtained. Setting
- *     the timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to
+ *     the timeout to #kArInfiniteTimeout will cause the thread to wait forever for a chance to
  *     get the semaphore.
  *
  * @retval kArSuccess The semaphore was obtained without error.
@@ -483,6 +523,11 @@ uint32_t ar_semaphore_get_count(ar_semaphore_t * sem);
  */
 const char * ar_semaphore_get_name(ar_semaphore_t * sem);
 //@}
+
+//! @}
+
+//! @addtogroup ar_mutex
+//! @{
 
 //! @name Mutexes
 //@{
@@ -567,6 +612,11 @@ ar_thread_t * ar_mutex_get_owner(ar_mutex_t * mutex);
 const char * ar_mutex_get_name(ar_mutex_t * mutex);
 //@}
 
+//! @}
+
+//! @addtogroup ar_queue
+//! @{
+
 //! @name Queues
 //@{
 /*!
@@ -599,7 +649,7 @@ status_t ar_queue_delete(ar_queue_t * queue);
  * @param element Pointer to the element to post to the queue. The element size was specified
  *     in the init() call.
  * @param timeout The maximum number of milliseconds that the caller is willing to wait in a
- *     blocked state before the element can be sent. If this value is 0, or #ArkNoTimeout, then
+ *     blocked state before the element can be sent. If this value is 0, or #kArNoTimeout, then
  *     this method will return immediately if the queue is full. Setting the timeout to
  *     #kArInfiniteTimeout will cause the thread to wait forever for a chance to send.
  *
@@ -650,6 +700,11 @@ uint32_t ar_queue_get_count(ar_queue_t * queue);
  */
 const char * ar_queue_get_name(ar_queue_t * queue);
 //@}
+
+//! @}
+
+//! @addtogroup ar_timer
+//! @{
 
 //! @name Timers
 //@{
@@ -735,6 +790,11 @@ uint32_t ar_timer_get_delay(ar_timer_t * timer);
 const char * ar_timer_get_name(ar_timer_t * timer);
 //@}
 
+//! @}
+
+//! @addtogroup ar_time
+//! @{
+
 //! @name Time
 //@{
 /*!
@@ -765,6 +825,11 @@ static inline uint32_t ar_ticks_to_milliseconds(uint32_t ticks) { return ticks *
 static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return milliseconds / ar_get_milliseconds_per_tick(); }
 //@}
 
+//! @}
+
+//! @addtogroup ar
+//! @{
+
 //! @name Interrupts
 //@{
 /*!
@@ -777,6 +842,11 @@ void ar_kernel_enter_interrupt();
  */
 void ar_kernel_exit_interrupt();
 //@}
+
+//! @}
+
+//! @addtogroup ar_atomic
+//! @{
 
 //! @name Atomic operations
 //@{
@@ -800,6 +870,8 @@ inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
  */
 bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
 //@}
+
+//! @}
 
 #if defined(__cplusplus)
 }
