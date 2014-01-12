@@ -36,11 +36,19 @@
 
 /********************************************************************/
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 status_t scuart_init (UART_Type * uartch, int uartclk, int baud);
 char scuart_getchar (UART_Type * channel);
 void scuart_putchar (UART_Type * channel, char ch);
 int scuart_getchar_present (UART_Type * channel);
 void scuart_shutdown (UART_Type * uartch);
+
+#if defined(__cplusplus)
+}
+#endif
 
 /********************************************************************/
 
