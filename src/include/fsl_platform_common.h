@@ -32,7 +32,13 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include "fsl_platform_types.h"
+#include <stdio.h>
+#include <stdint.h>
+
+#if !defined(WIN32)
+#include <stdbool.h>
+#endif
+
 #include "fsl_platform_status.h"
 
 ////////////////////////////////////////////////////////////////////////////////
