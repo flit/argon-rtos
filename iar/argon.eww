@@ -5,6 +5,9 @@
     <path>$WS_DIR$\argon_test_K60.ewp</path>
   </project>
   <project>
+    <path>$WS_DIR$\argon_test_K64.ewp</path>
+  </project>
+  <project>
     <path>$WS_DIR$\argon_test_KL25.ewp</path>
   </project>
   <project>

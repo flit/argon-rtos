@@ -81,7 +81,7 @@
     // CMSIS-style register definitions
     #include "device/MK22F51212/MK22F51212.h"
 
-#elif (defined(CPU_MK64FN1M0VMD12) || defined(CPU_MK64FX512VMD12))
+#elif (defined(CPU_MK64FN1M0VMD12) || defined(CPU_MK64FX512VMD12) || defined(CPU_MK64FN1M0VLL12))
     #define K64F12_SERIES
     // Extension register headers. (These will eventually be merged into the CMSIS-style header.)
     #include "device/MK64F12/MK64F12_adc.h"

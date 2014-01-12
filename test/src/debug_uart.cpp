@@ -31,7 +31,7 @@
 #include "debug_uart.h"
 #include "fsl_device_registers.h"
 
-#if defined(K60D10_SERIES)
+#if defined(K60D10_SERIES) || defined(K64F12_SERIES)
 #include "uart/scuart.h"
 #elif defined(KL25Z4_SERIES)
 #include "uart/uart0.h"
@@ -41,11 +41,21 @@
 // Definitions
 //------------------------------------------------------------------------------
 
-#define UART0_RX_GPIO_PIN_NUM 1  // PIN 1 in the PTA group
-#define UART0_RX_ALT_MODE 2      // ALT mode for UART0 functionality for pin 1
+#if defined(KL25Z4_SERIES)
+    #define UART0_RX_GPIO_PIN_NUM 1  // PIN 1 in the PTA group
+    #define UART0_RX_ALT_MODE 2      // ALT mode for UART0 functionality for pin 1
 
-#define UART0_TX_GPIO_PIN_NUM 2  // PIN 2 in the PTA group
-#define UART0_TX_ALT_MODE 2      // ALT mode for UART0 TX functionality for pin 2
+    #define UART0_TX_GPIO_PIN_NUM 2  // PIN 2 in the PTA group
+    #define UART0_TX_ALT_MODE 2      // ALT mode for UART0 TX functionality for pin 2
+#elif defined(K64F12_SERIES)
+    #define UART0_RX_GPIO_PIN_NUM 16  // PIN 1 in the PTB group
+    #define UART0_RX_ALT_MODE 3      // ALT mode for UART0 functionality for pin 16
+
+    #define UART0_TX_GPIO_PIN_NUM 17  // PIN 2 in the PTB group
+    #define UART0_TX_ALT_MODE 3      // ALT mode for UART0 TX functionality for pin 17
+#else
+    #error "Unsupported chip family"
+#endif
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -73,6 +83,11 @@ void debug_init(void)
     BW_PORT_PCRn_MUX(HW_PORTA, UART0_TX_GPIO_PIN_NUM, UART0_TX_ALT_MODE);   // Set UART0_TX pin to UART0_TX functionality
     
     uart0_init(GetSystemMCGPLLClock(), DEBUG_UART_BAUD);
+#elif defined(K64F12_SERIES)
+    BW_PORT_PCRn_MUX(HW_PORTB, UART0_RX_GPIO_PIN_NUM, UART0_RX_ALT_MODE);   // Set UART0_RX pin to UART0_RX functionality
+    BW_PORT_PCRn_MUX(HW_PORTB, UART0_TX_GPIO_PIN_NUM, UART0_TX_ALT_MODE);   // Set UART0_TX pin to UART0_TX functionality
+    
+    scuart_init(UART0, 120000000, DEBUG_UART_BAUD);
 #endif
 }
 
@@ -84,6 +99,8 @@ size_t __write(int handle, const unsigned char *buf, size_t size)
     {
 #if defined(KL25Z4_SERIES)
         uart0_putchar(*buf++);
+#elif defined(K64F12_SERIES)
+        scuart_putchar(UART0, *buf++);
 #endif
     }
 
