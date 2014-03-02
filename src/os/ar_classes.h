@@ -662,11 +662,14 @@ class Timer : public _ar_timer
 {
 public:
     
+    //! @brief Timer callback function that takes an instance of this class.
+    typedef void (*entry_t)(Timer * timer, void * param);
+    
     //! @brief Default constructor.
     Timer() {}
     
     //! @brief Constructor.
-    Timer(const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+    Timer(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
     {
         init(name, callback, param, timerMode, delay);
     }
@@ -675,10 +678,7 @@ public:
     virtual ~Timer() { ar_timer_delete(this); }
     
     //! @brief Initialize the timer.
-    status_t init(const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
-    {
-        return ar_timer_create(this, name, callback, param, timerMode, delay);
-    }
+    status_t init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
     
     //! @brief Get the timer's name.
     const char * getName() const { return m_name; }
@@ -698,6 +698,13 @@ public:
     //! @brief Get the current delay for the timer.
     uint32_t getDelay() const { return m_delay; }
     
+protected:
+
+    entry_t m_userCallback;    //!< The user timer callback.
+
+    //! @brief Converts the timer struct to an instance of this class.
+    static void timer_wrapper(ar_timer_t * timer, void * arg);
+
 };
 
 /*!

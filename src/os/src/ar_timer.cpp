@@ -168,6 +168,23 @@ const char * ar_timer_get_name(ar_timer_t * timer)
     return timer ? timer->m_name : NULL;
 }
 
+status_t Timer::init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+{
+    m_userCallback = callback;
+    
+    return ar_timer_create(this, name, timer_wrapper, param, timerMode, delay);
+}
+
+void Timer::timer_wrapper(ar_timer_t * timer, void * arg)
+{
+    Timer * _this = static_cast<Timer *>(timer);
+    assert(_this);
+    if (_this->m_userCallback)
+    {
+        _this->m_userCallback(_this, arg);
+    }
+}
+
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
