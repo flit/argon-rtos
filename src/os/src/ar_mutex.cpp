@@ -43,43 +43,43 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
+ar_status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
 {
     if (!mutex)
     {
         return kArInvalidParameterError;
     }
-    
-    status_t status = ar_semaphore_create(&mutex->m_sem, name, 1);
-    
+
+    ar_status_t status = ar_semaphore_create(&mutex->m_sem, name, 1);
+
     if (status == kArSuccess)
     {
         // Start without an owner.
         mutex->m_owner = NULL;
         mutex->m_ownerLockCount = 0;
         mutex->m_originalPriority = 0;
-        
+
         // Set the blocked list to sort by priority.
         mutex->m_sem.m_blockedList.m_predicate = ar_thread_sort_by_priority;
-        
+
 #if AR_GLOBAL_OBJECT_LISTS
         g_ar.allObjects.semaphores.remove(&mutex->m_sem.m_createdNode);
         g_ar.allObjects.mutexes.add(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     }
-    
+
     return status;
 }
 
 // See ar_kernel.h for documentation of this function.
 //! @todo Return error when deleting a mutex that is still locked.
-status_t ar_mutex_delete(ar_mutex_t * mutex)
+ar_status_t ar_mutex_delete(ar_mutex_t * mutex)
 {
     if (!mutex)
     {
         return kArInvalidParameterError;
     }
-    
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.mutexes.remove(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -88,13 +88,13 @@ status_t ar_mutex_delete(ar_mutex_t * mutex)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
+ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
 {
     if (!mutex)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
 
     // If this thread already owns the mutex, just increment the count.
@@ -114,7 +114,7 @@ status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
             {
                 return kArTimeoutError;
             }
-            
+
             // Check if we need to hoist the owning thread's priority to our own.
             ar_thread_t * self = g_ar.currentThread;
             if (self->m_priority > mutex->m_owner->m_priority)
@@ -127,7 +127,7 @@ status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
             }
         }
 
-        status_t result = ar_semaphore_get(&mutex->m_sem, timeout);
+        ar_status_t result = ar_semaphore_get(&mutex->m_sem, timeout);
         if (result == kArSuccess)
         {
             // Set the owner now that we own the lock.
@@ -137,21 +137,21 @@ status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
         else if (result == kArTimeoutError)
         {
             //! @todo Need to handle timeout after hoisting the owner thread.
-            
+
         }
-        
+
         return result;
     }
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_mutex_put(ar_mutex_t * mutex)
+ar_status_t ar_mutex_put(ar_mutex_t * mutex)
 {
     if (!mutex)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
 
     // Nothing to do if the mutex is already unlocked.
@@ -159,26 +159,26 @@ status_t ar_mutex_put(ar_mutex_t * mutex)
     {
         return kArAlreadyUnlockedError;
     }
-    
+
     // Only the owning thread can unlock a mutex.
     ar_thread_t * self = g_ar.currentThread;
     if (self != mutex->m_owner)
     {
         return kArNotOwnerError;
     }
-    
-    status_t result = kArSuccess;
 
-    // We are the owner of the mutex, so decrement its recursive lock count. 
+    ar_status_t result = kArSuccess;
+
+    // We are the owner of the mutex, so decrement its recursive lock count.
     if (--mutex->m_ownerLockCount == 0)
     {
         // The lock count has reached zero, so put the semaphore and clear the owner.
         // The owner is cleared first since putting the sem can cause us to
         // switch threads.
         mutex->m_owner = NULL;
-        
+
         result = ar_semaphore_put(&mutex->m_sem);
-        
+
         // Restore this thread's priority if it had been raised.
         uint8_t original = mutex->m_originalPriority;
         if (original)
@@ -187,7 +187,7 @@ status_t ar_mutex_put(ar_mutex_t * mutex)
             ar_thread_set_priority(self, original);
         }
     }
-    
+
     return result;
 }
 

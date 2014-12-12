@@ -52,21 +52,21 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity)
+ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity)
 {
     if (!queue || !storage || !elementSize || !capacity)
     {
         return kArInvalidParameterError;
     }
-    
+
     memset(queue, 0, sizeof(ar_queue_t));
-    
+
     queue->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     queue->m_elements = reinterpret_cast<uint8_t *>(storage);
     queue->m_elementSize = elementSize;
     queue->m_capacity = capacity;
     queue->m_createdNode.m_obj = queue;
-    
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.queues.add(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -75,7 +75,7 @@ status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, 
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_queue_delete(ar_queue_t * queue)
+ar_status_t ar_queue_delete(ar_queue_t * queue)
 {
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.queues.remove(&queue->m_createdNode);
@@ -85,15 +85,15 @@ status_t ar_queue_delete(ar_queue_t * queue)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout)
+ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout)
 {
     if (!queue || !element)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
-    
+
     // Check for full queue
     if (queue->m_count >= queue->m_capacity)
     {
@@ -102,21 +102,21 @@ status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeou
         {
             return kArQueueFullError;
         }
-        
+
         // Otherwise block until the queue has room.
         ar_thread_t * thread = g_ar.currentThread;
         thread->block(queue->m_sendBlockedList, timeout);
-        
+
         // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
-        
+
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
         ar_kernel_enter_scheduler();
-        
+
         disableIrq.disable();
-        
+
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
@@ -126,15 +126,15 @@ status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeou
             return thread->m_unblockStatus;
         }
     }
-    
+
     // fill element
     uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
     memcpy(elementSlot, element, queue->m_elementSize);
-    
+
     // Update queue pointers
     queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
     queue->m_count++;
-    
+
     // Are there any threads waiting to receive?
     if (queue->m_receiveBlockedList.m_head)
     {
@@ -147,24 +147,24 @@ status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeou
         {
             // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
-        
+
             ar_kernel_enter_scheduler();
         }
     }
-    
+
     return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
+ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
 {
     if (!queue || !element)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
-    
+
     // Check for empty queue
     if (queue->m_count == 0)
     {
@@ -172,21 +172,21 @@ status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
         {
             return kArQueueEmptyError;
         }
-        
+
         // Otherwise block until the queue has room.
         ar_thread_t * thread = g_ar.currentThread;
         thread->block(queue->m_receiveBlockedList, timeout);
-        
+
         // Reenable interrupts to allow switching contexts.
         disableIrq.enable();
-        
+
         // Yield to the scheduler. While other threads are executing, interrupts
         // will be restored to the state on those threads. When we come back to
         // this thread, interrupts will still be disabled.
         ar_kernel_enter_scheduler();
-        
+
         disableIrq.disable();
-        
+
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
@@ -196,15 +196,15 @@ status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
             return thread->m_unblockStatus;
         }
     }
-    
+
     // read out data
     uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
     memcpy(element, elementSlot, queue->m_elementSize);
-    
+
     // update queue
     queue->m_head = (queue->m_head + 1) % queue->m_capacity;
     queue->m_count--;
-    
+
     // Are there any threads waiting to send?
     if (queue->m_sendBlockedList.m_head)
     {
@@ -217,11 +217,11 @@ status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout)
         {
             // Reenable interrupts to allow switching contexts.
             disableIrq.enable();
-        
+
             ar_kernel_enter_scheduler();
         }
     }
-    
+
     return kArSuccess;
 }
 

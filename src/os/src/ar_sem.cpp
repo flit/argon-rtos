@@ -43,7 +43,7 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count)
+ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count)
 {
     if (!sem)
     {
@@ -63,7 +63,7 @@ status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned c
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_semaphore_delete(ar_semaphore_t * sem)
+ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
 {
     if (!sem)
     {
@@ -84,7 +84,7 @@ status_t ar_semaphore_delete(ar_semaphore_t * sem)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
+ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 {
     if (!sem)
     {
@@ -137,7 +137,7 @@ status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_semaphore_put(ar_semaphore_t * sem)
+ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
 {
     if (!sem)
     {

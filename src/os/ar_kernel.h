@@ -36,7 +36,6 @@
 #if !defined(_AR_KERNEL_H_)
 #define _AR_KERNEL_H_
 
-#include "fsl_platform_common.h"
 #include "ar_port.h"
 
 //------------------------------------------------------------------------------
@@ -55,10 +54,10 @@ enum _ar_timeouts
     kArInfiniteTimeout = 0xffffffffL
 };
 
-//! @brief Argon error codes.
+//! @brief Argon status and error codes.
 //!
 //! @ingroup ar
-enum _ar_errors
+typedef enum _ar_status
 {
     //! Operation was successful.
     kArSuccess = 0,
@@ -96,7 +95,7 @@ enum _ar_errors
 
     //! The timer is not running.
     kArTimerNotRunningError
-};
+} ar_status_t;
 
 //! @brief Potential thread states.
 //!
@@ -208,13 +207,13 @@ typedef struct _ar_thread {
     ar_list_node_t m_createdNode;   //!< Created list node.
     ar_list_node_t m_blockedNode;   //!< Blocked list node.
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
-    status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
+    ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_ref;               //!< Arbitrary reference value.
 
     // Internal utility methods.
 #if defined(__cplusplus)
     void block(ar_list_t & blockedList, uint32_t timeout);
-    void unblockWithStatus(ar_list_t & blockedList, status_t unblockStatus);
+    void unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockStatus);
 #endif // __cplusplus
 } ar_thread_t;
 
@@ -342,14 +341,14 @@ uint32_t ar_get_system_load(void);
  *
  * @return kArSuccess The thread was initialised without error.
  */
-status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 
 /*!
  * @brief Delete a thread.
  *
  * @param thread Pointer to the thread structure.
  */
-status_t ar_thread_delete(ar_thread_t * thread);
+ar_status_t ar_thread_delete(ar_thread_t * thread);
 
 /*!
  * @brief Put thread in suspended state.
@@ -363,7 +362,7 @@ status_t ar_thread_delete(ar_thread_t * thread);
  *
  * @param thread Pointer to the thread structure.
  */
-status_t ar_thread_suspend(ar_thread_t * thread);
+ar_status_t ar_thread_suspend(ar_thread_t * thread);
 
 /*!
  * @brief Make the thread eligible for execution.
@@ -379,7 +378,7 @@ status_t ar_thread_suspend(ar_thread_t * thread);
  *
  * @param thread Pointer to the thread structure.
  */
-status_t ar_thread_resume(ar_thread_t * thread);
+ar_status_t ar_thread_resume(ar_thread_t * thread);
 
 /*!
  * @brief Return the current state of the thread.
@@ -412,7 +411,7 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread);
  * @retval kArSuccess
  * @retval kArInvalidPriorityError
  */
-status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
+ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
 
 /*!
  * @brief Returns the currently running thread object.
@@ -458,7 +457,7 @@ const char * ar_thread_get_name(ar_thread_t * thread);
  *
  * @retval kArSuccess Semaphore initialised successfully.
  */
-status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
+ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned count);
 
 /*!
  * @brief Delete a semaphore.
@@ -469,7 +468,7 @@ status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigned c
  * @param sem Pointer to the semaphore.
  * @retval kArSuccess Semaphore deleted successfully.
  */
-status_t ar_semaphore_delete(ar_semaphore_t * sem);
+ar_status_t ar_semaphore_delete(ar_semaphore_t * sem);
 
 /*!
  * @brief Acquire the semaphore.
@@ -497,7 +496,7 @@ status_t ar_semaphore_delete(ar_semaphore_t * sem);
  * @retval kArNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
  *     context.
  */
-status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout);
+ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout);
 
 /*!
  * @brief Release the semaphore.
@@ -508,7 +507,7 @@ status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout);
  *
  * @note This call is safe from interrupt context.
  */
-status_t ar_semaphore_put(ar_semaphore_t * sem);
+ar_status_t ar_semaphore_put(ar_semaphore_t * sem);
 
 /*!
  * @brief Returns the current semaphore count.
@@ -542,7 +541,7 @@ const char * ar_semaphore_get_name(ar_semaphore_t * sem);
  *
  * @retval kArSuccess
  */
-status_t ar_mutex_create(ar_mutex_t * mutex, const char * name);
+ar_status_t ar_mutex_create(ar_mutex_t * mutex, const char * name);
 
 /*!
  * @brief Delete a mutex.
@@ -551,7 +550,7 @@ status_t ar_mutex_create(ar_mutex_t * mutex, const char * name);
  *
  * @retval kArSuccess
  */
-status_t ar_mutex_delete(ar_mutex_t * mutex);
+ar_status_t ar_mutex_delete(ar_mutex_t * mutex);
 
 /*!
  * @brief Lock the mutex.
@@ -574,7 +573,7 @@ status_t ar_mutex_delete(ar_mutex_t * mutex);
  * @retval kArObjectDeletedError Another thread deleted the semaphore while the caller was
  *     blocked on it.
  */
-status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
+ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
 
 /*!
  * @brief Unlock the mutex.
@@ -589,7 +588,7 @@ status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
  * @retval kArAlreadyUnlockedError The mutex is not locked.
  * @retval kArNotOwnerError The caller is not the thread that owns the mutex.
  */
-status_t ar_mutex_put(ar_mutex_t * mutex);
+ar_status_t ar_mutex_put(ar_mutex_t * mutex);
 
 /*!
  * @brief Returns whether the mutex is currently locked.
@@ -632,14 +631,14 @@ const char * ar_mutex_get_name(ar_mutex_t * mutex);
  *
  * @retval kArSuccess The queue was initialised.
  */
-status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity);
+ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storage, unsigned elementSize, unsigned capacity);
 
 /*!
  * @brief Delete an existing queue.
  *
  * @param queue The queue object.
  */
-status_t ar_queue_delete(ar_queue_t * queue);
+ar_status_t ar_queue_delete(ar_queue_t * queue);
 
 /*!
  * @brief Add an item to the queue.
@@ -657,7 +656,7 @@ status_t ar_queue_delete(ar_queue_t * queue);
  * @retval kArSuccess
  * @retval kArQueueFullError
  */
-status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout);
+ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout);
 
 /*!
  * @brief Remove an item from the queue.
@@ -672,7 +671,7 @@ status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeou
  * @retval kArSuccess
  * @retval kArQueueEmptyError
  */
-status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout);
+ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeout);
 
 /*!
  * @brief Returns whether the queue is currently empty.
@@ -723,7 +722,7 @@ const char * ar_queue_get_name(ar_queue_t * queue);
  *
  * @retval kArSuccess The timer was created successfully.
  */
-status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
+ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
 
 /*!
  * @brief Delete a timer.
@@ -732,7 +731,7 @@ status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t
  *
  * @retval kArSuccess The timer was deleted successfully.
  */
-status_t ar_timer_delete(ar_timer_t * timer);
+ar_status_t ar_timer_delete(ar_timer_t * timer);
 
 /*!
  * @brief Start the timer running.
@@ -741,7 +740,7 @@ status_t ar_timer_delete(ar_timer_t * timer);
  *
  * @retval kArSuccess The timer was started successfully.
  */
-status_t ar_timer_start(ar_timer_t * timer);
+ar_status_t ar_timer_start(ar_timer_t * timer);
 
 /*!
  * @brief Stop the timer.
@@ -750,7 +749,7 @@ status_t ar_timer_start(ar_timer_t * timer);
  *
  * @retval kArSuccess The timer was stopped successfully.
  */
-status_t ar_timer_stop(ar_timer_t * timer);
+ar_status_t ar_timer_stop(ar_timer_t * timer);
 
 /*!
  * @brief Returns whether the timer is currently running.
@@ -770,7 +769,7 @@ bool ar_timer_is_active(ar_timer_t * timer);
  *
  * @retval kArSuccess The timer's delay was modified.
  */
-status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t newDelay);
+ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t newDelay);
 
 /*!
  * @brief Get the current delay for the timer.

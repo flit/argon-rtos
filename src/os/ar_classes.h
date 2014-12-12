@@ -79,7 +79,7 @@ namespace Ar {
  *      class MySubclassThread : public Ar::Thread
  *      {
  *      public:
- *          status_t init()
+ *          ar_status_t init()
  *          {
  *              // Pass NULL for the entry point. It's not needed because you are
  *              // overriding threadEntry() below.
@@ -133,7 +133,7 @@ public:
     //!     reserved for the idle thread.
     //!
     //! @return kSuccess The thread was initialised without error.
-    status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
     //@}
 
     //! @brief Get the thread's name.
@@ -201,7 +201,7 @@ public:
     //!     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
     //!
     //! @retval kInvalidPriorityError
-    status_t setPriority(uint8_t priority) { return ar_thread_set_priority(this, priority); }
+    ar_status_t setPriority(uint8_t priority) { return ar_thread_set_priority(this, priority); }
     //@}
 
     //! @name Accessors
@@ -245,7 +245,7 @@ public:
         init(name, obj, entry, param, stack, stackSize, priority);
     }
 
-    status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    ar_status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
         m_object = obj;
         m_entryMember = entry;
@@ -279,7 +279,7 @@ public:
         Thread::init(name, entry, param, m_stack, S, priority);
     }
 
-    status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
+    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
     }
@@ -308,7 +308,7 @@ public:
         ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
     }
 
-    status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
+    ar_status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
     {
         return ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
     }
@@ -345,7 +345,7 @@ public:
     //!     calls to get() to succeed.
     //!
     //! @retval kSuccess Semaphore initialised successfully.
-    status_t init(const char * name, unsigned count=1) { return ar_semaphore_create(this, name, count); }
+    ar_status_t init(const char * name, unsigned count=1) { return ar_semaphore_create(this, name, count); }
 
     //! @brief Destructor.
     //!
@@ -379,14 +379,14 @@ public:
     //!     blocked on it.
     //! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
     //!     context.
-    status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
+    ar_status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
 
     //! @brief Release the semaphore.
     //!
     //! The semaphore count is incremented.
     //!
     //! @note This call is safe from interrupt context.
-    status_t put() { return ar_semaphore_put(this); }
+    ar_status_t put() { return ar_semaphore_put(this); }
 
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
@@ -455,7 +455,7 @@ public:
     //! @param name The name of the mutex.
     //!
     //! @retval SUCCCESS
-    status_t init(const char * name) { return ar_mutex_create(this, name); }
+    ar_status_t init(const char * name) { return ar_mutex_create(this, name); }
 
     //! @brief Cleanup.
     virtual ~Mutex() { ar_mutex_delete(this); }
@@ -481,7 +481,7 @@ public:
     //!     obtained.
     //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
-    status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
+    ar_status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
 
     //! @brief Unlock the mutex.
     //!
@@ -492,7 +492,7 @@ public:
     //!
     //! @retval kAlreadyUnlockedError The mutex is not locked.
     //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
-    status_t put() { return ar_mutex_put(this); }
+    ar_status_t put() { return ar_mutex_put(this); }
 
     //! @brief Returns the current owning thread, if there is one.
     ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }
@@ -525,7 +525,7 @@ public:
     //! @param capacity The number of elements that the buffer pointed to by @a storage will hold.
     //!
     //! @retval kSuccess The queue was initialised.
-    status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
+    ar_status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
     {
         return ar_queue_create(this, name, storage, elementSize, capacity);
     }
@@ -549,7 +549,7 @@ public:
     //!
     //! @retval kSuccess
     //! @retval kQueueFullError
-    status_t send(const void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_send(this, element, timeout); }
+    ar_status_t send(const void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_send(this, element, timeout); }
 
     //! @brief Remove an item from the queue.
     //!
@@ -561,7 +561,7 @@ public:
     //!
     //! @retval kSuccess
     //! @retval kQueueEmptyError
-    status_t receive(void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_receive(this, element, timeout); }
+    ar_status_t receive(void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_receive(this, element, timeout); }
 
     //! @brief Returns whether the queue is currently empty.
     bool isEmpty() const { return m_count == 0; }
@@ -592,7 +592,7 @@ public:
  *
  *      q.send(1024);
  *
- *      status_t s;
+ *      ar_status_t s;
  *
  *      s = q.receive(&element);
  *
@@ -616,19 +616,19 @@ public:
     }
 
     //! @brief Initialiser method.
-    status_t init(const char * name)
+    ar_status_t init(const char * name)
     {
         return Queue::init(name, m_storage, sizeof(T), N);
     }
 
     //! @copydoc Queue::send()
-    status_t send(T element, uint32_t timeout=kArInfiniteTimeout)
+    ar_status_t send(T element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::send((const void *)&element, timeout);
     }
 
     //! @copydoc Queue::receive()
-    status_t receive(T * element, uint32_t timeout=kArInfiniteTimeout)
+    ar_status_t receive(T * element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::receive((void *)element, timeout);
     }
@@ -638,10 +638,10 @@ public:
     //! @param[out] resultStatus The status of the receive operation is placed here.
     //!     May be NULL, in which case no status is returned.
     //! @param timeout Maximum time in ticks to wait for a queue element.
-    T receive(uint32_t timeout=kArInfiniteTimeout, status_t * resultStatus=NULL)
+    T receive(uint32_t timeout=kArInfiniteTimeout, ar_status_t * resultStatus=NULL)
     {
         T element;
-        status_t status = Queue::receive((void *)&element, timeout);
+        ar_status_t status = Queue::receive((void *)&element, timeout);
         if (resultStatus)
         {
             *resultStatus = status;
@@ -678,7 +678,7 @@ public:
     virtual ~Timer() { ar_timer_delete(this); }
 
     //! @brief Initialize the timer.
-    status_t init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
+    ar_status_t init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
 
     //! @brief Get the timer's name.
     const char * getName() const { return m_name; }

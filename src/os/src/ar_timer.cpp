@@ -43,7 +43,7 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
 {
     if (!timer || !callback || !delay)
     {
@@ -68,7 +68,7 @@ status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entry_t
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_timer_delete(ar_timer_t * timer)
+ar_status_t ar_timer_delete(ar_timer_t * timer)
 {
     if (!timer)
     {
@@ -85,7 +85,7 @@ status_t ar_timer_delete(ar_timer_t * timer)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_timer_start(ar_timer_t * timer)
+ar_status_t ar_timer_start(ar_timer_t * timer)
 {
     if (!timer)
     {
@@ -111,7 +111,7 @@ status_t ar_timer_start(ar_timer_t * timer)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_timer_stop(ar_timer_t * timer)
+ar_status_t ar_timer_stop(ar_timer_t * timer)
 {
     if (!timer)
     {
@@ -132,7 +132,7 @@ status_t ar_timer_stop(ar_timer_t * timer)
 }
 
 // See ar_kernel.h for documentation of this function.
-status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
+ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
 {
     if (!timer)
     {
@@ -168,7 +168,7 @@ const char * ar_timer_get_name(ar_timer_t * timer)
     return timer ? timer->m_name : NULL;
 }
 
-status_t Timer::init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+ar_status_t Timer::init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
 {
     m_userCallback = callback;
     

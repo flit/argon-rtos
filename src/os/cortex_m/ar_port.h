@@ -36,7 +36,6 @@
 #if !defined(_AR_PORT_H_)
 #define _AR_PORT_H_
 
-#include "fsl_platform_common.h"
 #include "fsl_device_registers.h"
 
 #if defined(__cplusplus)
@@ -115,16 +114,16 @@ public:
             __disable_irq();
         }
     }
-    
+
     //! @brief Restores interrupt mask state.
     ~IrqStateSetAndRestore()
     {
         __set_PRIMASK(m_savedPrimask);
     }
-    
+
     //! @brief Disable interrupts.
     void disable() { __disable_irq(); }
-    
+
     //! @brief Enable interrupts.
     void enable() { __enable_irq(); }
 
