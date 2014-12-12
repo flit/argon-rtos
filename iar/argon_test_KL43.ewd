@@ -45,7 +45,7 @@
         </option>
         <option>
           <name>MemFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK60DN512Zxxx10.ddf</state>
+          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MKL43Z256xxx4.ddf</state>
         </option>
         <option>
           <name>RunToEnable</name>
@@ -97,7 +97,7 @@
         </option>
         <option>
           <name>UseFlashLoader</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CLowLevel</name>
@@ -117,7 +117,7 @@
         </option>
         <option>
           <name>FlashLoadersV3</name>
-          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK60Dxxx128K.board</state>
+          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashKLxx256KROM.board</state>
         </option>
         <option>
           <name>OCImagesSuppressCheck1</name>
@@ -830,7 +830,7 @@
         </option>
         <option>
           <name>CCJLinkInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>OCJLinkAttachSlave</name>
@@ -1394,7 +1394,7 @@
         </option>
         <option>
           <name>MemFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MK60DN512Zxxx10.ddf</state>
+          <state>$TOOLKIT_DIR$\CONFIG\debugger\Freescale\MKL43Z256xxx4.ddf</state>
         </option>
         <option>
           <name>RunToEnable</name>
@@ -1438,7 +1438,7 @@
         </option>
         <option>
           <name>OCLastSavedByProductVersion</name>
-          <state>6.70.1.5793</state>
+          <state>7.30.1.7765</state>
         </option>
         <option>
           <name>OCDownloadAttachToProgram</name>
@@ -1466,7 +1466,7 @@
         </option>
         <option>
           <name>FlashLoadersV3</name>
-          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashK60Dxxx128K.board</state>
+          <state>$TOOLKIT_DIR$\config\flashloader\Freescale\FlashKLxx256KROM.board</state>
         </option>
         <option>
           <name>OCImagesSuppressCheck1</name>
@@ -2179,7 +2179,7 @@
         </option>
         <option>
           <name>CCJLinkInterfaceRadio</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>OCJLinkAttachSlave</name>

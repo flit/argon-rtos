@@ -17,15 +17,15 @@
         <debug>1</debug>
         <option>
           <name>ExePath</name>
-          <state>output\ring_coder_KL25\debug\exe</state>
+          <state>output\KL43\debug\exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>output\ring_coder_KL25\debug\obj</state>
+          <state>output\KL43\debug\obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>output\ring_coder_KL25\debug\list</state>
+          <state>output\KL43\debug\list</state>
         </option>
         <option>
           <name>Variant</name>
@@ -87,7 +87,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>6.70.1.5793</state>
+          <state>7.30.1.7765</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -99,7 +99,7 @@
         </option>
         <option>
           <name>OGChipSelectEditMenu</name>
-          <state>MKL25Z128xxx4	Freescale MKL25Z128xxx4</state>
+          <state>MKL43Z256xxx4	Freescale MKL43Z256xxx4</state>
         </option>
         <option>
           <name>GenLowLevelInterface</name>
@@ -172,8 +172,10 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state>CPU_MKL25Z128VLK4</state>
+          <state>CPU_MKL43Z256VLH4</state>
           <state>DEBUG</state>
+          <state>TARGET_KL43Z</state>
+          <state>TOOLCHAIN_IAR</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -305,12 +307,15 @@
           <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
+          <state>$PROJ_DIR$\..\src\include\device\MKL43Z4</state>
           <state>$PROJ_DIR$\..\src\startup</state>
+          <state>$PROJ_DIR$\..\src\startup\MKL43Z4</state>
           <state>$PROJ_DIR$\..\src\os\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
           <state>$PROJ_DIR$\..\src\mbed\api</state>
-          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -602,7 +607,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>argon_test.srec</state>
+          <state>argon_test_KL43.srec</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -644,7 +649,7 @@
         <debug>1</debug>
         <option>
           <name>IlinkOutputFile</name>
-          <state>ring_coder_test.out</state>
+          <state>argon_test.out</state>
         </option>
         <option>
           <name>IlinkLibIOConfig</name>
@@ -720,7 +725,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\config\128KB_Pflash.icf</state>
+          <state>$PROJ_DIR$\config\32KB_RAM.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -972,15 +977,15 @@
         <debug>0</debug>
         <option>
           <name>ExePath</name>
-          <state>output\KL25\release\exe</state>
+          <state>output\KL43\release\exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>output\KL25\release\obj</state>
+          <state>output\KL43\release\obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>output\KL25\release\list</state>
+          <state>output\KL43\release\list</state>
         </option>
         <option>
           <name>Variant</name>
@@ -1042,7 +1047,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>6.70.1.5793</state>
+          <state>7.30.1.7765</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -1054,7 +1059,7 @@
         </option>
         <option>
           <name>OGChipSelectEditMenu</name>
-          <state>MKL25Z128xxx4	Freescale MKL25Z128xxx4</state>
+          <state>MKL43Z256xxx4	Freescale MKL43Z256xxx4</state>
         </option>
         <option>
           <name>GenLowLevelInterface</name>
@@ -1127,8 +1132,9 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state>CPU_MKL25Z128VLK4</state>
+          <state>CPU_MKL43Z256VLH4</state>
           <state>NDEBUG</state>
+          <state>TARGET_KL43Z</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -1265,7 +1271,8 @@
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
           <state>$PROJ_DIR$\..\src\mbed\api</state>
-          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1927,12 +1934,6 @@
       </group>
       <group>
         <name>uart</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\uart\uart0.c</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\uart\uart0.h</name>
-        </file>
       </group>
     </group>
     <group>
@@ -1952,6 +1953,9 @@
       <group>
         <name>common</name>
         <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\assert.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\mbed\common\board.c</name>
         </file>
         <file>
@@ -1968,6 +1972,9 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\CAN.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\error.c</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\Ethernet.cpp</name>
@@ -1989,6 +1996,9 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\FunctionPointer.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\common\gpio.c</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\I2C.cpp</name>
@@ -2058,72 +2068,75 @@
         </file>
       </group>
       <group>
-        <name>kl25</name>
+        <name>kl43</name>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\analogin_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\analogin_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\analogout_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\analogout_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\clk_freqs.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis_nvic.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\device.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\cmsis_nvic.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\gpio_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\device.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\gpio_irq_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\gpio_object.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_irq_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\i2c_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\gpio_object.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\mbed_overrides.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\i2c_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\objects.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\objects.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\PeripheralNames.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PeripheralNames.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\PeripheralPins.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\pinmap.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\PeripheralPins.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PinNames.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\pinmap.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\port_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\PinNames.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\PortNames.h</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\port_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\pwmout_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\PortNames.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\rtc_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\pwmout_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\serial_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\rtc_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\sleep.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\serial_api.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\spi_api.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\sleep.c</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z\us_ticker.c</name>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\spi_api.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\us_ticker.c</name>
         </file>
       </group>
     </group>
@@ -2143,6 +2156,9 @@
       </group>
       <group>
         <name>src</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_internal.h</name>
+        </file>
         <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_kernel.cpp</name>
         </file>
@@ -2169,6 +2185,9 @@
     <group>
       <name>startup</name>
       <file>
+        <name>$PROJ_DIR$\..\src\include\device\MKL43Z4\cmsis_nvic.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\src\startup\crt0.s</name>
       </file>
       <file>
@@ -2178,15 +2197,21 @@
         <name>$PROJ_DIR$\..\src\startup\startup.h</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\src\startup\MKL25Z4\startup_MKL25Z4.s</name>
+        <name>$PROJ_DIR$\..\src\startup\MKL43Z4\iar\startup_MKL43Z4.s</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\src\startup\MKL25Z4\system_MKL25Z4.c</name>
+        <name>$PROJ_DIR$\..\src\startup\MKL43Z4\system_MKL43Z4.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\startup\MKL43Z4\system_MKL43Z4.h</name>
       </file>
     </group>
   </group>
   <group>
     <name>test</name>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
+    </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
       <excluded>
@@ -2198,7 +2223,19 @@
       <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\test\src\led_ringcoder.cpp</name>
+      <name>$PROJ_DIR$\..\test\src\kernel_tests.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\test_mutex_1.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\test_queue_1.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\test_sem_1.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\test\src\test_sleep_1.cpp</name>
     </file>
   </group>
 </project>

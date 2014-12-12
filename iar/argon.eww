@@ -11,6 +11,9 @@
     <path>$WS_DIR$\argon_test_KL25.ewp</path>
   </project>
   <project>
+    <path>$WS_DIR$\argon_test_KL43.ewp</path>
+  </project>
+  <project>
     <path>$WS_DIR$\led_ringcoder_test_KL25.ewp</path>
   </project>
   <batchBuild/>
