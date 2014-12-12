@@ -201,28 +201,17 @@
     // CMSIS-style register definitions
     #include "device/MKL03Z4/MKL03Z4.h"
 
-#elif (defined(CPU_MKL43Z64VFT4) || defined(CPU_MKL43Z128VFT4) || defined(CPU_MKL43Z64VLH4) || defined(CPU_MKL43Z128VLH4) || defined(CPU_MKL43Z256VLH4) || defined(CPU_MKL43Z64VMP4) || defined(CPU_MKL43Z128VMP4) || defined(CPU_MKL43Z256VMP4))
+#elif (defined(CPU_MKL43Z128VLH4) || defined(CPU_MKL43Z256VLH4) || defined(CPU_MKL43Z128VMP4) || \
+    defined(CPU_MKL43Z256VMP4))
 
-    #include "device/MKL43Z4/MKL43Z4_dma.h"
-    #include "device/MKL43Z4/MKL43Z4_dmamux.h"
-    #include "device/MKL43Z4/MKL43Z4_ftfa.h"
-    #include "device/MKL43Z4/MKL43Z4_gpio.h"
-    #include "device/MKL43Z4/MKL43Z4_i2c.h"
-    #include "device/MKL43Z4/MKL43Z4_mcg.h"
-    #include "device/MKL43Z4/MKL43Z4_mcm.h"
-    #include "device/MKL43Z4/MKL43Z4_osc.h"
-    #include "device/MKL43Z4/MKL43Z4_pctl.h"
-    #include "device/MKL43Z4/MKL43Z4_pit.h"
-    #include "device/MKL43Z4/MKL43Z4_sim.h"
-    #include "device/MKL43Z4/MKL43Z4_smc.h"
-    #include "device/MKL43Z4/MKL43Z4_spi.h"
-    #include "device/MKL43Z4/MKL43Z4_uart.h"
-    #include "device/MKL43Z4/MKL43Z4_lpuart.h"
-    #include "device/MKL43Z4/MKL43Z4_usb.h"
-    #include "device/MKL43Z4/MKL43Z4_rcm.h"
+    #define KL43Z4_SERIES
 
-    // CMSIS-style register definitions
+    /* CMSIS-style register definitions */
     #include "device/MKL43Z4/MKL43Z4.h"
+    /* Extension register definitions */
+    #include "device/MKL43Z4/MKL43Z4_registers.h"
+    /* CPU specific feature definitions */
+    #include "device/MKL43Z4/MKL43Z4_features.h"
 
 #elif (defined(CPU_MK70FN1M0VMJ12) || defined(CPU_MK70FX512VMJ12))
     // Extension register headers. (These will eventually be merged into the CMSIS-style header.)
@@ -253,7 +242,7 @@
     #include "device/MK70F12/K70_uart.h"
     #include "device/MK70F12/K70_usb.h"
     #include "device/MK70F12/K70_usbhs.h"
-    
+
     // Now include CMSIS style.
     #include "device/MK70F12/MK70F12.h"
 
