@@ -391,38 +391,34 @@ public:
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
 
-};
-
-/*!
- * @brief Utility class to automatically get and put a semaphore or mutex.
- *
- * @ingroup ar
- *
- * This class is intended to be stack allocated. It gets and holds a semaphore or mutex for the
- * duration of the scope in which it is declared. Once it goes out of scope, the destructor
- * automatically puts the lock.
- */
-class LockHolder
-{
-public:
-    //! @brief Constructor which gets the semaphore.
-    //!
-    //! Like the Semaphore::get() method, this constructor takes an optional timeout value which
-    //! defaults to never timeout.
-    LockHolder(Semaphore & sem, uint32_t timeout=kArInfiniteTimeout)
-    :   m_sem(sem)
+    /*!
+     * @brief Utility class to automatically get and put a semaphore.
+     *
+     * @ingroup ar
+     *
+     * This class is intended to be stack allocated. It gets and holds a semaphore for the
+     * duration of the scope in which it is declared. Once it goes out of scope, the destructor
+     * automatically puts the semaphore.
+     */
+    class Guard
     {
-        m_sem.get(timeout);
-    }
-    
-    //! @brief Destructor that puts the semaphore.
-    ~LockHolder()
-    {
-        m_sem.put();
-    }
+    public:
+        //! @brief Constructor which gets the semaphore.
+        Guard(Semaphore & sem)
+        :   m_sem(sem)
+        {
+            m_sem.get(kArInfiniteTimeout);
+        }
 
-protected:
-    Semaphore & m_sem;  //!< The semaphore to hold.
+        //! @brief Destructor that puts the semaphore.
+        ~Guard()
+        {
+            m_sem.put();
+        }
+
+    protected:
+        Semaphore & m_sem;  //!< The semaphore to hold.
+    };
 };
 
 /*!
@@ -496,6 +492,35 @@ public:
 
     //! @brief Returns the current owning thread, if there is one.
     ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }
+
+    /*!
+     * @brief Utility class to automatically get and put a mutex.
+     *
+     * @ingroup ar
+     *
+     * This class is intended to be stack allocated. It gets and holds a mutex for the
+     * duration of the scope in which it is declared. Once it goes out of scope, the destructor
+     * automatically puts the lock.
+     */
+    class Guard
+    {
+    public:
+        //! @brief Constructor which gets the mutex.
+        Guard(Mutex & mutex)
+        :   m_mutex(mutex)
+        {
+            m_mutex.get(kArInfiniteTimeout);
+        }
+
+        //! @brief Destructor that puts the mutex.
+        ~Guard()
+        {
+            m_mutex.put();
+        }
+
+    protected:
+        Mutex & m_mutex;  //!< The mutex to hold.
+    };
 
 };
 
