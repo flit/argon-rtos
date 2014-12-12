@@ -75,11 +75,11 @@ void idle_entry(void * param)
     uint32_t last;
     uint32_t ticks;
     uint32_t skipped = 0;
-    
+
     start = g_ar.tickCount;
     last = start;
 #endif // AR_ENABLE_SYSTEM_LOAD
-    
+
     while (1)
     {
         // Check if we need to handle a timer.
@@ -91,33 +91,33 @@ void idle_entry(void * param)
             {
                 ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
                 assert(timer);
-                
+
                 if (timer->m_wakeupTime > g_ar.tickCount)
                 {
                     break;
                 }
-                
+
                 // Invoke the timer callback.
                 assert(timer->m_callback);
                 timer->m_callback(timer, timer->m_param);
-            
+
                 switch (timer->m_mode)
                 {
                     case kArOneShotTimer:
                         // Stop a one shot timer after it has fired.
                         ar_timer_stop(timer);
                         break;
-                    
+
                     case kArPeriodicTimer:
                         // Restart a periodic timer.
                         ar_timer_start(timer);
                         break;
                 }
-            
+
                 handledTimer = true;
                 timerNode = timerNode->m_next;
             }
-        
+
             // If we handled any timers, we need to set our priority back to the normal idle thread
             // priority. The tick handler will have raised our priority to the max in order to handle
             // the expired timers.
@@ -126,19 +126,19 @@ void idle_entry(void * param)
                 ar_thread_set_priority(&g_ar.idleThread, kArIdleThreadPriority);
             }
         }
-        
+
         // Compute system load.
 #if AR_ENABLE_SYSTEM_LOAD
         ticks = g_ar.tickCount;
-        
+
         if (ticks != last)
         {
             uint32_t diff = ticks - last;
-            
+
             if (ticks - start >= 100)
             {
                 unsigned s = start + 100 - ticks;
-                
+
                 if (diff - 1 > s)
                 {
                     skipped += s;
@@ -147,9 +147,9 @@ void idle_entry(void * param)
                 {
                     skipped += diff - 1;
                 }
-                
+
                 g_ar.systemLoad = skipped;
-                
+
                 // start over counting
                 if (diff - 1 > s)
                 {
@@ -165,11 +165,11 @@ void idle_entry(void * param)
             {
                 skipped += diff - 1;
             }
-            
+
             last = ticks;
         }
 #endif // AR_ENABLE_SYSTEM_LOAD
-        
+
 #if AR_ENABLE_IDLE_SLEEP
         // Hitting this bit puts the processor to sleep until the next interrupt fires.
         __WFI();
@@ -199,27 +199,27 @@ void ar_kernel_run(void)
 {
     // Assert if there is no thread ready to run.
     assert(g_ar.readyList.m_head);
-    
+
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
     g_ar.suspendedList.m_predicate = NULL;
     g_ar.sleepingList.m_predicate = ar_thread_sort_by_wakeup;
     g_ar.activeTimers.m_predicate = ar_timer_sort_by_wakeup;
-    
+
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
     ar_thread_create(&g_ar.idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
     g_ar.idleThread.m_priority = 0;
     ar_thread_resume(&g_ar.idleThread);
-    
+
     // Set up system tick timer
     ar_port_init_tick_timer();
-    
+
     ar_port_init_system();
-    
+
     // We're now ready to run
     g_ar.isRunning = true;
-    
+
     // Enter into the scheduler. The yieldIsr() will see that s_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
     // runs, we return from the scheduler to a ready thread.
@@ -236,7 +236,7 @@ void ar_kernel_periodic_timer_isr()
     {
         return;
     }
-    
+
     ar_kernel_increment_tick_count(1);
 
     // Run the scheduler. It will modify s_currentThread if switching threads.
@@ -258,7 +258,7 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
     {
         g_ar.currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
-    
+
     // Run the scheduler. It will modify s_currentThread if switching threads.
     ar_kernel_scheduler();
 
@@ -276,49 +276,49 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 //! This function also checks if any timers have expired. If so, it changes the idle thread's
 //! priority to be the maximum, so it can immediately handle the timers.
 //!
-//! @param ticks The number of ticks that have elapsed. Normally this will only be 1, 
+//! @param ticks The number of ticks that have elapsed. Normally this will only be 1,
 //!     and must be at least 1, but may be higher if interrupts are disabled for a
 //!     long time.
 //! @return Flag indicating whether any threads were modified.
 bool ar_kernel_increment_tick_count(unsigned ticks)
 {
     assert(ticks > 0);
-    
+
     // Increment tick count.
     g_ar.tickCount += ticks;
 
     // Scan list of sleeping threads to see if any should wake up.
     ar_list_node_t * node = g_ar.sleepingList.m_head;
     bool wasThreadWoken = false;
-    
+
     if (node)
     {
         do {
             ar_thread_t * thread = node->getObject<ar_thread_t>();
             ar_list_node_t * next = node->m_next;
-        
+
             // Is it time to wake this thread?
             if (g_ar.tickCount >= thread->m_wakeupTime)
             {
                 wasThreadWoken = true;
-            
+
                 // State-specific actions
                 switch (thread->m_state)
                 {
                     case kArThreadSleeping:
                         // The thread was just sleeping.
                         break;
-                
+
                     case kArThreadBlocked:
                         // The thread has timed out waiting for a resource.
                         thread->m_unblockStatus = kArTimeoutError;
                         break;
-                
+
                     default:
                         // Should not have threads in other states on this list!
                         _halt();
                 }
-            
+
                 // Put thread in ready state.
                 g_ar.sleepingList.remove(thread);
                 thread->m_state = kArThreadReady;
@@ -330,11 +330,11 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
             {
                 break;
             }
-        
+
             node = next;
         } while (g_ar.sleepingList.m_head && node != g_ar.sleepingList.m_head);
     }
-    
+
     // Check for an active timer whose wakeup time has expired.
     if (g_ar.activeTimers.m_head)
     {
@@ -345,7 +345,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
             ar_thread_set_priority(&g_ar.idleThread, kArMaxThreadPriority);
         }
     }
-    
+
     return wasThreadWoken;
 }
 
@@ -359,10 +359,10 @@ void ar_kernel_scheduler()
 {
     // There must always be at least one thread on the ready list.
     assert(g_ar.readyList.m_head);
-    
+
     // Find the next ready thread using a round-robin search algorithm.
     ar_list_node_t * start;
-    
+
     // Handle both the first time the scheduler runs and g_ar.currentThread is NULL, and the case where
     // the current thread was suspended. For both cases we want to start searching at the beginning
     // of the ready list. Otherwise start searching at the current thread.
@@ -374,12 +374,12 @@ void ar_kernel_scheduler()
     {
         start = &g_ar.currentThread->m_threadNode;
     }
-    
+
     assert(start);
     ar_list_node_t * next = start;
     ar_thread_t * highest = next->getObject<ar_thread_t>();
     uint8_t priority = highest->m_priority;
-    
+
     // Iterate over the ready list, finding the highest priority thread.
     do {
         ar_thread_t * nextThread = next->getObject<ar_thread_t>();
@@ -388,10 +388,10 @@ void ar_kernel_scheduler()
             highest = nextThread;
             priority = nextThread->m_priority;
         }
-        
+
         next = next->m_next;
     } while (next != start);
-    
+
     // Switch to newly selected thread.
     assert(highest);
     if (highest != g_ar.currentThread)
@@ -400,11 +400,11 @@ void ar_kernel_scheduler()
         {
             g_ar.currentThread->m_state = kArThreadReady;
         }
-        
+
         highest->m_state = kArThreadRunning;
         g_ar.currentThread = highest;
     }
-    
+
     // Check for stack overflow on the selected thread.
     assert(g_ar.currentThread);
     uint32_t check = *(uint32_t *)((uint32_t)g_ar.currentThread->m_stackTop - g_ar.currentThread->m_stackSize);
@@ -482,7 +482,7 @@ void _ar_list_node::insertBefore(ar_list_node_t * node)
 void _ar_list::add(ar_list_node_t * item)
 {
     assert(item->m_next == NULL && item->m_prev == NULL);
-    
+
     // Handle an empty list.
     if (!m_head)
     {
@@ -501,7 +501,7 @@ void _ar_list::add(ar_list_node_t * item)
     {
         // Insert sorted by priority.
         ar_list_node_t * node = m_head;
-    
+
         do {
 //             if (node->m_next == m_head)
 //             {
@@ -514,15 +514,15 @@ void _ar_list::add(ar_list_node_t * item)
             if (m_predicate(item, node))
             {
                 item->insertBefore(node);
-            
+
                 if (node == m_head)
                 {
                     m_head = node;
                 }
-                
+
                 break;
             }
-        
+
             node = node->m_next;
         } while (node != m_head);
     }
@@ -546,7 +546,7 @@ void _ar_list::remove(ar_list_node_t * item)
         {
             node->m_prev->m_next = node->m_next;
             node->m_next->m_prev = node->m_prev;
-            
+
             // Special case for removing the list head.
             if (m_head == node)
             {
@@ -561,7 +561,7 @@ void _ar_list::remove(ar_list_node_t * item)
                     m_head = node->m_next;
                 }
             }
-            
+
             item->m_next = NULL;
             item->m_prev = NULL;
             break;

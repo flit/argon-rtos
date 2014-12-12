@@ -49,7 +49,7 @@ ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigne
     {
         return kArInvalidParameterError;
     }
-    
+
     memset(sem, 0, sizeof(ar_semaphore_t));
     sem->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     sem->m_count = count;
@@ -58,7 +58,7 @@ ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigne
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.semaphores.add(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
-    
+
     return kArSuccess;
 }
 
@@ -69,17 +69,17 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     {
         return kArInvalidParameterError;
     }
-    
+
     // Unblock all threads blocked on this semaphore.
     while (sem->m_blockedList.m_head)
     {
         sem->m_blockedList.m_head->getObject<ar_thread_t>()->unblockWithStatus(sem->m_blockedList, kArObjectDeletedError);
     }
-    
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.semaphores.remove(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
-    
+
     return kArSuccess;
 }
 
@@ -90,13 +90,13 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
     {
         return kArInvalidParameterError;
     }
-    
+
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
     if (g_ar.irqDepth > 0 && timeout != 0)
     {
         return kArNotFromInterruptError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
 
     if (sem->m_count == 0)
@@ -112,14 +112,14 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         thread->block(sem->m_blockedList, timeout);
 
         disableIrq.enable();
-        
+
         // Yield to the scheduler. We'll return when a call to put()
         // wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
         ar_kernel_enter_scheduler();
 
         disableIrq.disable();
-        
+
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
@@ -129,7 +129,7 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
             return thread->m_unblockStatus;
         }
     }
-    
+
     // Take ownership of the semaphore.
     --sem->m_count;
 
@@ -143,7 +143,7 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore disableIrq;
 
     // Increment count.
@@ -160,11 +160,11 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         if (thread->m_priority > g_ar.currentThread->m_priority)
         {
             disableIrq.enable();
-        
+
             ar_kernel_enter_scheduler();
         }
     }
-    
+
     return kArSuccess;
 }
 

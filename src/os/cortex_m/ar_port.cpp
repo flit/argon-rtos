@@ -73,7 +73,7 @@ void ar_port_init_tick_timer(void)
 {
     uint32_t ticks = SystemCoreClock / 1000 * kSchedulerQuanta_ms;
     SysTick_Config(ticks);
-    
+
     // Set priorities for the exceptions we use in the kernel.
     NVIC_SetPriority(SVCall_IRQn, kHandlerPriority);
     NVIC_SetPriority(PendSV_IRQn, kHandlerPriority);
@@ -93,15 +93,15 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
     sp -= delta;
     thread->m_stackTop = reinterpret_cast<uint8_t *>(sp);
     thread->m_stackSize = (thread->m_stackSize - delta) & ~7;
-    
+
     // Fill the stack with a pattern.
     uint32_t * stackBottom = (uint32_t *)(sp - thread->m_stackSize);
     memset(stackBottom, 0xba, thread->m_stackSize);
-    
+
     // Save new top of stack. Also, make sure stack is 8-byte aligned.
     sp -= sizeof(ThreadContext);
     thread->m_stackPointer = reinterpret_cast<uint8_t *>(sp);
-    
+
     // Set the initial context on stack.
     ThreadContext * context = reinterpret_cast<ThreadContext *>(sp);
     context->xpsr = kInitialxPSR;
@@ -109,7 +109,7 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
     context->lr = kInitialLR;
     context->r0 = reinterpret_cast<uint32_t>(thread); // Pass pointer to Thread object as first argument.
     context->r1 = reinterpret_cast<uint32_t>(param); // Pass arbitrary parameter as second argument.
-    
+
     // For debug builds, set registers to initial values that are easy to identify on the stack.
 #if DEBUG
     context->r2 = 0x22222222;
@@ -124,7 +124,7 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
     context->r11 = 0xbbbbbbbb;
     context->r12 = 0xcccccccc;
 #endif
-    
+
     // Write a check value to the bottom of the stack.
     *stackBottom = 0xdeadbeef;
 }

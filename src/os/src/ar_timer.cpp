@@ -49,9 +49,9 @@ ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entr
     {
         return kArInvalidParameterError;
     }
-    
+
     memset(timer, 0, sizeof(ar_timer_t));
-    
+
     timer->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     timer->m_callback = callback;
     timer->m_param = param;
@@ -74,9 +74,9 @@ ar_status_t ar_timer_delete(ar_timer_t * timer)
     {
         return kArInvalidParameterError;
     }
-    
+
     ar_timer_stop(timer);
-    
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.timers.remove(&timer->m_createdNode);
 #endif
@@ -91,18 +91,18 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     {
         return kArInvalidParameterError;
     }
-    
+
     // The callback should have been verified by the create function.
     assert(timer->m_callback);
-    
+
     IrqDisableAndRestore irqDisable;
-    
+
     // Handle a timer that is already active.
     if (timer->m_isActive)
     {
         g_ar.activeTimers.remove(timer);
     }
-    
+
     timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
     timer->m_isActive = true;
     g_ar.activeTimers.add(timer);
@@ -121,9 +121,9 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     {
         return kArTimerNotRunningError;
     }
-    
+
     IrqDisableAndRestore irqDisable;
-    
+
     g_ar.activeTimers.remove(timer);
     timer->m_wakeupTime = 0;
     timer->m_isActive = false;
@@ -138,16 +138,16 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
     {
         return kArInvalidParameterError;
     }
-    
+
     IrqDisableAndRestore irqDisable;
-    
+
     timer->m_delay = ar_milliseconds_to_ticks(delay);
-    
+
     // If the timer is running, we need to update the wakeup time and resort the list.
     if (timer->m_isActive)
     {
         timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
-        
+
         g_ar.activeTimers.remove(timer);
         g_ar.activeTimers.add(timer);
     }
@@ -171,7 +171,7 @@ const char * ar_timer_get_name(ar_timer_t * timer)
 ar_status_t Timer::init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
 {
     m_userCallback = callback;
-    
+
     return ar_timer_create(this, name, timer_wrapper, param, timerMode, delay);
 }
 
