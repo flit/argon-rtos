@@ -13,33 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "TimerEvent.h"
-#include "cmsis.h"
+#include "mbed_assert.h"
+#include "device.h"
 
-#include <stddef.h>
+#if DEVICE_STDIO_MESSAGES
+#include <stdio.h>
+#endif
 
-namespace mbed {
+#include <stdlib.h>
+#include "mbed_interface.h"
 
-TimerEvent::TimerEvent() : event() {
-    us_ticker_set_handler((&TimerEvent::irq));
+void mbed_assert_internal(const char *expr, const char *file, int line)
+{
+#if DEVICE_STDIO_MESSAGES
+    fprintf(stderr, "mbed assertation failed: %s, file: %s, line %d \n", expr, file, line);
+#endif
+    mbed_die();
 }
-
-void TimerEvent::irq(uint32_t id) {
-    TimerEvent *timer_event = (TimerEvent*)id;
-    timer_event->handler();
-}
-
-TimerEvent::~TimerEvent() {
-    remove();
-}
-
-// insert in to linked list
-void TimerEvent::insert(timestamp_t timestamp) {
-    us_ticker_insert_event(&event, timestamp, (uint32_t)this);
-}
-
-void TimerEvent::remove() {
-    us_ticker_remove_event(&event);
-}
-
-} // namespace mbed

@@ -19,9 +19,12 @@
 
 namespace mbed {
 
-InterruptIn::InterruptIn(PinName pin) {
+InterruptIn::InterruptIn(PinName pin) : gpio(),
+                                        gpio_irq(),
+                                        _rise(),
+                                        _fall() {
     gpio_irq_init(&gpio_irq, pin, (&InterruptIn::_irq_handler), (uint32_t)this);
-    gpio_init(&gpio, pin, PIN_INPUT);
+    gpio_init_in(&gpio, pin);
 }
 
 InterruptIn::~InterruptIn() {

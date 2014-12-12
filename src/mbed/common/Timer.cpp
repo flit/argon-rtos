@@ -18,13 +18,15 @@
 
 namespace mbed {
 
-Timer::Timer() {
+Timer::Timer() : _running(), _start(), _time() {
     reset();
 }
 
 void Timer::start() {
-    _start = us_ticker_read();
-    _running = 1;
+    if (!_running) {
+        _start = us_ticker_read();
+        _running = 1;
+    }
 }
 
 void Timer::stop() {

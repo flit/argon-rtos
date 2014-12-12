@@ -126,7 +126,7 @@ extern "C" FILEHANDLE PREFIX(_open)(const char* name, int openmode) {
     // This is the workaround that the microlib author suggested us
     static int n = 0;
     if (!std::strcmp(name, ":tt")) return n++;
-    
+
     #else
     /* Use the posix convention that stdin,out,err are filehandles 0,1,2.
      */
@@ -141,7 +141,7 @@ extern "C" FILEHANDLE PREFIX(_open)(const char* name, int openmode) {
         return 2;
     }
     #endif
-    
+
     // find the first empty slot in filehandles
     unsigned int fh_i;
     for (fh_i = 0; fh_i < sizeof(filehandles)/sizeof(*filehandles); fh_i++) {
@@ -227,6 +227,7 @@ extern "C" int PREFIX(_read)(FILEHANDLE fh, unsigned char *buffer, unsigned int 
     if (fh < 3) {
         // only read a character at a time from stdin
 #if DEVICE_SERIAL
+        if (!stdio_uart_inited) init_serial();
         *buffer = serial_getc(&stdio_uart);
 #endif
         n = 1;
@@ -322,7 +323,15 @@ extern "C" int remove(const char *path) {
 }
 
 extern "C" int rename(const char *oldname, const char *newname) {
-    return -1;
+    FilePath fpOld(oldname);
+    FilePath fpNew(newname);
+    FileSystemLike *fsOld = fpOld.fileSystem();
+    FileSystemLike *fsNew = fpNew.fileSystem();
+
+    /* rename only if both files are on the same FS */
+    if (fsOld != fsNew || fsOld == NULL) return -1;
+
+    return fsOld->rename(fpOld.fileName(), fpNew.fileName());
 }
 
 extern "C" char *tmpnam(char *s) {
@@ -383,7 +392,7 @@ extern "C" int mkdir(const char *path, mode_t mode) {
 
 #if defined(TOOLCHAIN_GCC)
 /* prevents the exception handling name demangling code getting pulled in */
-#include "error.h"
+#include "mbed_error.h"
 namespace __gnu_cxx {
     void __verbose_terminate_handler() {
         error("Exception");
@@ -398,15 +407,23 @@ extern "C" WEAK void __cxa_pure_virtual(void) {
 
 // ****************************************************************************
 // mbed_main is a function that is called before main()
+// mbed_sdk_init() is also a function that is called before main(), but unlike
+// mbed_main(), it is not meant for user code, but for the SDK itself to perform
+// initializations before main() is called.
 
 extern "C" WEAK void mbed_main(void);
 extern "C" WEAK void mbed_main(void) {
+}
+
+extern "C" WEAK void mbed_sdk_init(void);
+extern "C" WEAK void mbed_sdk_init(void) {
 }
 
 #if defined(TOOLCHAIN_ARM)
 extern "C" int $Super$$main(void);
 
 extern "C" int $Sub$$main(void) {
+    mbed_sdk_init();
     mbed_main();
     return $Super$$main();
 }
@@ -414,6 +431,7 @@ extern "C" int $Sub$$main(void) {
 extern "C" int __real_main(void);
 
 extern "C" int __wrap_main(void) {
+    mbed_sdk_init();
     mbed_main();
     return __real_main();
 }
@@ -424,6 +442,7 @@ extern "C" int __wrap_main(void) {
 // code will call a function to setup argc and argv (__iar_argc_argv) if it is defined.
 // Since mbed doesn't use argc/argv, we use this function to call our mbed_main.
 extern "C" void __iar_argc_argv() {
+    mbed_sdk_init();
     mbed_main();
 }
 #endif
@@ -456,7 +475,7 @@ extern "C" caddr_t _sbrk(int incr) {
         errno = ENOMEM;
         return (caddr_t)-1;
     }
-    
+
     heap = new_heap;
     return (caddr_t) prev_heap;
 }
