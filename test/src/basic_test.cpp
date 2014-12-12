@@ -78,23 +78,23 @@ void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
-    
+
     printf("[%s] Main thread is running\r\n", myName);
-    
+
     g_testCase.init();
     g_testCase.run();
-    
+
     printf("[%s] goodbye!\r\n", myName);
 }
 
 void main(void)
 {
 #if !defined(KL25Z4_SERIES)
-    debug_init();
+//     debug_init();
 #endif
-    
+
     printf("Running test...\r\n");
-    
+
 #if 0
     printf("sizeof(Thread)=%d\r\n", sizeof(Ar::Thread));
     printf("sizeof(Semaphore)=%d\r\n", sizeof(Ar::Semaphore));
@@ -102,11 +102,11 @@ void main(void)
     printf("sizeof(Queue)=%d\r\n", sizeof(Ar::Queue));
     printf("sizeof(Timer)=%d\r\n", sizeof(Ar::Timer));
 #endif
-    
+
     // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 //     g_mainThread.init("main", main_thread, 0, 56);
     g_mainThread.resume();
-    
+
     ar_kernel_run();
 
     Ar::_halt();

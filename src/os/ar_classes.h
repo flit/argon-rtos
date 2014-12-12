@@ -104,16 +104,16 @@ class Thread : public _ar_thread
 public:
     //! @brief Constructor.
     Thread() {}
-    
+
     //! @brief Constructor.
     Thread(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
         init(name, entry, param, stack, stackSize, priority);
     }
-    
+
     //! @brief Destructor.
     virtual ~Thread() { ar_thread_delete(this); }
-    
+
     //! @name Thread init and cleanup
     //@{
     //! @brief Base initialiser.
@@ -135,7 +135,7 @@ public:
     //! @return kSuccess The thread was initialised without error.
     status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
     //@}
-    
+
     //! @brief Get the thread's name.
     const char * getName() const { return m_name; }
 
@@ -211,11 +211,11 @@ public:
     //! @brief Returns the currently running thread object.
     static Thread * getCurrent() { return reinterpret_cast<Thread *>(ar_thread_get_current()->m_ref); }
     //@}
-    
+
 protected:
 
     ar_thread_entry_t m_userEntry;
-    
+
     //! @brief Virtual thread entry point.
     virtual void threadEntry(void * param);
 
@@ -237,9 +237,9 @@ class ThreadToMemberFunction : public Thread
 public:
 
     typedef void (T::*thread_member_entry_t)(void * param);
-    
+
     ThreadToMemberFunction() {}
-    
+
     ThreadToMemberFunction(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
         init(name, obj, entry, param, stack, stackSize, priority);
@@ -255,12 +255,12 @@ public:
 protected:
     T * m_object;
     thread_member_entry_t m_entryMember;
-    
+
     virtual void threadEntry(void * param)
     {
         (m_object->*m_entryMember)(param);
     }
-    
+
 };
 
 /*!
@@ -273,12 +273,12 @@ class ThreadWithStack : public Thread
 {
 public:
     ThreadWithStack() {}
-    
+
     ThreadWithStack(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         Thread::init(name, entry, param, m_stack, S, priority);
     }
-    
+
     status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
@@ -297,17 +297,17 @@ template <uint32_t S, typename T>
 class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
 {
 public:
-    
+
 //     typedef ThreadToMemberFunction<T>::thread_member_entry_t thread_member_entry_t;
     typedef void (T::*thread_member_entry_t)(void * param);
-    
+
     ThreadToMemberFunctionWithStack() {}
-    
+
     ThreadToMemberFunctionWithStack(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
     {
         ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
     }
-    
+
     status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
     {
         return ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
@@ -329,13 +329,13 @@ class Semaphore : public _ar_semaphore
 public:
     //! @brief Default constructor.
     Semaphore() {}
-    
+
     //! @brief Constructor.
     Semaphore(const char * name, unsigned count=1)
     {
         init(name, count);
     }
-    
+
     //! @brief Initialiser.
     //!
     //! @param name Pass a name for the semaphore. If NULL is passed the name will be set to an
@@ -441,13 +441,13 @@ class Mutex : public _ar_mutex
 public:
     //! @brief Default constructor.
     Mutex() {}
-    
+
     //! @brief Constructor.
     Mutex(const char * name)
     {
         init(name);
     }
-    
+
     //! @brief Initialiser.
     //!
     //! The mutex starts out unlocked.
@@ -459,7 +459,7 @@ public:
 
     //! @brief Cleanup.
     virtual ~Mutex() { ar_mutex_delete(this); }
-    
+
     //! @brief Get the mutex's name.
     const char * getName() const { return m_sem.m_name; }
 
@@ -482,7 +482,7 @@ public:
     //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
     status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
-    
+
     //! @brief Unlock the mutex.
     //!
     //! Only the owning thread is allowed to unlock the mutex. If the owning thread has called get()
@@ -493,7 +493,7 @@ public:
     //! @retval kAlreadyUnlockedError The mutex is not locked.
     //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
     status_t put() { return ar_mutex_put(this); }
-    
+
     //! @brief Returns the current owning thread, if there is one.
     ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }
 
@@ -509,13 +509,13 @@ class Queue : public _ar_queue
 public:
     //! @brief Default constructor.
     Queue() {}
-    
+
     //! @brief Constructor.
     Queue(const char * name, void * storage, unsigned elementSize, unsigned capacity)
     {
         init(name, storage, elementSize, capacity);
     }
-    
+
     //! @brief Queue initialiser.
     //!
     //! @param name The new queue's name.
@@ -529,10 +529,10 @@ public:
     {
         return ar_queue_create(this, name, storage, elementSize, capacity);
     }
-    
+
     //! @brief Queue cleanup.
     virtual ~Queue() { ar_queue_delete(this); }
-    
+
     //! @brief Get the queue's name.
     const char * getName() const { return m_name; }
 
@@ -562,10 +562,10 @@ public:
     //! @retval kSuccess
     //! @retval kQueueEmptyError
     status_t receive(void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_receive(this, element, timeout); }
-    
+
     //! @brief Returns whether the queue is currently empty.
     bool isEmpty() const { return m_count == 0; }
-    
+
     //! @brief Returns the current number of elements in the queue.
     unsigned getCount() const { return m_count; }
 
@@ -595,7 +595,7 @@ public:
  *      status_t s;
  *
  *      s = q.receive(&element);
- *      
+ *
  *      element = q.receive(&s);
  * @endcode
  *
@@ -608,31 +608,31 @@ class StaticQueue : public Queue
 public:
     //! @brief Default constructor.
     StaticQueue() {}
-    
+
     //! @brief Constructor.
     StaticQueue(const char * name)
     {
         Queue::init(name, m_storage, sizeof(T), N);
     }
-    
+
     //! @brief Initialiser method.
     status_t init(const char * name)
     {
         return Queue::init(name, m_storage, sizeof(T), N);
     }
-    
+
     //! @copydoc Queue::send()
     status_t send(T element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::send((const void *)&element, timeout);
     }
-    
+
     //! @copydoc Queue::receive()
     status_t receive(T * element, uint32_t timeout=kArInfiniteTimeout)
     {
         return Queue::receive((void *)element, timeout);
     }
-    
+
     //! @brief Alternate form of typed receive.
     //!
     //! @param[out] resultStatus The status of the receive operation is placed here.
@@ -648,7 +648,7 @@ public:
         }
         return element;
     }
-    
+
 protected:
     T m_storage[N]; //!< Static storage for the queue elements.
 };
@@ -661,43 +661,43 @@ protected:
 class Timer : public _ar_timer
 {
 public:
-    
+
     //! @brief Timer callback function that takes an instance of this class.
     typedef void (*entry_t)(Timer * timer, void * param);
-    
+
     //! @brief Default constructor.
     Timer() {}
-    
+
     //! @brief Constructor.
     Timer(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
     {
         init(name, callback, param, timerMode, delay);
     }
-    
+
     //! @brief Destructor.
     virtual ~Timer() { ar_timer_delete(this); }
-    
+
     //! @brief Initialize the timer.
     status_t init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
-    
+
     //! @brief Get the timer's name.
     const char * getName() const { return m_name; }
 
     //! @brief Start the timer running.
     void start() { ar_timer_start(this); }
-    
+
     //! @brief Stop the timer.
     void stop() { ar_timer_stop(this); }
-    
+
     //! @brief Returns whether the timer is currently running.
     bool isActive() const { return m_isActive; }
-    
+
     //! @brief Adjust the timer's delay.
     void setDelay(uint32_t delay) { ar_timer_set_delay(this, delay); }
 
     //! @brief Get the current delay for the timer.
     uint32_t getDelay() const { return m_delay; }
-    
+
 protected:
 
     entry_t m_userCallback;    //!< The user timer callback.
@@ -718,10 +718,10 @@ public:
 
     //! @brief Increments interrupt depth.
     InterruptWrapper() { ar_kernel_enter_interrupt(); }
-    
+
     //! @brief Decrements interrupt depth.
     ~InterruptWrapper() { ar_kernel_exit_interrupt(); }
-    
+
 };
 
 } // namespace Ar

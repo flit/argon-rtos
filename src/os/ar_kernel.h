@@ -50,7 +50,7 @@ enum _ar_timeouts
 {
     //! Return immediately if a resource cannot be acquired.
     kArNoTimeout = 0,
-    
+
     //! Pass this value to wait forever to acquire a resource.
     kArInfiniteTimeout = 0xffffffffL
 };
@@ -62,38 +62,38 @@ enum _ar_errors
 {
     //! Operation was successful.
     kArSuccess = 0,
-    
+
     //! Timeout while blocked on an object.
     kArTimeoutError,
-    
+
     //! An object was deleted while a thread was blocked on it. This may be
     //! a semaphore, mutex, or queue.
     kArObjectDeletedError,
-    
+
     //! The queue is at maximum capacity and cannot accept more elements.
     kArQueueFullError,
-    
+
     //! No elements are in the queue.
     kArQueueEmptyError,
-    
+
     //! The requested thread priority is invalid.
     kArInvalidPriorityError,
-    
+
     //! The thread's stack size is too small.
     kArStackSizeTooSmallError,
-    
+
     //! The requested operation cannot be performed from interrupt context.
     kArNotFromInterruptError,
-    
+
     //! The caller is not the owning thread.
     kArNotOwnerError,
-    
+
     //! The mutex is already unlocked.
     kArAlreadyUnlockedError,
-    
+
     //! An invalid parameter value was passed to the function.
     kArInvalidParameterError,
-    
+
     //! The timer is not running.
     kArTimerNotRunningError
 };
@@ -178,7 +178,7 @@ typedef struct _ar_list_node {
 typedef struct _ar_list {
     ar_list_node_t * m_head;    //!< Pointer to the head of the list. Will be NULL if the list is empty.
     ar_sort_predicate_t m_predicate;    //!< Sort predicate to use for this list. Items are added to the end if NULL.
-    
+
     // Internal utility methods.
 #if defined(__cplusplus)
     void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
@@ -696,7 +696,7 @@ uint32_t ar_queue_get_count(ar_queue_t * queue);
  * @brief Get the queue's name.
  *
  * @param queue The queue object.
- * 
+ *
  * @return Pointer to the queue's name.
  */
 const char * ar_queue_get_name(ar_queue_t * queue);
