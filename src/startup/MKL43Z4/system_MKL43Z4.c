@@ -118,6 +118,8 @@ uint32_t SystemCoreClock = DEFAULT_SYSTEM_CLOCK;
 
 void SystemInit (void) {
 
+    HW_RCM_MR_SET(RCM_BASE, 0xff);
+
 #if (ACK_ISOLATION)
   if(PMC->REGSC &  PMC_REGSC_ACKISO_MASK) {
     PMC->REGSC |= PMC_REGSC_ACKISO_MASK; /* VLLSx recovery */

@@ -128,7 +128,7 @@ __FlashConfig
       	DCD	0xFFFFFFFF
       	DCD	0xFFFFFFFF
       	DCD	0xFFFFFFFF
-      	DCD	0xFFFF3FFE
+      	DCD	0xFFFF3DFE
 __FlashConfig_End
 
 __Vectors       EQU   __vector_table

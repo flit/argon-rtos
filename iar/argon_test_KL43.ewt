@@ -408,6 +408,9 @@
       <group>
         <name>src</name>
         <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_channel.cpp</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_internal.h</name>
         </file>
         <file>

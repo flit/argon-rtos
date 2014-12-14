@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Freescale Semiconductor, Inc.
+ * Copyright (c) 2013 - 2014, Freescale Semiconductor, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -27,18 +27,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*!
- * @file
- * @brief Initialize memory and zero out zero regions. Move necessary code to RAM.
- */
 
 #ifndef _STARTUP_H_
 #define _STARTUP_H_
 
-/********************************************************************/
+/*******************************************************************************
+ * API
+ ******************************************************************************/
 
+/*!
+ * @brief Make necessary initializations for RAM.
+ *
+ * - Copy initialized data from ROM to RAM.
+ * - Clear the zero-initialized data section.
+ * - Copy the vector table from ROM to RAM. This could be an option.
+ */
 void init_data_bss(void);
 
-/********************************************************************/
+#endif /* _STARTUP_H_*/
+/*******************************************************************************
+ * EOF
+ ******************************************************************************/
 
-#endif /* _STARTUP_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Freescale Semiconductor, Inc.
+ * Copyright (c) 2013 - 2014, Freescale Semiconductor, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -28,124 +28,115 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fsl_platform_common.h"
+#include "startup.h"
 #include "device/fsl_device_registers.h"
 
 #if (defined(__ICCARM__))
-    #pragma section = ".intvec"
     #pragma section = ".data"
     #pragma section = ".data_init"
     #pragma section = ".bss"
-    #pragma section = "CodeRelocate"
-    #pragma section = "CodeRelocateRam"
 #endif
 
-////////////////////////////////////////////////////////////////////////////////
-// Code
-////////////////////////////////////////////////////////////////////////////////
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
 
+/*FUNCTION**********************************************************************
+ *
+ * Function Name : init_data_bss
+ * Description   : Make necessary initializations for RAM.
+ * - Copy initialized data from ROM to RAM.
+ * - Clear the zero-initialized data section.
+ * - Copy the vector table from ROM to RAM. This could be an option.
+ *
+ * Tool Chians:
+ *   __GNUC__   : GCC
+ *   __CC_ARM   : KEIL
+ *   __ICCARM__ : IAR
+ *
+ *END**************************************************************************/
 void init_data_bss(void)
 {
-#if (defined(CW))
-    extern char __START_BSS[];
-    extern char __END_BSS[];
+    uint32_t n;
+
+    /* Addresses for VECTOR_TABLE and VECTOR_RAM come from the linker file */
+#if defined(__CC_ARM)
+    extern uint32_t Image$$VECTOR_ROM$$Base[];
+    extern uint32_t Image$$VECTOR_RAM$$Base[];
+    extern uint32_t Image$$RW_m_data$$Base[];
+
+    #define __VECTOR_TABLE Image$$VECTOR_ROM$$Base
+    #define __VECTOR_RAM Image$$VECTOR_RAM$$Base
+    #define __RAM_VECTOR_TABLE_SIZE (((uint32_t)Image$$RW_m_data$$Base - (uint32_t)Image$$VECTOR_RAM$$Base))
+#elif defined(__ICCARM__)
+    extern uint32_t __RAM_VECTOR_TABLE_SIZE[];
+    extern uint32_t __VECTOR_TABLE[];
+    extern uint32_t __VECTOR_RAM[];
+#elif defined(__GNUC__)
+    extern uint32_t __VECTOR_TABLE[];
+    extern uint32_t __VECTOR_RAM[];
+    extern uint32_t __RAM_VECTOR_TABLE_SIZE_BYTES[];
+    uint32_t __RAM_VECTOR_TABLE_SIZE = (uint32_t)(__RAM_VECTOR_TABLE_SIZE_BYTES);
+#endif
+
+    if (__VECTOR_RAM != __VECTOR_TABLE)
+    {
+        /* Copy the vector table from ROM to RAM */
+        for (n = 0; n < ((uint32_t)__RAM_VECTOR_TABLE_SIZE)/sizeof(uint32_t); n++)
+        {
+            __VECTOR_RAM[n] = __VECTOR_TABLE[n];
+        }
+        /* Point the VTOR to the position of vector table */
+        SCB->VTOR = (uint32_t)__VECTOR_RAM;
+    }
+    else
+    {
+        /* Point the VTOR to the position of vector table */
+        SCB->VTOR = (uint32_t)__VECTOR_TABLE;
+    }
+
+#if !defined(__CC_ARM) && !defined(__ICCARM__)
+
+    /* Declare pointers for various data sections. These pointers
+     * are initialized using values pulled in from the linker file */
+    uint8_t * data_ram, * data_rom, * data_rom_end;
+    uint8_t * bss_start, * bss_end;
+
+    /* Get the addresses for the .data section (initialized data section) */
+#if defined(__GNUC__)
     extern uint32_t __DATA_ROM[];
     extern uint32_t __DATA_RAM[];
     extern char __DATA_END[];
-#endif
-
-    // Declare a counter we'll use in all of the copy loops
-    uint32_t n;
-
-#ifndef KEIL
-    /* Declare pointers for various data sections. These pointers
-     * are initialized using values pulled in from the linker file
-     */
-    uint8_t * data_ram, * data_rom, * data_rom_end;
-    uint8_t * bss_start, * bss_end;
-#endif
-
-#if (defined(KEIL))
-    extern uint32_t Image$$VECTOR_ROM$$Base[];
-    extern uint32_t Image$$VECTOR_RAM$$Base[];
-    #define __VECTOR_TABLE Image$$VECTOR_ROM$$Base
-    #define __VECTOR_RAM Image$$VECTOR_RAM$$Base
-#elif (defined(__ICCARM__))
-    // Addresses for VECTOR_TABLE and VECTOR_RAM come from the linker file
-    extern uint32_t __VECTOR_TABLE[];
-    extern uint32_t __VECTOR_RAM[];
-#elif (defined(CW))
-    #define __VECTOR_TABLE __vector_table
-    #define __VECTOR_RAM   __vector_ram
-    extern uint32_t __VECTOR_TABLE[];
-    extern uint32_t __VECTOR_RAM[];
-#endif
-
-    // Copy the vector table to RAM
-//    if (__VECTOR_RAM != __VECTOR_TABLE)
-//    {
-//        for (n = 0; n < 0x104; n++)
-//           __VECTOR_RAM[n] = __VECTOR_TABLE[n];
-//    }
-    // Point the VTOR to the new copy of the vector table
-//     write_vtor((uint32_t)__VECTOR_RAM);
-//    SCB->VTOR = (uint32_t)__VECTOR_RAM;
-    SCB->VTOR = (uint32_t)__section_begin(".intvec");
-
-    // Get the addresses for the .data section (initialized data section)
-#if (defined(CW))
     data_ram = (uint8_t *)__DATA_RAM;
     data_rom = (uint8_t *)__DATA_ROM;
-    data_rom_end  = (uint8_t *)__DATA_END; // This is actually a RAM address in CodeWarrior
-    n = data_rom_end - data_ram;
-#elif (defined(__ICCARM__))
-    data_ram = __section_begin(".data");
-    data_rom = __section_begin(".data_init");
-    data_rom_end = __section_end(".data_init");
+    data_rom_end  = (uint8_t *)__DATA_END;
     n = data_rom_end - data_rom;
 #endif
 
-#ifndef __CC_ARM
-
-    // Copy initialized data from ROM to RAM
+    /* Copy initialized data from ROM to RAM */
     while (n--)
+    {
         *data_ram++ = *data_rom++;
+    }
 
-
-    // Get the addresses for the .bss section (zero-initialized data)
-#if (defined(CW))
+    /* Get the addresses for the .bss section (zero-initialized data) */
+#if defined(__GNUC__)
+    extern char __START_BSS[];
+    extern char __END_BSS[];
     bss_start = (uint8_t *)__START_BSS;
     bss_end = (uint8_t *)__END_BSS;
-#elif (defined(__ICCARM__))
-    bss_start = __section_begin(".bss");
-    bss_end = __section_end(".bss");
 #endif
 
-
-    // Clear the zero-initialized data section
+    /* Clear the zero-initialized data section */
     n = bss_end - bss_start;
     while(n--)
+    {
         *bss_start++ = 0;
-#endif
-
-    /* Get addresses for any code sections that need to be copied from ROM to RAM.
-     * The IAR tools have a predefined keyword that can be used to mark individual
-     * functions for execution from RAM. Add "__ramfunc" before the return type in
-     * the function prototype for any routines you need to execute from RAM instead
-     * of ROM. ex: __ramfunc void foo(void);
-     */
-#if (defined(__ICCARM__))
-    uint8_t* code_relocate_ram = __section_begin("CodeRelocateRam");
-    uint8_t* code_relocate = __section_begin("CodeRelocate");
-    uint8_t* code_relocate_end = __section_end("CodeRelocate");
-
-    // Copy functions from ROM to RAM
-    n = code_relocate_end - code_relocate;
-    while (n--)
-        *code_relocate_ram++ = *code_relocate++;
-#endif
+    }
+#endif /* !__CC_ARM && !__ICCARM__*/
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// EOF
-////////////////////////////////////////////////////////////////////////////////
+/*******************************************************************************
+ * EOF
+ ******************************************************************************/
+

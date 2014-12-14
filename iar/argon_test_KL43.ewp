@@ -103,7 +103,7 @@
         </option>
         <option>
           <name>GenLowLevelInterface</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>GEndianModeBE</name>
@@ -725,7 +725,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\config\32KB_RAM.icf</state>
+          <state>$PROJ_DIR$\config\MKL43Z256xxx4_flash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -2026,6 +2026,9 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\retarget.cpp</name>
+          <excluded>
+            <configuration>Debug</configuration>
+          </excluded>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\rtc_time.c</name>
@@ -2157,6 +2160,9 @@
       <group>
         <name>src</name>
         <file>
+          <name>$PROJ_DIR$\..\src\os\src\ar_channel.cpp</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\os\src\ar_internal.h</name>
         </file>
         <file>
@@ -2189,6 +2195,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\src\startup\crt0.s</name>
+        <excluded>
+          <configuration>Debug</configuration>
+        </excluded>
       </file>
       <file>
         <name>$PROJ_DIR$\..\src\startup\startup.c</name>

@@ -22,6 +22,8 @@ define exported symbol __VECTOR_RAM        = __ICFEDIT_region_RAM_start__;// - 0
 
 define exported symbol __BOOT_STACK_ADDRESS = __region_RAM2_end__ - 8;
 
+define symbol __fcf_addr__ = 0x00000400;//********
+
 define symbol __code_start__ = 0x00000410;//********
 
 define memory mem with size = 4G;
@@ -39,7 +41,8 @@ do not initialize  { section .noinit };
 define block CodeRelocate { section .textrw_init };
 define block CodeRelocateRam { section .textrw };
 place at address mem:__ICFEDIT_intvec_start__ { readonly section .intvec };
-place at address mem:__code_start__ { readonly section .noinit };
+place at address mem:__ICFEDIT_intvec_start__ { readonly section FlashConfig };
+place at address mem:__fcf_addr__ { readonly section .noinit };
 
 place in ROM_region   { readonly, block CodeRelocate };
 
