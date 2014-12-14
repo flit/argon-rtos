@@ -57,8 +57,7 @@ enum _ar_timeouts
 //! @brief Argon status and error codes.
 //!
 //! @ingroup ar
-typedef enum _ar_status
-{
+typedef enum _ar_status {
     //! Operation was successful.
     kArSuccess = 0,
 
@@ -180,6 +179,7 @@ typedef struct _ar_list {
 
     // Internal utility methods.
 #if defined(__cplusplus)
+    bool isEmpty() const;                       //!< @brief Return whether the list is empty.
     void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
     inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.
     inline void add(ar_timer_t * item);         //!< @brief Add a timer to the list.
@@ -189,6 +189,20 @@ typedef struct _ar_list {
 #endif // __cplusplus
 } ar_list_t;
 //@}
+
+/*!
+ * @brief Channel.
+ *
+ * @ingroup ar_chan
+ */
+typedef struct _ar_channel {
+    const char * m_name;            //!< Name of the channel.
+    uint32_t m_width;               //!< Size in bytes of the channel's data.
+    void * m_dest;                  //!< Receiver's destination pointer.
+    ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
+    ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
+    ar_list_node_t m_createdNode;   //!< Node on the created channels list.
+} ar_channel_t;
 
 /*!
  * @brief Thread.
@@ -209,6 +223,7 @@ typedef struct _ar_thread {
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_ref;               //!< Arbitrary reference value.
+    void * m_channelData;       //!< Receive or send data pointer for blocked channel.
 
     // Internal utility methods.
 #if defined(__cplusplus)
@@ -614,6 +629,61 @@ const char * ar_mutex_get_name(ar_mutex_t * mutex);
 
 //! @}
 
+//! @addtogroup ar_chan
+//! @{
+
+//! @name Channels
+//@{
+/*!
+ * @brief Create a new channel.
+ *
+ * @param channel Pointer to storage for the new channel.
+ * @param name Optional name for the new channel.
+ * @param width The size in bytes of the data passed through the channel. Set this parameter
+ *      to 0 to use the default pointer-sized width.
+ */
+ar_status_t ar_channel_create(ar_channel_t * channel, const char * name, uint32_t width);
+
+/*!
+ * @brief Delete an existing channel.
+ *
+ * @param channel Pointer to the channel.
+ */
+ar_status_t ar_channel_delete(ar_channel_t * channel);
+
+/*!
+ * @brief Send to a channel.
+ *
+ * This function synchronously sends a value across the specified channel. If there is not a
+ * thread waiting to receive on the other side, then this function will block.
+ *
+ * @param channel Pointer to the channel.
+ * @param value Pointer-sized value to send through the channel.
+ * @param timeout The maximum number of milliseconds the caller is willing to wait before the
+ *      send is completed.
+ */
+ar_status_t ar_channel_send(ar_channel_t * channel, const void * value, uint32_t timeout);
+
+/*!
+ * @brief Receive from a channel.
+ *
+ * @param channel Pointer to the channel.
+ * @param value Pointer to a location where the received data is written.
+ * @param timeout The maximum number of milliseconds the caller is willing to wait before the
+ *      receive is completed.
+ */
+ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t timeout);
+
+/*!
+ * @brief Get a channel's name.
+ *
+ * @param channel Pointer to the channel.
+ */
+const char * ar_channel_get_name(ar_channel_t * channel);
+//@}
+
+//! @}
+
 //! @addtogroup ar_queue
 //! @{
 
@@ -858,12 +928,12 @@ void ar_atomic_add(uint32_t * value, int32_t delta);
 /*!
  * @brief Atomic increment.
  */
-inline void ar_atomic_increment(uint32_t * value) { ar_atomic_add(value, 1); }
+static inline void ar_atomic_increment(uint32_t * value) { ar_atomic_add(value, 1); }
 
 /*!
  * @brief Atomic decrement.
  */
-inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
+static inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
 
 /*!
  * @brief Atomic compare-and-swap operation.

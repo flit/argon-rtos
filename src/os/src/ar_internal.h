@@ -64,6 +64,7 @@ typedef struct _ar_kernel {
         ar_list_t threads;          //!< All existing threads.
         ar_list_t semaphores;       //!< All existing semaphores.
         ar_list_t mutexes;          //!< All existing mutexes.
+        ar_list_t channels;         //!< All existing channels;
         ar_list_t queues;           //!< All existing queues.
         ar_list_t timers;           //!< All existing timers.
     } allObjects;
@@ -113,6 +114,7 @@ extern "C" uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
 //@}
 
 // Inline list method implementation.
+inline bool _ar_list::isEmpty() const { return m_head == NULL; }
 inline void _ar_list::add(ar_thread_t * item) { add(&item->m_threadNode); }
 inline void _ar_list::add(ar_timer_t * item) { add(&item->m_activeNode); }
 inline void _ar_list::remove(ar_thread_t * item) { remove(&item->m_threadNode); }

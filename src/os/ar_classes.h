@@ -525,6 +525,62 @@ public:
 };
 
 /*!
+ * @brief Channel.
+ */
+class Channel : public _ar_channel
+{
+public:
+    //! @brief Default constructor.
+    Channel() {}
+
+    //! @brief Constructor.
+    Channel(const char * name, uint32_t width=0) { init(name); }
+
+    //! @brief Channel initialiser.
+    ar_status_t init(const char * name, uint32_t width=0) { return ar_channel_create(this, name, width); }
+
+    //! @brief Send to channel.
+    ar_status_t send(const void * value, uint32_t timeout=kArInfiniteTimeout) { return ar_channel_send(this, value, timeout); }
+
+    //! @brief Receive from channel.
+    ar_status_t receive(void * value, uint32_t timeout=kArInfiniteTimeout) { return ar_channel_receive(this, value, timeout); }
+};
+
+/*!
+ * @brief Typed channel.
+ */
+template <typename T>
+class TypedChannel : public Channel
+{
+public:
+    //! @brief Default constructor.
+    TypedChannel() {}
+
+    //! @brief Constructor.
+    TypedChannel(const char * name) : Channel(name, sizeof(T)) {}
+
+    //! @brief Channel initialiser.
+    ar_status_t init(const char * name) { return Channel::init(name, sizeof(T)); }
+
+    //! @brief Send to channel.
+    ar_status_t send(const T & value, uint32_t timeout=kArInfiniteTimeout)
+    {
+        return Channel::send(&value, timeout);
+    }
+
+    //! @brief Receive from channel.
+    T receive(uint32_t timeout=kArInfiniteTimeout)
+    {
+        T temp;
+        Channel::receive(&temp, timeout);
+        return temp;
+    }
+
+protected:
+    T m_storage;
+};
+
+/*!
  * @brief A blocking queue for inter-thread messaging.
  *
  * @ingroup ar
