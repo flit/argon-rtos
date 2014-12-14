@@ -408,7 +408,7 @@ void ar_kernel_scheduler()
     // Check for stack overflow on the selected thread.
     assert(g_ar.currentThread);
     uint32_t check = *(uint32_t *)((uint32_t)g_ar.currentThread->m_stackTop - g_ar.currentThread->m_stackSize);
-    if (check != 0xdeadbeef)
+    if (check != kStackCheckValue)
     {
         THREAD_STACK_OVERFLOW_DETECTED();
     }

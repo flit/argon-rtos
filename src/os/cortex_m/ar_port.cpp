@@ -126,7 +126,7 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
 #endif
 
     // Write a check value to the bottom of the stack.
-    *stackBottom = 0xdeadbeef;
+    *stackBottom = kStackCheckValue;
 }
 
 void ar_atomic_add(uint32_t * value, uint32_t delta)

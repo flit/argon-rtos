@@ -44,6 +44,13 @@
 // Definitions
 //------------------------------------------------------------------------------
 
+enum
+{
+    //! Signature value written to the top of each thread's the stack. The scheduler looks
+    //! for this value every time it activates a thread and halts if it is missing.
+    kStackCheckValue = 0xdeadbeef
+};
+
 /*!
  * @brief Argon kernel state.
  */
