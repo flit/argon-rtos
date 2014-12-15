@@ -463,13 +463,13 @@ void _ar_list_node::insertBefore(ar_list_node_t * node)
     node->m_prev = this;
 }
 
-//! The thread is inserted in either FIFO or sorted order, depending on whether the @a predicate
-//! parameter is provided. If the predicate is NULL, the new list item will be inserted in at the
+//! The item is inserted in either FIFO or sorted order, depending on whether the predicate
+//! member is set. If the predicate is NULL, the new list item will be inserted at the
 //! end of the list, maintaining FIFO order.
 //!
 //! If the predicate function is provided, then it is used to search for the insert position on the
 //! list. The new item will be inserted before the first existing list item for which the predicate
-//! function returns true with called with its first parameter set to the new item and second
+//! function returns true when called with its first parameter set to the new item and second
 //! parameter set to the existing item.
 //!
 //! The list is maintained as a doubly-linked circular list. The last item in the list has its
@@ -477,8 +477,6 @@ void _ar_list_node::insertBefore(ar_list_node_t * node)
 //! only one item in the list, both its next and previous links point to itself.
 //!
 //! @param item The item to insert into the list. The item must not already be on the list.
-//! @param predicate An optional sorting predicate function. If this parameter is NULL, the item
-//!     will be inserted in at the end of the list (FIFO order).
 void _ar_list::add(ar_list_node_t * item)
 {
     assert(item->m_next == NULL && item->m_prev == NULL);

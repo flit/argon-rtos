@@ -31,6 +31,7 @@
 #include "os/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
+#include "us_ticker_api.h"
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -43,6 +44,8 @@
 //------------------------------------------------------------------------------
 
 void main_thread(void * arg);
+void x_thread(void * arg);
+void y_thread(void * arg);
 
 //------------------------------------------------------------------------------
 // Variables
@@ -50,7 +53,12 @@ void main_thread(void * arg);
 
 Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
 
-TEST_CASE_CLASS g_testCase;
+// TEST_CASE_CLASS g_testCase;
+
+Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 30);
+Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 20);
+
+Ar::TypedChannel<int> g_chan("c");
 
 //------------------------------------------------------------------------------
 // Code
@@ -59,7 +67,7 @@ TEST_CASE_CLASS g_testCase;
 const char * KernelTest::threadIdString() const
 {
     static char idString[32];
-    snprintf(idString, sizeof(idString), "[%s]", self()->getName());
+    snprintf(idString, sizeof(idString), "[%d:%s]", us_ticker_read(), self()->getName());
     return idString;
 }
 
@@ -74,21 +82,93 @@ void KernelTest::printTicks()
     printf("%s ticks=%u!\r\n", threadIdString(), ticks);
 }
 
+void x_thread(void * arg)
+{
+    Ar::Thread * self = Ar::Thread::getCurrent();
+    const char * myName = self->getName();
+    ar_status_t status;
+
+    while (1)
+    {
+        printf("[%d:%s] receiving on channel\n", us_ticker_read(), myName);
+        int foo = g_chan.receive();
+        printf("[%d:%s] received from channel (foo=%d)\n", us_ticker_read(), myName, foo);
+
+        printf("[%d:%s] sleeping a bit\n", us_ticker_read(), myName);
+        Ar::Thread::sleep(1000);
+
+        printf("[%d:%s] receiving on channel\n", us_ticker_read(), myName);
+        foo = g_chan.receive();
+        printf("[%d:%s] received from channel (foo=%d)\n", us_ticker_read(), myName, foo);
+
+        printf("[%d:%s] receiving on channel (will timeout)\n", us_ticker_read(), myName);
+        status = g_chan.receive(foo, 500);
+        if (status != kArTimeoutError)
+        {
+            printf("[%d:%s] receiving didn't timeout!\n", us_ticker_read(), myName);
+        }
+        else
+        {
+            printf("[%d:%s] receiving timed out successfully\n", us_ticker_read(), myName);
+        }
+
+        printf("[%d:%s] sleeping a bit\n", us_ticker_read(), myName);
+        Ar::Thread::sleep(4000);
+    }
+}
+
+void y_thread(void * arg)
+{
+    Ar::Thread * self = Ar::Thread::getCurrent();
+    const char * myName = self->getName();
+    ar_status_t status;
+
+    while (1)
+    {
+        printf("[%d:%s] sending to channel\n", us_ticker_read(), myName);
+        g_chan.send(128);
+        printf("[%d:%s] sent to channel\n", us_ticker_read(), myName);
+
+        printf("[%d:%s] sending to channel\n", us_ticker_read(), myName);
+        g_chan.send(256);
+        printf("[%d:%s] sent to channel\n", us_ticker_read(), myName);
+
+        printf("[%d:%s] sleeping a bit\n", us_ticker_read(), myName);
+        Ar::Thread::sleep(2000);
+
+        printf("[%d:%s] sending on channel (will timeout)\n", us_ticker_read(), myName);
+        status = g_chan.send(1, 2);
+        if (status != kArTimeoutError)
+        {
+            printf("[%d:%s] sending didn't timeout!\n", us_ticker_read(), myName);
+        }
+        else
+        {
+            printf("[%d:%s] sending timed out successfully\n", us_ticker_read(), myName);
+        }
+    }
+}
+
 void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
 
-    printf("[%s] Main thread is running\r\n", myName);
+    printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
 
-    g_testCase.init();
-    g_testCase.run();
+//     g_testCase.init();
+//     g_testCase.run();
 
-    printf("[%s] goodbye!\r\n", myName);
+    g_xThread.resume();
+    g_yThread.resume();
+
+    printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }
 
 void main(void)
 {
+    us_ticker_init();
+
 #if !defined(KL25Z4_SERIES)
 //     debug_init();
 #endif

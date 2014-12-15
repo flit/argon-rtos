@@ -38,6 +38,8 @@
 
 using namespace Ar;
 
+static ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
+
 //------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
@@ -91,14 +93,9 @@ ar_status_t ar_channel_delete(ar_channel_t * channel)
     return kArSuccess;
 }
 
-// See ar_kernel.h for documentation of this function.
-ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t timeout)
+//! @brief Common channel send/receive code.
+ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
-    if (!channel)
-    {
-        return kArInvalidParameterError;
-    }
-
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
     if (g_ar.irqDepth > 0 && timeout != 0)
     {
@@ -108,24 +105,25 @@ ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t ti
     IrqDisableAndRestore disableIrq;
     ar_thread_t * thread;
 
-    // Are there any blocked senders?
-    if (channel->m_blockedSenders.isEmpty())
+    // Are there any blocked threads for the opposite direction of this call?
+    if (otherDirList.isEmpty())
     {
-        // Nobody waiting to send, so we must block. Return immediately if the timeout is 0.
+        // Nobody waiting, so we must block. Return immediately if the timeout is 0.
         if (timeout == kArNoTimeout)
         {
             return kArTimeoutError;
         }
 
-        // Block this thread on the channel.
+        // Block this thread on the channel. Save the value pointer into the thread
+        // object so the other side of this channel can access it.
         thread = g_ar.currentThread;
         thread->m_channelData = value;
-        thread->block(channel->m_blockedReceivers, timeout);
+        thread->block(myDirList, timeout);
 
         disableIrq.enable();
 
-        // Yield to the scheduler. We'll return when a call to send()
-        // wakes this thread. If another thread gains control, interrupts will be
+        // Yield to the scheduler. We'll return when a call for the other direction, or
+        // a timeout, wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
         ar_kernel_enter_scheduler();
 
@@ -135,20 +133,42 @@ ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t ti
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
         {
-            channel->m_blockedReceivers.remove(&thread->m_blockedNode);
+            myDirList.remove(&thread->m_blockedNode);
             return thread->m_unblockStatus;
         }
     }
     else
     {
-        // Get the first blocked sender.
-        thread = channel->m_blockedSenders.m_head->getObject<ar_thread_t>();;
+        // Get the first thread blocked on this channel.
+        thread = otherDirList.m_head->getObject<ar_thread_t>();
 
-        // Copy data from the sender.
-        memcpy(value, thread->m_channelData, channel->m_width);
+        // Copy data from the other side. Optimize word-sized channels so we don't
+        // have to call into memcpy().
+        if (channel->m_width == sizeof(uint32_t))
+        {
+            if (isSending)
+            {
+                *(uint32_t *)thread->m_channelData = *(uint32_t *)value;
+            }
+            else
+            {
+                *(uint32_t *)value = *(uint32_t *)thread->m_channelData;
+            }
+        }
+        else
+        {
+            if (isSending)
+            {
+                memcpy(thread->m_channelData, value, channel->m_width);
+            }
+            else
+            {
+                memcpy(value, thread->m_channelData, channel->m_width);
+            }
+        }
 
-        // Unblock the sender.
-        thread->unblockWithStatus(channel->m_blockedSenders, kArSuccess);
+        // Unblock the other side.
+        thread->unblockWithStatus(otherDirList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar.currentThread->m_priority)
@@ -162,6 +182,18 @@ ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t ti
     return kArSuccess;
 }
 
+
+// See ar_kernel.h for documentation of this function.
+ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t timeout)
+{
+    if (!channel)
+    {
+        return kArInvalidParameterError;
+    }
+
+    return ar_channel_send_receive(channel, false, channel->m_blockedReceivers, channel->m_blockedSenders, value, timeout);
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_channel_send(ar_channel_t * channel, const void * value, uint32_t timeout)
 {
@@ -170,61 +202,7 @@ ar_status_t ar_channel_send(ar_channel_t * channel, const void * value, uint32_t
         return kArInvalidParameterError;
     }
 
-    IrqDisableAndRestore disableIrq;
-    ar_thread_t * thread;
-
-    // Are there any threads waiting to receive?
-    if (channel->m_blockedReceivers.isEmpty())
-    {
-        // Nobody waiting to receive, so we must block. Return immediately if the timeout is 0.
-        if (timeout == kArNoTimeout)
-        {
-            return kArTimeoutError;
-        }
-
-        // Block this thread on the channel.
-        thread = g_ar.currentThread;
-        thread->m_channelData = const_cast<void *>(value);
-        thread->block(channel->m_blockedSenders, timeout);
-
-        disableIrq.enable();
-
-        // Yield to the scheduler. We'll return when a call to receive()
-        // wakes this thread. If another thread gains control, interrupts will be
-        // set to that thread's last state.
-        ar_kernel_enter_scheduler();
-
-        disableIrq.disable();
-
-        // We're back from the scheduler. Interrupts are still disabled.
-        // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kArSuccess)
-        {
-            channel->m_blockedSenders.remove(&thread->m_blockedNode);
-            return thread->m_unblockStatus;
-        }
-    }
-    else
-    {
-        // Get the first blocked receiver.
-        thread = channel->m_blockedReceivers.m_head->getObject<ar_thread_t>();
-
-        // Copy data to the receiver.
-        memcpy(thread->m_channelData, value, channel->m_width);
-
-        // Unblock the receiver.
-        thread->unblockWithStatus(channel->m_blockedReceivers, kArSuccess);
-
-        // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            disableIrq.enable();
-
-            ar_kernel_enter_scheduler();
-        }
-    }
-
-    return kArSuccess;
+    return ar_channel_send_receive(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, const_cast<void *>(value), timeout);
 }
 
 // See ar_kernel.h for documentation of this function.

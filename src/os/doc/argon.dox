@@ -12,6 +12,9 @@
 @defgroup ar_mutex Mutexes
 @ingroup ar
 
+@defgroup ar_chan Channels
+@ingroup ar
+
 @defgroup ar_queue Queues
 @ingroup ar
 

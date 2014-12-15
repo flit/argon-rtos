@@ -179,7 +179,7 @@ typedef struct _ar_list {
 
     // Internal utility methods.
 #if defined(__cplusplus)
-    bool isEmpty() const;                       //!< @brief Return whether the list is empty.
+    inline bool isEmpty() const;                //!< @brief Return whether the list is empty.
     void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
     inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.
     inline void add(ar_timer_t * item);         //!< @brief Add a timer to the list.
@@ -198,7 +198,6 @@ typedef struct _ar_list {
 typedef struct _ar_channel {
     const char * m_name;            //!< Name of the channel.
     uint32_t m_width;               //!< Size in bytes of the channel's data.
-    void * m_dest;                  //!< Receiver's destination pointer.
     ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
     ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
     ar_list_node_t m_createdNode;   //!< Node on the created channels list.

@@ -2194,12 +2194,6 @@
         <name>$PROJ_DIR$\..\src\include\device\MKL43Z4\cmsis_nvic.c</name>
       </file>
       <file>
-        <name>$PROJ_DIR$\..\src\startup\crt0.s</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
         <name>$PROJ_DIR$\..\src\startup\startup.c</name>
       </file>
       <file>

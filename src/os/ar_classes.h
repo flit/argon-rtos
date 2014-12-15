@@ -526,6 +526,8 @@ public:
 
 /*!
  * @brief Channel.
+ *
+ * @ingroup ar
  */
 class Channel : public _ar_channel
 {
@@ -548,6 +550,8 @@ public:
 
 /*!
  * @brief Typed channel.
+ *
+ * @ingroup ar
  */
 template <typename T>
 class TypedChannel : public Channel
@@ -569,15 +573,18 @@ public:
     }
 
     //! @brief Receive from channel.
-    T receive(uint32_t timeout=kArInfiniteTimeout)
+    T receive()
     {
         T temp;
-        Channel::receive(&temp, timeout);
+        Channel::receive(&temp, kArInfiniteTimeout);
         return temp;
     }
 
-protected:
-    T m_storage;
+    //! @brief Receive from channel.
+    ar_status_t receive(T & value, uint32_t timeout=kArInfiniteTimeout)
+    {
+        return Channel::receive(&value, timeout);
+    }
 };
 
 /*!
