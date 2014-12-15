@@ -515,7 +515,7 @@ void _ar_list::add(ar_list_node_t * item)
 
                 if (node == m_head)
                 {
-                    m_head = node;
+                    m_head = item;
                 }
 
                 break;
