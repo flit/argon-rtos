@@ -38,6 +38,11 @@
 
 using namespace Ar;
 
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void * value, uint32_t timeout);
 static ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
 
 //------------------------------------------------------------------------------
@@ -93,6 +98,43 @@ ar_status_t ar_channel_delete(ar_channel_t * channel)
     return kArSuccess;
 }
 
+//! @brief Handles blocking a thread on a channel.
+//!
+//! The kernel must be locked prior to entry of this function.
+ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void * value, uint32_t timeout)
+{
+    // Nobody waiting, so we must block. Return immediately if the timeout is 0.
+    if (timeout == kArNoTimeout)
+    {
+        return kArTimeoutError;
+    }
+
+    // Block this thread on the channel. Save the value pointer into the thread
+    // object so the other side of this channel can access it.
+    ar_thread_t * thread = g_ar.currentThread;
+    thread->m_channelData = value;
+    thread->block(myDirList, timeout);
+
+    // Enable interrupts for this block, so we can enter the scheduler.
+    {
+        IrqEnableAndRestore enableIrq;
+
+        // Yield to the scheduler. We'll return when a call for the other direction, or
+        // a timeout, wakes this thread.
+        ar_kernel_enter_scheduler();
+    }
+
+    // We're back from the scheduler. Interrupts are still disabled.
+    // Check for errors and exit early if there was one.
+    if (thread->m_unblockStatus != kArSuccess)
+    {
+        myDirList.remove(&thread->m_blockedNode);
+        return thread->m_unblockStatus;
+    }
+
+    return kArSuccess;
+}
+
 //! @brief Common channel send/receive code.
 ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
@@ -103,68 +145,39 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
     }
 
     IrqDisableAndRestore disableIrq;
-    ar_thread_t * thread;
 
     // Are there any blocked threads for the opposite direction of this call?
     if (otherDirList.isEmpty())
     {
-        // Nobody waiting, so we must block. Return immediately if the timeout is 0.
-        if (timeout == kArNoTimeout)
-        {
-            return kArTimeoutError;
-        }
-
-        // Block this thread on the channel. Save the value pointer into the thread
-        // object so the other side of this channel can access it.
-        thread = g_ar.currentThread;
-        thread->m_channelData = value;
-        thread->block(myDirList, timeout);
-
-        disableIrq.enable();
-
-        // Yield to the scheduler. We'll return when a call for the other direction, or
-        // a timeout, wakes this thread. If another thread gains control, interrupts will be
-        // set to that thread's last state.
-        ar_kernel_enter_scheduler();
-
-        disableIrq.disable();
-
-        // We're back from the scheduler. Interrupts are still disabled.
-        // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kArSuccess)
-        {
-            myDirList.remove(&thread->m_blockedNode);
-            return thread->m_unblockStatus;
-        }
+        return ar_channel_block(channel, myDirList, value, timeout);
     }
     else
     {
         // Get the first thread blocked on this channel.
-        thread = otherDirList.m_head->getObject<ar_thread_t>();
+        ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
 
-        // Copy data from the other side. Optimize word-sized channels so we don't
-        // have to call into memcpy().
-        if (channel->m_width == sizeof(uint32_t))
+        // Figure out the direction of the data transfer.
+        void * src;
+        void * dest;
+        if (isSending)
         {
-            if (isSending)
-            {
-                *(uint32_t *)thread->m_channelData = *(uint32_t *)value;
-            }
-            else
-            {
-                *(uint32_t *)value = *(uint32_t *)thread->m_channelData;
-            }
+            src = value;
+            dest = thread->m_channelData;
         }
         else
         {
-            if (isSending)
-            {
-                memcpy(thread->m_channelData, value, channel->m_width);
-            }
-            else
-            {
-                memcpy(value, thread->m_channelData, channel->m_width);
-            }
+            src = thread->m_channelData;
+            dest = value;
+        }
+
+        // Do the transfer. Optimize word-sized channels so we don't have to call into memcpy().
+        if (channel->m_width == sizeof(uint32_t))
+        {
+            *(uint32_t *)dest = *(uint32_t *)src;
+        }
+        else
+        {
+            memcpy(dest, src, channel->m_width);
         }
 
         // Unblock the other side.

@@ -191,19 +191,6 @@ typedef struct _ar_list {
 //@}
 
 /*!
- * @brief Channel.
- *
- * @ingroup ar_chan
- */
-typedef struct _ar_channel {
-    const char * m_name;            //!< Name of the channel.
-    uint32_t m_width;               //!< Size in bytes of the channel's data.
-    ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
-    ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
-    ar_list_node_t m_createdNode;   //!< Node on the created channels list.
-} ar_channel_t;
-
-/*!
  * @brief Thread.
  *
  * @ingroup ar_thread
@@ -254,6 +241,19 @@ typedef struct _ar_mutex {
     volatile unsigned m_ownerLockCount; //!< Number of times the owner thread has locked the mutex.
     uint8_t m_originalPriority;         //!< Original priority of the owner thread before its priority was raised.
 } ar_mutex_t;
+
+/*!
+ * @brief Channel.
+ *
+ * @ingroup ar_chan
+ */
+typedef struct _ar_channel {
+    const char * m_name;            //!< Name of the channel.
+    uint32_t m_width;               //!< Size in bytes of the channel's data.
+    ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
+    ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
+    ar_list_node_t m_createdNode;   //!< Node on the created channels list.
+} ar_channel_t;
 
 /*!
  * @brief Queue.
@@ -657,7 +657,7 @@ ar_status_t ar_channel_delete(ar_channel_t * channel);
  * thread waiting to receive on the other side, then this function will block.
  *
  * @param channel Pointer to the channel.
- * @param value Pointer-sized value to send through the channel.
+ * @param value Pointer to value to send through the channel.
  * @param timeout The maximum number of milliseconds the caller is willing to wait before the
  *      send is completed.
  */
