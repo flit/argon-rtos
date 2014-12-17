@@ -261,6 +261,9 @@ protected:
         (m_object->*m_entryMember)(param);
     }
 
+private:
+    //! @brief The copy constructor is disabled for thread objects.
+    ThreadToMemberFunction(const ThreadToMemberFunction<T> & other) {}
 };
 
 /*!
@@ -286,6 +289,10 @@ public:
 
 protected:
     uint8_t m_stack[S];
+
+private:
+    //! @brief The copy constructor is disabled for thread objects.
+    ThreadWithStack(const ThreadWithStack<S> & other) {}
 };
 
 /*!
@@ -298,8 +305,7 @@ class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
 {
 public:
 
-//     typedef ThreadToMemberFunction<T>::thread_member_entry_t thread_member_entry_t;
-    typedef void (T::*thread_member_entry_t)(void * param);
+    using typename ThreadToMemberFunction<T>::thread_member_entry_t;
 
     ThreadToMemberFunctionWithStack() {}
 
@@ -315,6 +321,10 @@ public:
 
 protected:
     uint8_t m_stack[S];
+
+private:
+    //! @brief The copy constructor is disabled for thread objects.
+    ThreadToMemberFunctionWithStack(const ThreadToMemberFunctionWithStack<S,T> & other) {}
 };
 
 /*!
@@ -419,6 +429,10 @@ public:
     protected:
         Semaphore & m_sem;  //!< The semaphore to hold.
     };
+
+private:
+    //! @brief Disable copy constructor.
+    Semaphore(const Semaphore & other) {}
 };
 
 /*!
@@ -522,6 +536,9 @@ public:
         Mutex & m_mutex;  //!< The mutex to hold.
     };
 
+private:
+    //! @brief Disable copy constructor.
+    Mutex(const Mutex & other) {}
 };
 
 /*!
@@ -546,6 +563,10 @@ public:
 
     //! @brief Receive from channel.
     ar_status_t receive(void * value, uint32_t timeout=kArInfiniteTimeout) { return ar_channel_receive(this, value, timeout); }
+
+private:
+    //! @brief Disable copy constructor.
+    Channel(const Channel & other) {}
 };
 
 /*!
@@ -585,6 +606,10 @@ public:
     {
         return Channel::receive(&value, timeout);
     }
+
+private:
+    //! @brief Disable copy constructor.
+    TypedChannel(const TypedChannel<T> & other) {}
 };
 
 /*!
@@ -657,6 +682,9 @@ public:
     //! @brief Returns the current number of elements in the queue.
     unsigned getCount() const { return m_count; }
 
+private:
+    //! @brief Disable copy constructor.
+    Queue(const Queue & other) {}
 };
 
 /*!
@@ -739,6 +767,10 @@ public:
 
 protected:
     T m_storage[N]; //!< Static storage for the queue elements.
+
+private:
+    //! @brief Disable copy constructor.
+    StaticQueue(const StaticQueue<T,N> & other) {}
 };
 
 /*!
@@ -793,6 +825,9 @@ protected:
     //! @brief Converts the timer struct to an instance of this class.
     static void timer_wrapper(ar_timer_t * timer, void * arg);
 
+private:
+    //! @brief Disable copy constructor.
+    Timer(const Timer & other) {}
 };
 
 /*!
