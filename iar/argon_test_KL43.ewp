@@ -649,7 +649,7 @@
         <debug>1</debug>
         <option>
           <name>IlinkOutputFile</name>
-          <state>argon_test.out</state>
+          <state>basic_test.out</state>
         </option>
         <option>
           <name>IlinkLibIOConfig</name>
@@ -1135,6 +1135,7 @@
           <state>CPU_MKL43Z256VLH4</state>
           <state>NDEBUG</state>
           <state>TARGET_KL43Z</state>
+          <state>TOOLCHAIN_IAR</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -1266,7 +1267,9 @@
           <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
+          <state>$PROJ_DIR$\..\src\include\device\MKL43Z4</state>
           <state>$PROJ_DIR$\..\src\startup</state>
+          <state>$PROJ_DIR$\..\src\startup\MKL43Z4</state>
           <state>$PROJ_DIR$\..\src\os\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
@@ -1682,7 +1685,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\config\128KB_Pflash.icf</state>
+          <state>$PROJ_DIR$\config\MKL43Z256xxx4_flash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -2149,6 +2152,9 @@
         <name>cortex_m</name>
         <file>
           <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers_cm0p.s</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_main_thread.cpp</name>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.cpp</name>

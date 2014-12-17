@@ -177,19 +177,24 @@ void main(void)
 
 #if 0
     printf("sizeof(Thread)=%d\r\n", sizeof(Ar::Thread));
+    printf("sizeof(Channel)=%d\r\n", sizeof(Ar::Channel));
     printf("sizeof(Semaphore)=%d\r\n", sizeof(Ar::Semaphore));
     printf("sizeof(Mutex)=%d\r\n", sizeof(Ar::Mutex));
     printf("sizeof(Queue)=%d\r\n", sizeof(Ar::Queue));
     printf("sizeof(Timer)=%d\r\n", sizeof(Ar::Timer));
 #endif
 
+    main_thread(0);
+
     // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 //     g_mainThread.init("main", main_thread, 0, 56);
-    g_mainThread.resume();
+//     g_mainThread.resume();
 
-    ar_kernel_run();
+//     ar_kernel_run();
 
-    Ar::_halt();
+//     Ar::_halt();
+
+    Ar::Thread::getCurrent()->suspend();
 }
 
 //------------------------------------------------------------------------------

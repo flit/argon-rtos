@@ -399,6 +399,9 @@
           <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers_cm0p.s</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_main_thread.cpp</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.cpp</name>
         </file>
         <file>

@@ -77,6 +77,22 @@
     #define AR_IDLE_THREAD_STACK_SIZE (512)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 
+#if !defined(AR_ENABLE_MAIN_THREAD)
+    //! Set to 1 to cause main() to be run in a thread.
+    #define AR_ENABLE_MAIN_THREAD (1)
+#endif // AR_ENABLE_MAIN_THREAD
+
+#if !defined(AR_SCHEDULER_STACK_SIZE)
+    //! Size in bytes of the stack used by the scheduler and interrupts if the main thread
+    //! is enabled.
+    #define AR_SCHEDULER_STACK_SIZE (256)
+#endif // AR_SCHEDULER_STACK_SIZE
+
+#if !defined(AR_MAIN_THREAD_PRIORITY)
+    //! Priority for the main thread.
+    #define AR_MAIN_THREAD_PRIORITY (128)
+#endif // AR_MAIN_THREAD_PRIORITY
+
 #endif // _AR_CONFIG_H_
 //------------------------------------------------------------------------------
 // EOF
