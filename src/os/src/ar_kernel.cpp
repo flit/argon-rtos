@@ -501,14 +501,6 @@ void _ar_list::add(ar_list_node_t * item)
         ar_list_node_t * node = m_head;
 
         do {
-//             if (node->m_next == m_head)
-//             {
-//                 item->m_next = m_head;
-//                 item->m_prev = node;
-//                 node->m_next = item;
-//                 m_head->m_prev = item;
-//             }
-//             else
             if (m_predicate(item, node))
             {
                 item->insertBefore(node);
