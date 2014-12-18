@@ -111,8 +111,14 @@ public:
         init(name, entry, param, stack, stackSize, priority);
     }
 
+    //! @brief Constructor to dynamically allocate the stack.
+    Thread(const char * name, ar_thread_entry_t entry, void * param, unsigned stackSize, uint8_t priority)
+    {
+        init(name, entry, param, NULL, stackSize, priority);
+    }
+
     //! @brief Destructor.
-    virtual ~Thread() { ar_thread_delete(this); }
+    virtual ~Thread();
 
     //! @name Thread init and cleanup
     //@{
@@ -126,7 +132,7 @@ public:
     //! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
     //!     entry point.
     //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
-    //!     not it's top.
+    //!     not it's top. If this parameter is NULL, the stack will be dynamically allocated.
     //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
     //!     added to @a stack to get the initial top of stack address.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
@@ -209,12 +215,13 @@ public:
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return reinterpret_cast<Thread *>(ar_thread_get_current()->m_ref); }
+    static Thread * getCurrent() { return static_cast<Thread *>(ar_thread_get_current()->m_ref); }
     //@}
 
 protected:
 
-    ar_thread_entry_t m_userEntry;
+    void * m_allocatedStack; //!< Dynamically allocated stack.
+    ar_thread_entry_t m_userEntry;  //!< User-specified thread entry point function.
 
     //! @brief Virtual thread entry point.
     virtual void threadEntry(void * param);

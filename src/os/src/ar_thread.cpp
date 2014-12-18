@@ -400,8 +400,33 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread)
 }
 
 // See ar_classes.h for documentation of this function.
+Thread::~Thread()
+{
+    ar_thread_delete(this);
+
+    // Free dynamically allocated stack.
+    if (m_allocatedStack)
+    {
+        delete [] m_allocatedStack;
+    }
+}
+
+// See ar_classes.h for documentation of this function.
 ar_status_t Thread::init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
 {
+    if (!stack)
+    {
+        m_allocatedStack = new uint8_t[stackSize];
+        if (!m_allocatedStack)
+        {
+            return kArOutOfMemoryError;
+        }
+        stack = m_allocatedStack;
+    }
+    else
+    {
+        m_allocatedStack = NULL;
+    }
     ar_status_t result = ar_thread_create(this, name, thread_entry, param, stack, stackSize, priority);
     m_ref = this;
     m_userEntry = entry;

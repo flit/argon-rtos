@@ -93,7 +93,10 @@ typedef enum _ar_status {
     kArInvalidParameterError,
 
     //! The timer is not running.
-    kArTimerNotRunningError
+    kArTimerNotRunningError,
+
+    //! Allocation failed.
+    kArOutOfMemoryError,
 } ar_status_t;
 
 //! @brief Potential thread states.

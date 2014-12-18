@@ -47,18 +47,32 @@ void main_thread(void * arg);
 void x_thread(void * arg);
 void y_thread(void * arg);
 
+class Foo
+{
+public:
+
+    void entry(void * param)
+    {
+        printf("hi from Foo!\n");
+    }
+};
+
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
 
-Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
+// Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
 
-// TEST_CASE_CLASS g_testCase;
+TEST_CASE_CLASS g_testCase;
 
 Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 30);
 Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 20);
 
 Ar::TypedChannel<int> g_chan("c");
+
+Ar::ThreadToMemberFunctionWithStack<512,Foo> g_fooThread;
+
+Ar::Thread * g_dyn;
 
 //------------------------------------------------------------------------------
 // Code
@@ -149,6 +163,14 @@ void y_thread(void * arg)
     }
 }
 
+// #define CPPSTR #__cplusplus
+
+void dyn_test(void * arg)
+{
+    printf("hi from dyn_test\n");
+    printf("__cplusplus = '%d'\n", __cplusplus);
+}
+
 void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
@@ -156,11 +178,18 @@ void main_thread(void * arg)
 
     printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
 
-//     g_testCase.init();
-//     g_testCase.run();
+    g_testCase.init();
+    g_testCase.run();
 
     g_xThread.resume();
     g_yThread.resume();
+
+    Foo * foo = new Foo;
+    g_fooThread.init("foo", foo, &Foo::entry, 0, 120);
+    g_fooThread.resume();
+
+    g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
+    g_dyn->resume();
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }
