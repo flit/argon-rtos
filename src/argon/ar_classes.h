@@ -234,6 +234,9 @@ protected:
 private:
     //! @brief The copy constructor is disabled for thread objects.
     Thread(const Thread & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Thread & other) {}
 };
 
 /*!
@@ -274,6 +277,9 @@ protected:
 private:
     //! @brief The copy constructor is disabled for thread objects.
     ThreadToMemberFunction(const ThreadToMemberFunction<T> & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const ThreadToMemberFunction<T> & other) {}
 };
 
 /*!
@@ -303,6 +309,9 @@ protected:
 private:
     //! @brief The copy constructor is disabled for thread objects.
     ThreadWithStack(const ThreadWithStack<S> & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const ThreadWithStack<S> & other) {}
 };
 
 /*!
@@ -335,6 +344,9 @@ protected:
 private:
     //! @brief The copy constructor is disabled for thread objects.
     ThreadToMemberFunctionWithStack(const ThreadToMemberFunctionWithStack<S,T> & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const ThreadToMemberFunctionWithStack<S,T> & other) {}
 };
 
 /*!
@@ -443,6 +455,9 @@ public:
 private:
     //! @brief Disable copy constructor.
     Semaphore(const Semaphore & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Semaphore & other) {}
 };
 
 /*!
@@ -552,6 +567,9 @@ public:
 private:
     //! @brief Disable copy constructor.
     Mutex(const Mutex & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Mutex & other) {}
 };
 
 /*!
@@ -580,6 +598,9 @@ public:
 private:
     //! @brief Disable copy constructor.
     Channel(const Channel & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Channel & other) {}
 };
 
 /*!
@@ -623,6 +644,9 @@ public:
 private:
     //! @brief Disable copy constructor.
     TypedChannel(const TypedChannel<T> & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const TypedChannel<T> & other) {}
 };
 
 /*!
@@ -698,6 +722,9 @@ public:
 private:
     //! @brief Disable copy constructor.
     Queue(const Queue & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Queue & other) {}
 };
 
 /*!
@@ -784,6 +811,9 @@ protected:
 private:
     //! @brief Disable copy constructor.
     StaticQueue(const StaticQueue<T,N> & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const StaticQueue<T,N> & other) {}
 };
 
 /*!
@@ -841,6 +871,9 @@ protected:
 private:
     //! @brief Disable copy constructor.
     Timer(const Timer & other) {}
+
+    //! @brief Disable assignment operator.
+    void operator=(const Timer & other) {}
 };
 
 /*!
