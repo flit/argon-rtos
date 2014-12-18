@@ -3,4 +3,5 @@ Release
 output
 settings
 *.dep
+*.tmp.*
 
