@@ -50,7 +50,7 @@ namespace Ar {
 /*!
  * @brief Preemptive thread class.
  *
- * @ingroup ar
+ * @ingroup ar_thread
  *
  * This thread class implements a preemptive threading system with priorities. The highest priority
  * thread that is ready to run will always get the processor. That means that if there is only one
@@ -102,7 +102,7 @@ namespace Ar {
 class Thread : public _ar_thread
 {
 public:
-    //! @brief Constructor.
+    //! @brief Default constructor.
     Thread() {}
 
     //! @brief Constructor.
@@ -224,8 +224,11 @@ protected:
     ar_thread_entry_t m_userEntry;  //!< User-specified thread entry point function.
 
     //! @brief Virtual thread entry point.
+    //!
+    //! This is the method that subclasses should override.
     virtual void threadEntry(void * param);
 
+    //! @brief Static thread entry callback to invoke the virtual method.
     static void thread_entry(void * param);
 
 private:
@@ -236,7 +239,7 @@ private:
 /*!
  * @brief Template to create a thread whose entry point is a member of a class.
  *
- * @ingroup ar
+ * @ingroup ar_thread
  */
 template <typename T>
 class ThreadToMemberFunction : public Thread
@@ -276,7 +279,7 @@ private:
 /*!
  * @brief Template to create a thread and its stack.
  *
- * @ingroup ar
+ * @ingroup ar_thread
  */
 template <uint32_t S>
 class ThreadWithStack : public Thread
@@ -305,7 +308,7 @@ private:
 /*!
  * @brief Template to create a thread and its stack, with a member function entry point.
  *
- * @ingroup ar
+ * @ingroup ar_thread
  */
 template <uint32_t S, typename T>
 class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
@@ -337,9 +340,9 @@ private:
 /*!
  * @brief Counting semaphore class.
  *
- * @ingroup ar
+ * @ingroup ar_sem
  *
- * @see LockHolder
+ * @see Semaphore::Guard
  */
 class Semaphore : public _ar_semaphore
 {
@@ -411,7 +414,7 @@ public:
     /*!
      * @brief Utility class to automatically get and put a semaphore.
      *
-     * @ingroup ar
+     * @ingroup ar_sem
      *
      * This class is intended to be stack allocated. It gets and holds a semaphore for the
      * duration of the scope in which it is declared. Once it goes out of scope, the destructor
@@ -445,13 +448,16 @@ private:
 /*!
  * @brief Mutex object.
  *
- * @ingroup ar
+ * @ingroup ar_mutex
  *
  * Very similar to a binary semaphore, except that a single thread can lock the mutex multiple times
  * without deadlocking. In this case, the number of calls to get() and put() must be matched.
  *
- * Because Mutex is a sublcass of Semaphore, it can be used anywhere that accepts a Semaphore
- * object. For instance, LockHolder works equally well for a Mutex.
+ * Another difference from semaphores is that mutexes support priority inheritance. If a high-
+ * priority thread blocks on a mutex held by a lower-priority thread, the thread holding the mutex
+ * will have its priority temporarily raised to the priority of the thread waiting on the mutex.
+ *
+ * @see Mutex::Guard
  */
 class Mutex : public _ar_mutex
 {
@@ -517,7 +523,7 @@ public:
     /*!
      * @brief Utility class to automatically get and put a mutex.
      *
-     * @ingroup ar
+     * @ingroup ar_mutex
      *
      * This class is intended to be stack allocated. It gets and holds a mutex for the
      * duration of the scope in which it is declared. Once it goes out of scope, the destructor
@@ -551,7 +557,7 @@ private:
 /*!
  * @brief Channel.
  *
- * @ingroup ar
+ * @ingroup ar_chan
  */
 class Channel : public _ar_channel
 {
@@ -579,7 +585,7 @@ private:
 /*!
  * @brief Typed channel.
  *
- * @ingroup ar
+ * @ingroup ar_chan
  */
 template <typename T>
 class TypedChannel : public Channel
@@ -622,7 +628,7 @@ private:
 /*!
  * @brief A blocking queue for inter-thread messaging.
  *
- * @ingroup ar
+ * @ingroup ar_queue
  */
 class Queue : public _ar_queue
 {
@@ -697,7 +703,7 @@ private:
 /*!
  * @brief Template class to help statically allocate a Queue.
  *
- * @ingroup ar
+ * @ingroup ar_queue
  *
  * This template class helps create a Queue instance by defining a static array of queue elements.
  * The array length is one of the template parameters.
@@ -783,7 +789,7 @@ private:
 /*!
  * @brief Timer object.
  *
- * @ingroup ar
+ * @ingroup ar_timer
  */
 class Timer : public _ar_timer
 {
