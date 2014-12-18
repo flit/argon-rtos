@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 #include "us_ticker_api.h"

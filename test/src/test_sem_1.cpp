@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
@@ -39,13 +39,13 @@
 void TestSem1::run()
 {
     m_sem.init("sem", 0);
-    
+
 //     m_aThread.init("a", _a_thread, this, 60);
 //     m_aThread.resume();
-// 
+//
 //     m_bThread.init("b", _b_thread, this, 70);
 //     m_bThread.resume();
-    
+
     m_aThread.init("a", this, &TestSem1::a_thread, this, 60);
     m_aThread.resume();
 
@@ -58,7 +58,7 @@ void TestSem1::run()
 //     TestSem1 * _this = (TestSem1 *)arg;
 //     _this->a_thread();
 // }
-// 
+//
 // void TestSem1::_b_thread(void * arg)
 // {
 //     TestSem1 * _this = (TestSem1 *)arg;
@@ -68,7 +68,7 @@ void TestSem1::run()
 void TestSem1::a_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
         printf("%s sleeping for 2 sec\r\n", threadIdString());
@@ -81,7 +81,7 @@ void TestSem1::a_thread(void * param)
 void TestSem1::b_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
         printf("%s getting sem\r\n", threadIdString());

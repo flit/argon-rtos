@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
@@ -71,14 +71,14 @@ void TestQueue1::_consumer_b_thread(void * arg)
 void TestQueue1::producer_thread()
 {
     printHello();
-    
+
     int counter = 0;
     while (1)
     {
         int value = ++counter;
         printf("%s sending %d\r\n", threadIdString(), value);
         m_q.send(value);
-        
+
         Ar::Thread::sleep(2000);
     }
 }
@@ -86,7 +86,7 @@ void TestQueue1::producer_thread()
 void TestQueue1::consumer_a_thread()
 {
     printHello();
-    
+
     while (1)
     {
         int value = m_q.receive();
@@ -97,7 +97,7 @@ void TestQueue1::consumer_a_thread()
 void TestQueue1::consumer_b_thread()
 {
     printHello();
-    
+
     while (1)
     {
         int value = m_q.receive();

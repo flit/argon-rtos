@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/src/ar_internal.h"
+#include "argon/src/ar_internal.h"
 #include "ar_port.h"
 
 #include <string.h>

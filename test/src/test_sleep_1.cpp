@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
@@ -43,7 +43,7 @@ void TestSleep1::run()
 
     m_bThread.init("b", _b_thread, this, 70);
     m_bThread.resume();
-    
+
 }
 
 void TestSleep1::_a_thread(void * arg)
@@ -61,11 +61,11 @@ void TestSleep1::_b_thread(void * arg)
 void TestSleep1::a_thread()
 {
     printHello();
-    
+
     while (1)
     {
         printTicks();
-        
+
         Ar::Thread::sleep(2000);
     }
 }
@@ -73,11 +73,11 @@ void TestSleep1::a_thread()
 void TestSleep1::b_thread()
 {
     printHello();
-    
+
     while (1)
     {
         printTicks();
-        
+
         Ar::Thread::sleep(3000);
     }
 }

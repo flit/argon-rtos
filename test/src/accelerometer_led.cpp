@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 #include "MMA8451Q/MMA8451Q.h"
@@ -53,14 +53,14 @@ class Fader
 private:
     float m_value;
     float m_delta;
-    
+
 public:
     Fader(float delta);
-    
+
     float next();
-    
+
     void setDelta(float delta) { m_delta = delta; }
-    
+
     operator float () { return next(); }
 };
 
@@ -122,7 +122,7 @@ float Fader::next()
         m_value = 1.0f;
         m_delta = -m_delta;
     }
-    
+
     return m_value;
 }
 
@@ -149,12 +149,12 @@ void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
-    
+
     printf("[%s] Main thread is running\r\n", myName);
-    
+
     g_testCase.init();
     g_testCase.run();
-    
+
     g_accLock.init("accLock");
     g_x.init("x");
     g_y.init("y");
@@ -177,7 +177,7 @@ void main_thread(void * arg)
 
     g_redThread.init("red", red_thread, 0, 50);
     g_redThread.resume();
-    
+
     printf("[%s] goodbye!\r\n", myName);
 }
 
@@ -186,14 +186,14 @@ void x_thread(void * arg)
     g_accLock.get();
     printf("MMA8451Q ID: 0x%2x\r\n", acc.getWhoAmI());
     g_accLock.put();
-    
+
     while (true)
     {
         g_accLock.get();
         int16_t x = acc.getAccX();
         g_accLock.put();
         g_x.send(x);
-        
+
         Ar::Thread::sleep(50);
     }
 }
@@ -206,7 +206,7 @@ void y_thread(void * arg)
         int16_t y = acc.getAccY();
         g_accLock.put();
         g_y.send(y);
-        
+
         Ar::Thread::sleep(50);
     }
 }
@@ -219,7 +219,7 @@ void z_thread(void * arg)
         int16_t z = acc.getAccZ();
         g_accLock.put();
         g_z.send(z);
-        
+
         Ar::Thread::sleep(50);
     }
 }
@@ -228,7 +228,7 @@ void blue_thread(void * arg)
 {
     PwmOut blueLed(LED_BLUE);
     blueLed.period_ms(2);   // 500 Hz
-    
+
 //     Fader dutyCycle(0.05f);
     while (1)
     {
@@ -237,9 +237,9 @@ void blue_thread(void * arg)
         int16_t a = g_x.receive();
         float dutyCycle = (float)(4096 - (a < 0 ? -a : a)) / 4096.0f;
         printf("x=%d\r\n", a);
-        
+
         blueLed = dutyCycle;
-        
+
 //         Ar::Thread::sleep(kLedFadeRate);
     }
 }
@@ -247,10 +247,10 @@ void blue_thread(void * arg)
 void green_thread(void * arg)
 {
 //     Ar::Thread::sleep(500);
-    
+
     PwmOut greenLed(LED_GREEN);
     greenLed.period_ms(2);   // 500 Hz
-    
+
 //     Fader dutyCycle(0.025f);
     while (1)
     {
@@ -261,7 +261,7 @@ void green_thread(void * arg)
         printf("y=%d\r\n", a);
 
         greenLed = dutyCycle;
-        
+
 //         Ar::Thread::sleep(kLedFadeRate);
     }
 }
@@ -269,10 +269,10 @@ void green_thread(void * arg)
 void red_thread(void * arg)
 {
 //     Ar::Thread::sleep(1250);
-    
+
     PwmOut redLed(LED_RED);
     redLed.period_ms(2);   // 500 Hz
-    
+
 //     Fader dutyCycle(0.035f);
     while (1)
     {
@@ -283,7 +283,7 @@ void red_thread(void * arg)
         printf("z=%d\r\n", a);
 
         redLed = dutyCycle;
-        
+
 //         Ar::Thread::sleep(kLedFadeRate);
     }
 }
@@ -291,13 +291,13 @@ void red_thread(void * arg)
 void main(void)
 {
 //     debug_init();
-    
+
     printf("Running test...\r\n");
-    
+
     // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
     g_mainThread.init("main", main_thread, 0, 56);
     g_mainThread.resume();
-    
+
     Ar::Kernel::run();
 
     Ar::_halt();

@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "mbed.h"
 
@@ -61,14 +61,14 @@ class Fader
 private:
     float m_value;
     float m_delta;
-    
+
 public:
     Fader(float delta);
-    
+
     float next();
-    
+
     void setDelta(float delta) { m_delta = delta; }
-    
+
     operator float () { return next(); }
 };
 
@@ -76,7 +76,7 @@ class RotaryDecoder
 {
 public:
     RotaryDecoder();
-    
+
     int decode(uint8_t a, uint8_t b);
 
 private:
@@ -173,7 +173,7 @@ float Fader::next()
         m_value = 1.0f;
         m_delta = -m_delta;
     }
-    
+
     return m_value;
 }
 
@@ -206,12 +206,12 @@ void ShiftRegister::set(uint32_t bits)
 {
     m_latch = 0;
     m_clk = 0;
-    
+
     unsigned i;
     for (i=B; i; --i)
     {
         uint32_t b = (bits >> (i-1)) & 1;
-        
+
         m_clk = 0;
 //         m_latch = 0;
         m_dat = b;
@@ -222,7 +222,7 @@ void ShiftRegister::set(uint32_t bits)
 //         Ar::Thread::sleep(20);
         wait_us(50);
     }
-    
+
 //     Ar::Thread::sleep(20);
     wait_us(50);
     m_latch = 1;
@@ -250,7 +250,7 @@ void update_led_ring(unsigned value)
     {
         bits = (bits << 1) | 1;
     }
-    
+
 //    bits = ((bits & 0xff) << 8) | ((bits & 0xff00) >> 8);
     g_ledRing.set<16>(bits);
 }
@@ -270,34 +270,34 @@ void init_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
-    
+
     printf("[%s] Init thread is running\r\n", myName);
-    
+
     g_red = 1;
     g_green = 1;
     g_blue = 1;
-    
+
 //     g_blinker.start();
 //     g_green_blinker.start();
-    
+
     g_a.mode(PullUp);
     g_b.mode(PullUp);
     g_a.rise(encoder_handler);
     g_a.fall(encoder_handler);
     g_b.rise(encoder_handler);
     g_b.fall(encoder_handler);
-    
+
     g_r.period_us(20);
     g_g.period_us(20);
-    
+
     g_ledRing.clear();
 //     g_ledRing.set<16>(0x5555);
-    
+
     int colorChannel = kRedChannel;
     g_red = 0;
     int colorValues[3] = {0};
     update_rgb_led(colorValues[kRedChannel], colorValues[kGreenChannel], colorValues[kBlueChannel]);
-    
+
     DigitalIn switchPin((PinName)kEncoderSwitchPin);
 //     int lastValue = g_value;
     while (true)
@@ -318,7 +318,7 @@ void init_thread(void * arg)
             {
                 colorChannel = kRedChannel;
             }
-            
+
             switch (colorChannel)
             {
                 case kRedChannel:
@@ -340,7 +340,7 @@ void init_thread(void * arg)
 
             g_value = colorValues[colorChannel];
             update_led_ring(g_value);
-            
+
             while (switchPin)
             {
                 Ar::Thread::sleep(100);
@@ -352,11 +352,11 @@ void init_thread(void * arg)
             printf("value=%d\r\n", g_value);
             colorValues[colorChannel] = g_value;
             update_led_ring(g_value);
-            
+
             update_rgb_led(colorValues[kRedChannel], colorValues[kGreenChannel], colorValues[kBlueChannel]);
         }
     }
-    
+
 //     printf("[%s] goodbye!\r\n", myName);
 }
 
@@ -368,11 +368,11 @@ RotaryDecoder::RotaryDecoder()
 int RotaryDecoder::decode(uint8_t a, uint8_t b)
 {
     uint8_t newState = ((b & 1) << 1) | (a & 1);
-    
+
     m_oldState = ((m_oldState & 3) << 2) | newState;
-    
+
     return s_encoderStates[m_oldState];
-    
+
     // First, find the newEncoderState. This'll be a 2-bit value
     // the msb is the state of the B pin. The lsb is the state
     // of the A pin on the encoder.
@@ -382,10 +382,10 @@ int RotaryDecoder::decode(uint8_t a, uint8_t b)
     // First we need to shift oldEncoder state left two bits.
     // This'll put the last state in bits 2 and 3.
 //     oldEncoderState <<= 2;
-    
+
     // Mask out everything in oldEncoderState except for the previous state
 //     oldEncoderState &= 0xC0;
-    
+
     // Now add the newEncoderState. oldEncoderState will now be of
     // the form: 0b0000(old B)(old A)(new B)(new A)
 //     oldEncoderState |= newEncoderState; // add filteredport value
@@ -396,7 +396,7 @@ void encoder_debounce(ar_timer_t * timer, void * arg)
     int a = g_a;
     int b = g_b;
 //     printf("encoder: a=%d, b=%d\r\n", a, b);
-    
+
     int delta = g_decoder.decode(a, b);
     g_value += delta;
     if (g_value < 0)
@@ -423,11 +423,11 @@ void main(void)
                   | SIM_SCGC5_PORTC_MASK
                   | SIM_SCGC5_PORTD_MASK
                   | SIM_SCGC5_PORTE_MASK );
-    
+
     printf("Running test...\r\n");
-    
+
     g_initThread.resume();
-    
+
     ar_kernel_run();
 
     Ar::_halt();

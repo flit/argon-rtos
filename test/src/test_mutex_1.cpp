@@ -28,7 +28,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "debug_uart.h"
 #include "kernel_tests.h"
 
@@ -39,7 +39,7 @@
 void TestMutex1::run()
 {
     m_mutex.init("mutex");
-    
+
     m_aThread.init("a", this, &TestMutex1::a_thread, 0, 60);
     m_aThread.resume();
 
@@ -48,7 +48,7 @@ void TestMutex1::run()
 
 //     m_cThread.init("c", this, &TestMutex1::c_thread, 0, 80);
 //     m_cThread.resume();
-// 
+//
 //     m_dThread.init("d", this, &TestMutex1::d_thread, 0, 90);
 //     m_dThread.resume();
 }
@@ -56,12 +56,12 @@ void TestMutex1::run()
 void TestMutex1::a_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
 //         printf("%s sleeping for 2 sec\r\n", threadIdString());
 //         Ar::Thread::sleep(2000);
-        
+
         printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
         printf("%s getting mutex\r\n", threadIdString());
         m_mutex.get();
@@ -84,13 +84,13 @@ void TestMutex1::a_thread(void * param)
 void TestMutex1::b_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
         printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
         printf("%s sleeping for 4 sec\r\n", threadIdString());
         Ar::Thread::sleep(4000);
-        
+
         printf("%s getting mutex\r\n", threadIdString());
         m_mutex.get();
         printf("%s got mutex\r\n", threadIdString());
@@ -105,7 +105,7 @@ void TestMutex1::b_thread(void * param)
 void TestMutex1::c_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
         Ar::Thread::sleep(2000);
@@ -115,7 +115,7 @@ void TestMutex1::c_thread(void * param)
 void TestMutex1::d_thread(void * param)
 {
     printHello();
-    
+
     while (1)
     {
         Ar::Thread::sleep(2000);

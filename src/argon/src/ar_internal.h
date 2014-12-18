@@ -36,7 +36,7 @@
 #if !defined(_AR_INTERNAL_H_)
 #define _AR_INTERNAL_H_
 
-#include "os/argon.h"
+#include "argon/argon.h"
 #include "ar_port.h"
 #include "ar_config.h"
 

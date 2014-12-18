@@ -28,8 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "os/ar_classes.h"
-#include "os/src/ar_config.h"
+#include "argon/ar_classes.h"
+#include "argon/src/ar_config.h"
 
 #if AR_ENABLE_MAIN_THREAD
 

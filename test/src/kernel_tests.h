@@ -31,7 +31,7 @@
 #if !defined(_KERNEL_TESTS_H_)
 #define _KERNEL_TESTS_H_
 
-#include "os/argon.h"
+#include "argon/argon.h"
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -44,12 +44,12 @@ class KernelTest
 {
 public:
     KernelTest() {}
-    
+
     virtual ~KernelTest() {}
 
     virtual void init() {}
     virtual void run()=0;
-    
+
     Ar::Thread * self() const { return Ar::Thread::getCurrent(); }
     const char * threadIdString() const;
 
@@ -57,7 +57,7 @@ protected:
 
     void printHello();
     void printTicks();
-    
+
 };
 
 /*!
@@ -67,11 +67,11 @@ class TestSleep1 : public KernelTest
 {
 public:
     TestSleep1() : KernelTest() {}
-    
+
     virtual void run();
 
 protected:
-    
+
     Ar::ThreadWithStack<512> m_aThread;
     Ar::ThreadWithStack<512> m_bThread;
 
@@ -80,7 +80,7 @@ protected:
 
     static void _a_thread(void * arg);
     static void _b_thread(void * arg);
-    
+
 };
 
 /*!
@@ -90,19 +90,19 @@ class TestSem1 : public KernelTest
 {
 public:
     TestSem1() {}
-    
+
     virtual void run();
 
 protected:
-    
+
     Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_aThread;
     Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_bThread;
-    
+
     Ar::Semaphore m_sem;
 
     void a_thread(void * param);
     void b_thread(void * param);
-    
+
 };
 
 /*!
@@ -112,16 +112,16 @@ class TestMutex1 : public KernelTest
 {
 public:
     TestMutex1() {}
-    
+
     virtual void run();
 
 protected:
-    
+
     Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_aThread;
     Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_bThread;
     Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_cThread;
     Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_dThread;
-    
+
     Ar::Mutex m_mutex;
 
     void a_thread(void * param);
@@ -138,7 +138,7 @@ class TestQueue1 : public KernelTest
 {
 public:
     TestQueue1() {}
-    
+
     virtual void run();
 
 protected:
@@ -156,7 +156,7 @@ protected:
     static void _producer_thread(void * arg);
     static void _consumer_a_thread(void * arg);
     static void _consumer_b_thread(void * arg);
-    
+
 };
 
 //------------------------------------------------------------------------------

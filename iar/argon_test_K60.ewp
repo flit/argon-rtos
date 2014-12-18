@@ -306,7 +306,7 @@
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
           <state>$PROJ_DIR$\..\src\startup</state>
-          <state>$PROJ_DIR$\..\src\os\cortex_m</state>
+          <state>$PROJ_DIR$\..\src\argon\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
           <state>$PROJ_DIR$\..\src\mbed\api</state>
@@ -1261,7 +1261,7 @@
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
           <state>$PROJ_DIR$\..\src\startup</state>
-          <state>$PROJ_DIR$\..\src\os\cortex_m</state>
+          <state>$PROJ_DIR$\..\src\argon\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
           <state>$PROJ_DIR$\..\src\mbed\api</state>
@@ -2134,45 +2134,45 @@
       </group>
     </group>
     <group>
-      <name>os</name>
+      <name>argon</name>
       <group>
         <name>cortex_m</name>
         <file>
-          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_handlers_cm4.s</name>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\cortex_m\ar_port.h</name>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
         </file>
       </group>
       <group>
         <name>src</name>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_internal.h</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_kernel.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_mutex.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_queue.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_sem.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_thread.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
         </file>
         <file>
-          <name>$PROJ_DIR$\..\src\os\src\ar_timer.cpp</name>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
         </file>
       </group>
       <file>
-        <name>$PROJ_DIR$\..\src\os\ar_kernel.h</name>
+        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
       </file>
     </group>
     <group>
