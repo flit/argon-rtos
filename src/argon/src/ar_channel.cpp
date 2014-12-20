@@ -117,7 +117,7 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
 
     // Enable interrupts for this block, so we can enter the scheduler.
     {
-        IrqEnableAndRestore enableIrq;
+        KernelUnlock guard;
 
         // Yield to the scheduler. We'll return when a call for the other direction, or
         // a timeout, wakes this thread.
@@ -144,7 +144,7 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         return kArNotFromInterruptError;
     }
 
-    IrqDisableAndRestore disableIrq;
+    KernelLock guard;
 
     // Are there any blocked threads for the opposite direction of this call?
     if (otherDirList.isEmpty())
@@ -186,7 +186,7 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar.currentThread->m_priority)
         {
-            disableIrq.enable();
+            guard.enable();
 
             ar_kernel_enter_scheduler();
         }

@@ -94,15 +94,15 @@ struct ThreadContext
  *
  * @param E The desired interrupt enable state. Pass true to enable interrupts, and false to disable.
  *
- * @see IrqDisableAndRestore
- * @see IrqEnableAndRestore
+ * @see KernelLock
+ * @see KernelUnlock
  */
 template <bool E>
-class IrqStateSetAndRestore
+class KernelGuard
 {
 public:
     //! @brief Saves interrupt mask state then modifies it.
-    IrqStateSetAndRestore()
+    KernelGuard()
     {
         m_savedPrimask = __get_PRIMASK();
         if (E)
@@ -116,7 +116,7 @@ public:
     }
 
     //! @brief Restores interrupt mask state.
-    ~IrqStateSetAndRestore()
+    ~KernelGuard()
     {
         __set_PRIMASK(m_savedPrimask);
     }
@@ -131,8 +131,8 @@ private:
     uint32_t m_savedPrimask;    //!< The interrupt mask saved by the constructor.
 };
 
-typedef IrqStateSetAndRestore<false> IrqDisableAndRestore;  //!< Disable and restore interrupts.
-typedef IrqStateSetAndRestore<true> IrqEnableAndRestore;    //!< Enable and restore interrupts.
+typedef KernelGuard<false> KernelLock;  //!< Disable and restore interrupts.
+typedef KernelGuard<true> KernelUnlock;    //!< Enable and restore interrupts.
 
 //! @brief Stop the CPU because of a serious error.
 inline void _halt()

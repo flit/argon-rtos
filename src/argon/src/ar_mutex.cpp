@@ -95,7 +95,7 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
         return kArInvalidParameterError;
     }
 
-    IrqDisableAndRestore disableIrq;
+    KernelLock guard;
 
     // If this thread already owns the mutex, just increment the count.
     if (g_ar.currentThread == mutex->m_owner)
@@ -152,7 +152,7 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
         return kArInvalidParameterError;
     }
 
-    IrqDisableAndRestore disableIrq;
+    KernelLock guard;
 
     // Nothing to do if the mutex is already unlocked.
     if (mutex->m_ownerLockCount == 0)

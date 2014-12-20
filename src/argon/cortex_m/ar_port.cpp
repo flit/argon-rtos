@@ -131,13 +131,13 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
 
 void ar_atomic_add(uint32_t * value, uint32_t delta)
 {
-    IrqDisableAndRestore irqDisable;
+    KernelLock guard;
     *value += delta;
 }
 
 bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue)
 {
-    IrqDisableAndRestore irqDisable;
+    KernelLock guard;
     uint32_t oldValue = *value;
     if (oldValue == expectedValue)
     {

@@ -95,7 +95,7 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     // The callback should have been verified by the create function.
     assert(timer->m_callback);
 
-    IrqDisableAndRestore irqDisable;
+    KernelLock guard;
 
     // Handle a timer that is already active.
     if (timer->m_isActive)
@@ -122,7 +122,7 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
         return kArTimerNotRunningError;
     }
 
-    IrqDisableAndRestore irqDisable;
+    KernelLock guard;
 
     g_ar.activeTimers.remove(timer);
     timer->m_wakeupTime = 0;
@@ -139,7 +139,7 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         return kArInvalidParameterError;
     }
 
-    IrqDisableAndRestore irqDisable;
+    KernelLock guard;
 
     timer->m_delay = ar_milliseconds_to_ticks(delay);
 

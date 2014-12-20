@@ -97,7 +97,7 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         return kArNotFromInterruptError;
     }
 
-    IrqDisableAndRestore disableIrq;
+    KernelLock guard;
 
     if (sem->m_count == 0)
     {
@@ -111,14 +111,14 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         ar_thread_t * thread = g_ar.currentThread;
         thread->block(sem->m_blockedList, timeout);
 
-        disableIrq.enable();
+        guard.enable();
 
         // Yield to the scheduler. We'll return when a call to put()
         // wakes this thread. If another thread gains control, interrupts will be
         // set to that thread's last state.
         ar_kernel_enter_scheduler();
 
-        disableIrq.disable();
+        guard.disable();
 
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -144,7 +144,7 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         return kArInvalidParameterError;
     }
 
-    IrqDisableAndRestore disableIrq;
+    KernelLock guard;
 
     // Increment count.
     ++sem->m_count;
@@ -159,7 +159,7 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
         if (thread->m_priority > g_ar.currentThread->m_priority)
         {
-            disableIrq.enable();
+            guard.enable();
 
             ar_kernel_enter_scheduler();
         }

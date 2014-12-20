@@ -82,7 +82,7 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
 
     {
         // disable interrupts
-        IrqDisableAndRestore disableIrq;
+        KernelLock guard;
 
         // add to suspended list
         g_ar.suspendedList.add(thread);
@@ -111,7 +111,7 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
 
         // Now remove from the suspended list
         {
-            IrqDisableAndRestore disableIrq;
+            KernelLock guard;
             g_ar.suspendedList.remove(thread);
         }
     }
@@ -132,7 +132,7 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
     }
 
     {
-        IrqDisableAndRestore disableIrq;
+        KernelLock guard;
 
         if (thread->m_state == kArThreadReady)
         {
@@ -165,7 +165,7 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
     }
 
     {
-        IrqDisableAndRestore disableIrq;
+        KernelLock guard;
 
         if (thread->m_state == kArThreadSuspended)
         {
@@ -205,7 +205,7 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
     if (priority != thread->m_priority)
     {
         {
-            IrqDisableAndRestore disableIrq;
+            KernelLock guard;
 
             // Set new priority.
             thread->m_priority = priority;
@@ -241,7 +241,7 @@ void ar_thread_sleep(uint32_t milliseconds)
     }
 
     {
-        IrqDisableAndRestore disableIrq;
+        KernelLock guard;
 
         // put the current thread on the sleeping list
         g_ar.currentThread->m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(milliseconds);
@@ -277,7 +277,7 @@ void ar_thread_wrapper(ar_thread_t * thread, void * param)
 
     // Thread function has finished, so clean up and terminate the thread.
     {
-        IrqDisableAndRestore disableIrq;
+        KernelLock guard;
 
         // This thread must be in the running state for this code to execute,
         // so we know it is on the ready list.
