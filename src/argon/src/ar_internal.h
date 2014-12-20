@@ -62,7 +62,6 @@ typedef struct _ar_kernel {
     ar_list_t activeTimers;       //!< List of running timers
     bool isRunning;                 //!< True if the kernel has been started.
     volatile uint32_t tickCount;    //!< Current tick count.
-    volatile uint32_t irqDepth;     //!< Current level of nested IRQs, or 0 if in user mode.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
     ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
 #if AR_GLOBAL_OBJECT_LISTS

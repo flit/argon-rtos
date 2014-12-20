@@ -139,7 +139,7 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
 ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    if (g_ar.irqDepth > 0 && timeout != 0)
+    if (ar_port_get_irq_state() && timeout != 0)
     {
         return kArNotFromInterruptError;
     }

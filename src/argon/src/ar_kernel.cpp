@@ -182,7 +182,7 @@ void idle_entry(void * param)
 //! directly and any change will take effect when the ISR exits.
 void ar_kernel_enter_scheduler(void)
 {
-    if (g_ar.irqDepth == 0)
+    if (!ar_port_get_irq_state())
     {
         // In user mode we must SWI into the scheduler.
         ar_port_service_call();

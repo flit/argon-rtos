@@ -152,6 +152,12 @@ inline void ar_port_service_call()
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
+//! @brief Returns true if in IRQ state.
+inline bool ar_port_get_irq_state()
+{
+    return __get_IPSR() != 0;
+}
+
 extern "C" inline uint32_t ar_get_milliseconds_per_tick();
 
 //! @brief Returns the number of milliseconds per tick.

@@ -92,7 +92,7 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
     }
 
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    if (g_ar.irqDepth > 0 && timeout != 0)
+    if (ar_port_get_irq_state() && timeout != 0)
     {
         return kArNotFromInterruptError;
     }
