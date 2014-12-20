@@ -876,23 +876,6 @@ private:
     void operator=(const Timer & other) {}
 };
 
-/*!
- * @brief Helper class for managing user interrupt handlers.
- *
- * @ingroup ar
- */
-class InterruptWrapper
-{
-public:
-
-    //! @brief Increments interrupt depth.
-    InterruptWrapper() { ar_kernel_enter_interrupt(); }
-
-    //! @brief Decrements interrupt depth.
-    ~InterruptWrapper() { ar_kernel_exit_interrupt(); }
-
-};
-
 } // namespace Ar
 
 #endif // defined(__cplusplus)

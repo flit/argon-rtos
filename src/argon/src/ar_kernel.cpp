@@ -415,18 +415,6 @@ void ar_kernel_scheduler()
 }
 
 // See ar_kernel.h for documentation of this function.
-void ar_kernel_enter_interrupt()
-{
-    ++g_ar.irqDepth;
-}
-
-// See ar_kernel.h for documentation of this function.
-void ar_kernel_exit_interrupt()
-{
-    --g_ar.irqDepth;
-}
-
-// See ar_kernel.h for documentation of this function.
 bool ar_kernel_is_running(void)
 {
     return g_ar.isRunning;

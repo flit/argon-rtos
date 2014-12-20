@@ -899,24 +899,6 @@ static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return 
 
 //! @}
 
-//! @addtogroup ar
-//! @{
-
-//! @name Interrupts
-//@{
-/*!
- * @brief Inform the kernel that an interrupt handler is executing.
- */
-void ar_kernel_enter_interrupt();
-
-/*!
- * @brief Tell the kernel that an interupt handler is exiting.
- */
-void ar_kernel_exit_interrupt();
-//@}
-
-//! @}
-
 //! @addtogroup ar_atomic
 //! @{
 
