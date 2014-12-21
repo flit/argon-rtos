@@ -19,7 +19,7 @@
 
         <header>
           <h1>Argon RTOS</h1>
-          <h2>Tiny embedded C++ RTOS</h2>
+          <h2>Small embedded C++ RTOS</h2>
         </header>
 
         <section id="downloads" class="clearfix">
@@ -34,7 +34,9 @@
           <h1>
 <a id="argon-rtos" class="anchor" href="#argon-rtos" aria-hidden="true"><span class="octicon octicon-link"></span></a>Argon RTOS</h1>
 
-<p>Tiny embedded RTOS written almost entirely in C++.</p>
+<p>Small embedded RTOS written almost entirely in C++.</p>
+
+<p>Status: Actively under development, but usable. The API is likely to change some more.</p>
 
 <p>Supported cores:</p>
 
@@ -43,47 +45,16 @@
 <li>ARM Cortex-M4</li>
 </ul>
 
-<p>Supported chips and boards:</p>
+<p>Supported toolchains:</p>
 
 <ul>
-<li>Freescale Kinetis
-
-<ul>
-<li>KL25Z128xxx4
-
-<ul>
-<li>FRDM-KL25Z48 board</li>
-</ul>
-</li>
-<li>KL43Z256xxx4
-
-<ul>
-<li>FRDM-KL43Z48 board</li>
-</ul>
-</li>
-<li>K20DX128xxx5
-
-<ul>
-<li>FRDM-K20D50M board</li>
-</ul>
-</li>
-<li>K60DZ128xxx10
-
-<ul>
-<li>TWR-K60N512 board</li>
-</ul>
-</li>
-<li>K64F1M0xxx12
-
-<ul>
-<li>FRDM-K64F120 board</li>
-</ul>
-</li>
-</ul>
-</li>
+<li>IAR EWARM</li>
 </ul>
 
-<p>Argon is primarily targeted at ARM Cortex-M processors, though it should be fairly easily portable to other architectures. The kernel itself is core agnostic. All core-specific code is isolated into a separate directory. The Cortex-M port only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB), so it should work on any other Cortex-M platform.</p>
+<h3>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h3>
+
+<p>Argon is designed to be a very clean RTOS kernel with a C++ API. Currently it also has a C API upon which the C++ API is built, but that may go away. The code is exceptionally readable and maintainable, and is well commented.</p>
 
 <p>The resources provided by Argon are those most important for building a threaded application:</p>
 
@@ -96,12 +67,90 @@
 <li>Timer</li>
 </ul>
 
+<p>A memory allocator is not provided, as every Standard C Library includes malloc.</p>
+
+<p>No dynamic memory is not required under any circumstances. All kernel objects can be allocated statically. This lets you determine application memory requirements at link time. However, you can still use <code>new</code> or <code>malloc()</code> to allocate objects if you prefer.</p>
+
+<p>There are no limits on the number of kernel objects. You may create as many threads, channels, etc., as you like at runtime.</p>
+
+<p>Argon is primarily targeted at ARM Cortex-M processors, though it should be fairly easily portable to other architectures. The kernel itself is core agnostic. All core-specific code is isolated into a separate directory. The Cortex-M port only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB), so it should work on any other Cortex-M platform.</p>
+
+<h3>
+<a id="memory-requirements" class="anchor" href="#memory-requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Memory requirements</h3>
+
+<p>Total code size with all features enabled is ~4 kB. Kernel objects are not explicitly disable-able, but the linker will exclude any unused code.</p>
+
+<p>RAM requirements are quite small. The kernel itself consumes 128 bytes plus the idle thread stack. Timers share the idle thread stack, so you don't need an extra stack to use timers.</p>
+
+<p>Kernel object sizes:</p>
+
+<ul>
+<li>Thread = 92 bytes + stack</li>
+<li>Channel = 36 bytes</li>
+<li>Semaphore = 32 bytes</li>
+<li>Mutex = 44 bytes</li>
+<li>Queue = 60 bytes + element storage</li>
+<li>Timer = 60 bytes</li>
+</ul>
+
+<p>(These sizes are as of 21 Dec 2014, and will probably change in the future.)</p>
+
+<h3>
+<a id="supported-chips-and-boards" class="anchor" href="#supported-chips-and-boards" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported chips and boards</h3>
+
+<p>These are the devices that have demo projects included in the repository. The kernel itself will build for any Cortex-M device.</p>
+
+<table>
+<tr>
+<th>Family</th>
+<th>Part Number</th>
+<th>Board</th>
+</tr>
+<tr>
+<td>Freescale Kinetis</td>
+<td>KL25Z128xxx4</td>
+<td>FRDM-KL25Z</td>
+</tr>
+<tr>
+<td></td>
+<td>KL43Z256xxx4</td>
+<td>FRDM-KL43Z</td>
+</tr>
+<tr>
+<td></td>
+<td>K20DX128xxx5</td>
+<td>FRDM-K20D50M</td>
+</tr>
+<tr>
+<td></td>
+<td>K22FN512xxx12</td>
+<td>FRDM-K22F</td>
+</tr>
+<tr>
+<td></td>
+<td>K60DZ128xxx10</td>
+<td>TWR-K60N512</td>
+</tr>
+<tr>
+<td></td>
+<td>K64F1M0xxx12</td>
+<td>FRDM-K64F</td>
+</tr>
+</table>
+
+<h3>
+<a id="source-code" class="anchor" href="#source-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Source code</h3>
+
+<p>The code for the Argon kernel is in the <code>src/argon</code> directory in the repository.</p>
+
+<p>The <a href="http://mbed.org">mbed</a> libraries are included under <code>src/mbed</code>, to provide a simple C++ driver API for demo applications. mbed device HALs are located in <code>src/mbed/targets</code>.</p>
+
 <h3>
 <a id="licensing" class="anchor" href="#licensing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Licensing</h3>
 
 <p>The Argon RTOS is released with a BSD three-clause license. See the included LICENSE.txt file for details.</p>
 
-<p>Copyright © 2007-2014 Immo Software. All rights reserved.</p>
+<p>Copyright © 2007-2014 Immo Software.</p>
 
 <p>The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br>
 Portions copyright © 2013 Freescale Semiconductor, Inc.<br>
