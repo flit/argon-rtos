@@ -2085,6 +2085,9 @@
           <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\clk_freqs.h</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\cmsis_nvic.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KLXX\TARGET_KL43Z\device.h</name>
         </file>
         <file>
@@ -2205,9 +2208,6 @@
     </group>
     <group>
       <name>startup</name>
-      <file>
-        <name>$PROJ_DIR$\..\src\include\device\MKL43Z4\cmsis_nvic.c</name>
-      </file>
       <file>
         <name>$PROJ_DIR$\..\src\startup\startup.c</name>
       </file>

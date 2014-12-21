@@ -185,7 +185,7 @@ void uart0_shutdown (void)
 {
     // This driver uses polling so nothing to do
     // just disable clocking to the peripheral
-    HW_SIM_SCGC4_CLR(BM_SIM_SCGC4_UART0);
+    HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART0);
 }
 /********************************************************************/
 

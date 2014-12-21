@@ -1,44 +1,39 @@
-/*****************************************************************************/
-/* startup_MK20D5.s: Startup file for MK20D5 device series                   */
-/*****************************************************************************/
-/* Version: GCC for ARM Embedded Processors                                  */
-/*****************************************************************************/
+/**************************************************************************************/
+/* startup_MK20D5.s: Startup file for MK20D5 device series                            */
+/**************************************************************************************/
+/* Copyright (c) 1997 - 2014 , Freescale Semiconductor, Inc.                */
+/* All rights reserved.                                                               */
+/*                                                                                    */
+/* Redistribution and use in source and binary forms, with or without modification,   */
+/* are permitted provided that the following conditions are met:                      */
+/*                                                                                    */
+/* o Redistributions of source code must retain the above copyright notice, this list */
+/*   of conditions and the following disclaimer.                                      */
+/*                                                                                    */
+/* o Redistributions in binary form must reproduce the above copyright notice, this   */
+/*   list of conditions and the following disclaimer in the documentation and/or      */
+/*   other materials provided with the distribution.                                  */
+/*                                                                                    */
+/* o Neither the name of Freescale Semiconductor, Inc. nor the names of its           */
+/*   contributors may be used to endorse or promote products derived from this        */
+/*   software without specific prior written permission.                              */
+/*                                                                                    */
+/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND    */
+/* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED      */
+/* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE             */
+/* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR   */
+/* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES     */
+/* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;       */
+/* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON     */
+/* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT            */
+/* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS      */
+/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                       */
+/* Version: GCC for ARM Embedded Processors                                           */
+/**************************************************************************************/
 
 
     .syntax unified
     .arch armv7-m
-
-    .section .stack
-    .align 3
-#ifdef __STACK_SIZE
-    .equ    Stack_Size, __STACK_SIZE
-#else
-    .equ    Stack_Size, 0x00000400
-#endif
-    .globl    __StackTop
-    .globl    __StackLimit
-__StackLimit:
-    .space    Stack_Size
-    .size __StackLimit, . - __StackLimit
-__StackTop:
-    .size __StackTop, . - __StackTop
-
-    .section .heap
-    .align 3
-#ifdef __HEAP_SIZE
-    .equ    Heap_Size, __HEAP_SIZE
-#else
-    .equ    Heap_Size, 0x00000C00
-#endif
-    .globl    __HeapBase
-    .globl    __HeapLimit
-__HeapBase:
-    .if    Heap_Size
-    .space    Heap_Size
-    .endif
-    .size __HeapBase, . - __HeapBase
-__HeapLimit:
-    .size __HeapLimit, . - __HeapLimit
 
     .section .isr_vector
     .align 2
@@ -307,35 +302,44 @@ __isr_vector:
     .size    __isr_vector, . - __isr_vector
 
 /* Flash Configuration */
+    .section .FlashConfig
+    .long 0xFFFFFFFF
+    .long 0xFFFFFFFF
+    .long 0xFFFFFFFF
+    .long 0xFFFFFFFE
 
-  	.long	0xFFFFFFFF
-  	.long	0xFFFFFFFF
-  	.long	0xFFFFFFFF
-  	.long	0xFFFFFFFE
-
+    .equ _NVIC_ICER0, 0xE000E180
+    .equ _NVIC_ICPR0, 0xE000E280
+    .text
     .thumb
-
-    .weak   init_data_bss
-    .type   init_data_bss, %function
-init_data_bss:
-    bx     r14
 
 /* Reset Handler */
 
-    .text
     .thumb
     .thumb_func
     .align 2
     .globl   Reset_Handler
     .type    Reset_Handler, %function
 Reset_Handler:
+    cpsid   i               /* Mask interrupts */
+    ldr r0, =_NVIC_ICER0    /* Disable interrupts and clear pending flags */
+    ldr r1, =_NVIC_ICPR0
+    ldr r2, =0xFFFFFFFF
+    mov r3, #8
+_irq_clear:
+    cbz r3, _irq_clear_end
+    str r2, [r0], #4        /* NVIC_ICERx - clear enable IRQ register */
+    str r2, [r1], #4        /* NVIC_ICPRx - clear pending IRQ register */
+    sub r3, r3, #1
+    b _irq_clear
+_irq_clear_end:
 #ifndef __NO_SYSTEM_INIT
     bl    SystemInit
 #endif
 #ifndef __NO_INIT_DATA_BSS
     bl    init_data_bss
 #endif
-
+    cpsie   i               /* Unmask interrupts */
 /*     Loop to copy data from read only memory to RAM. The ranges
  *      of copy from/to are specified by following symbols evaluated in
  *      linker script.
@@ -392,6 +396,8 @@ Reset_Handler:
 #define __START _start
 #endif
     bl    __START
+_done:
+    b       _done
     .pool
     .size Reset_Handler, . - Reset_Handler
 

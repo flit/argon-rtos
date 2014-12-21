@@ -2,15 +2,37 @@
 ; * @file:    startup_MK20D5.s
 ; * @purpose: CMSIS Cortex-M4 Core Device Startup File
 ; *           MK20D5
-; * @version: 2.4
-; * @date:    2013-10-29
+; * @version: 2.3
+; * @date:    2013-6-24
 ; *----------------------------------------------------------------------------
-; *
-; * Copyright: 1997 - 2014 Freescale Semiconductor, Inc. All Rights Reserved.
-; *
-; ******************************************************************************/
-
-
+;
+; Copyright (c) 1997 - 2014 , Freescale Semiconductor, Inc.
+; All rights reserved.
+;
+; Redistribution and use in source and binary forms, with or without modification,
+; are permitted provided that the following conditions are met:
+;
+; o Redistributions of source code must retain the above copyright notice, this list
+;   of conditions and the following disclaimer.
+;
+; o Redistributions in binary form must reproduce the above copyright notice, this
+;   list of conditions and the following disclaimer in the documentation and/or
+;   other materials provided with the distribution.
+;
+; o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+;   contributors may be used to endorse or promote products derived from this
+;   software without specific prior written permission.
+;
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+; DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+; ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+; ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;
 ; The modules in this file are included in the libraries, and may be replaced
 ; by any user-defined modules that define the PUBLIC symbol _program_start or
@@ -36,6 +58,7 @@
 
         EXTERN  __iar_program_start
         EXTERN  SystemInit
+        EXTERN  init_data_bss
         PUBLIC  __vector_table
         PUBLIC  __vector_table_0x1c
         PUBLIC  __Vectors
@@ -316,8 +339,10 @@ __FlashConfig
 __FlashConfig_End
 
 __Vectors       EQU   __vector_table
-__Vectors_Size 	EQU 	__Vectors_End - __Vectors
+__Vectors_Size 	EQU   __Vectors_End - __Vectors
 
+_NVIC_ICER0     EQU   0xE000E180
+_NVIC_ICPR0     EQU   0xE000E280
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -325,299 +350,171 @@ __Vectors_Size 	EQU 	__Vectors_End - __Vectors
 ;;
         THUMB
 
-        PUBWEAK init_data_bss
-        SECTION .text:CODE:REORDER(1)
-init_data_bss
-        BX      R14
-
         PUBWEAK Reset_Handler
-        SECTION .text:CODE:REORDER(2)
+        SECTION .text:CODE:REORDER:NOROOT(2)
 Reset_Handler
+        CPSID   I               ; Mask interrupts
+        LDR R0, =_NVIC_ICER0    ; Disable interrupts and clear pending flags
+        LDR R1, =_NVIC_ICPR0
+        LDR R2, =0xFFFFFFFF
+        MOV R3, #8
+_irq_clear
+        CBZ R3, _irq_clear_end
+        STR R2, [R0], #4        ; NVIC_ICERx - clear enable IRQ register
+        STR R2, [R1], #4        ; NVIC_ICPRx - clear pending IRQ register
+        SUB R3, R3, #1
+        B _irq_clear
+_irq_clear_end
         LDR     R0, =SystemInit
         BLX     R0
         LDR     R0, =init_data_bss
         BLX     R0
+        CPSIE   I               ; Unmask interrupts */
         LDR     R0, =__iar_program_start
         BX      R0
+_done
+        B       _done
 
         PUBWEAK NMI_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 NMI_Handler
-        B NMI_Handler
+        B .
 
         PUBWEAK HardFault_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 HardFault_Handler
-        B HardFault_Handler
+        B .
 
         PUBWEAK MemManage_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 MemManage_Handler
-        B MemManage_Handler
+        B .
 
         PUBWEAK BusFault_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 BusFault_Handler
-        B BusFault_Handler
+        B .
 
         PUBWEAK UsageFault_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 UsageFault_Handler
-        B UsageFault_Handler
+        B .
 
         PUBWEAK SVC_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 SVC_Handler
-        B SVC_Handler
+        B .
 
         PUBWEAK DebugMon_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 DebugMon_Handler
-        B DebugMon_Handler
+        B .
 
         PUBWEAK PendSV_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 PendSV_Handler
-        B PendSV_Handler
+        B .
 
         PUBWEAK SysTick_Handler
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
 SysTick_Handler
-        B SysTick_Handler
+        B .
 
         PUBWEAK DMA0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-DMA0_IRQHandler
-        B DMA0_IRQHandler
-
         PUBWEAK DMA1_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-DMA1_IRQHandler
-        B DMA1_IRQHandler
-
         PUBWEAK DMA2_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-DMA2_IRQHandler
-        B DMA2_IRQHandler
-
         PUBWEAK DMA3_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-DMA3_IRQHandler
-        B DMA3_IRQHandler
-
         PUBWEAK DMA_Error_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-DMA_Error_IRQHandler
-        B DMA_Error_IRQHandler
-
         PUBWEAK Reserved21_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-Reserved21_IRQHandler
-        B Reserved21_IRQHandler
-
         PUBWEAK FTFL_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-FTFL_IRQHandler
-        B FTFL_IRQHandler
-
         PUBWEAK Read_Collision_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-Read_Collision_IRQHandler
-        B Read_Collision_IRQHandler
-
         PUBWEAK LVD_LVW_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-LVD_LVW_IRQHandler
-        B LVD_LVW_IRQHandler
-
         PUBWEAK LLW_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-LLW_IRQHandler
-        B LLW_IRQHandler
-
         PUBWEAK Watchdog_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-Watchdog_IRQHandler
-        B Watchdog_IRQHandler
-
         PUBWEAK I2C0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-I2C0_IRQHandler
-        B I2C0_IRQHandler
-
         PUBWEAK SPI0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-SPI0_IRQHandler
-        B SPI0_IRQHandler
-
         PUBWEAK I2S0_Tx_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-I2S0_Tx_IRQHandler
-        B I2S0_Tx_IRQHandler
-
         PUBWEAK I2S0_Rx_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-I2S0_Rx_IRQHandler
-        B I2S0_Rx_IRQHandler
-
         PUBWEAK UART0_LON_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART0_LON_IRQHandler
-        B UART0_LON_IRQHandler
-
         PUBWEAK UART0_RX_TX_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART0_RX_TX_IRQHandler
-        B UART0_RX_TX_IRQHandler
-
         PUBWEAK UART0_ERR_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART0_ERR_IRQHandler
-        B UART0_ERR_IRQHandler
-
         PUBWEAK UART1_RX_TX_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART1_RX_TX_IRQHandler
-        B UART1_RX_TX_IRQHandler
-
         PUBWEAK UART1_ERR_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART1_ERR_IRQHandler
-        B UART1_ERR_IRQHandler
-
         PUBWEAK UART2_RX_TX_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART2_RX_TX_IRQHandler
-        B UART2_RX_TX_IRQHandler
-
         PUBWEAK UART2_ERR_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-UART2_ERR_IRQHandler
-        B UART2_ERR_IRQHandler
-
         PUBWEAK ADC0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-ADC0_IRQHandler
-        B ADC0_IRQHandler
-
         PUBWEAK CMP0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-CMP0_IRQHandler
-        B CMP0_IRQHandler
-
         PUBWEAK CMP1_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-CMP1_IRQHandler
-        B CMP1_IRQHandler
-
         PUBWEAK FTM0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-FTM0_IRQHandler
-        B FTM0_IRQHandler
-
         PUBWEAK FTM1_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-FTM1_IRQHandler
-        B FTM1_IRQHandler
-
         PUBWEAK CMT_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-CMT_IRQHandler
-        B CMT_IRQHandler
-
         PUBWEAK RTC_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-RTC_IRQHandler
-        B RTC_IRQHandler
-
         PUBWEAK RTC_Seconds_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-RTC_Seconds_IRQHandler
-        B RTC_Seconds_IRQHandler
-
         PUBWEAK PIT0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PIT0_IRQHandler
-        B PIT0_IRQHandler
-
         PUBWEAK PIT1_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PIT1_IRQHandler
-        B PIT1_IRQHandler
-
         PUBWEAK PIT2_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PIT2_IRQHandler
-        B PIT2_IRQHandler
-
         PUBWEAK PIT3_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PIT3_IRQHandler
-        B PIT3_IRQHandler
-
         PUBWEAK PDB0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PDB0_IRQHandler
-        B PDB0_IRQHandler
-
         PUBWEAK USB0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-USB0_IRQHandler
-        B USB0_IRQHandler
-
         PUBWEAK USBDCD_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-USBDCD_IRQHandler
-        B USBDCD_IRQHandler
-
         PUBWEAK TSI0_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-TSI0_IRQHandler
-        B TSI0_IRQHandler
-
         PUBWEAK MCG_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-MCG_IRQHandler
-        B MCG_IRQHandler
-
         PUBWEAK LPTimer_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-LPTimer_IRQHandler
-        B LPTimer_IRQHandler
-
         PUBWEAK PORTA_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PORTA_IRQHandler
-        B PORTA_IRQHandler
-
         PUBWEAK PORTB_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PORTB_IRQHandler
-        B PORTB_IRQHandler
-
         PUBWEAK PORTC_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PORTC_IRQHandler
-        B PORTC_IRQHandler
-
         PUBWEAK PORTD_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PORTD_IRQHandler
-        B PORTD_IRQHandler
-
         PUBWEAK PORTE_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-PORTE_IRQHandler
-        B PORTE_IRQHandler
-
         PUBWEAK SWI_IRQHandler
-        SECTION .text:CODE:REORDER(1)
-SWI_IRQHandler
-        B SWI_IRQHandler
-
         PUBWEAK DefaultISR
-        SECTION .text:CODE:REORDER(1)
+        SECTION .text:CODE:REORDER:NOROOT(1)
+DMA0_IRQHandler
+DMA1_IRQHandler
+DMA2_IRQHandler
+DMA3_IRQHandler
+DMA_Error_IRQHandler
+Reserved21_IRQHandler
+FTFL_IRQHandler
+Read_Collision_IRQHandler
+LVD_LVW_IRQHandler
+LLW_IRQHandler
+Watchdog_IRQHandler
+I2C0_IRQHandler
+SPI0_IRQHandler
+I2S0_Tx_IRQHandler
+I2S0_Rx_IRQHandler
+UART0_LON_IRQHandler
+UART0_RX_TX_IRQHandler
+UART0_ERR_IRQHandler
+UART1_RX_TX_IRQHandler
+UART1_ERR_IRQHandler
+UART2_RX_TX_IRQHandler
+UART2_ERR_IRQHandler
+ADC0_IRQHandler
+CMP0_IRQHandler
+CMP1_IRQHandler
+FTM0_IRQHandler
+FTM1_IRQHandler
+CMT_IRQHandler
+RTC_IRQHandler
+RTC_Seconds_IRQHandler
+PIT0_IRQHandler
+PIT1_IRQHandler
+PIT2_IRQHandler
+PIT3_IRQHandler
+PDB0_IRQHandler
+USB0_IRQHandler
+USBDCD_IRQHandler
+TSI0_IRQHandler
+MCG_IRQHandler
+LPTimer_IRQHandler
+PORTA_IRQHandler
+PORTB_IRQHandler
+PORTC_IRQHandler
+PORTD_IRQHandler
+PORTE_IRQHandler
+SWI_IRQHandler
 DefaultISR
-        B DefaultISR
+        B .
 
         END

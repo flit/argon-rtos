@@ -72,22 +72,22 @@ status_t scuart_init (UART_Type * uartch, int uartclk, int baud)
     switch((unsigned int)uartch)
     {
         case (unsigned int)UART0:
-            HW_SIM_SCGC4_SET(BM_SIM_SCGC4_UART0);
+            HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART0);
             break;
         case (unsigned int)UART1:
-            HW_SIM_SCGC4_SET(BM_SIM_SCGC4_UART1);
+            HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART1);
             break;
         case (unsigned int)UART2:
-            HW_SIM_SCGC4_SET(BM_SIM_SCGC4_UART2);
+            HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART2);
             break;
         case (unsigned int)UART3:
-            HW_SIM_SCGC4_SET(BM_SIM_SCGC4_UART3);
+            HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART3);
             break;
         case (unsigned int)UART4:
-            HW_SIM_SCGC1_SET(BM_SIM_SCGC1_UART4);
+            HW_SIM_SCGC1_SET(SIM_BASE, BM_SIM_SCGC1_UART4);
             break;
         case (unsigned int)UART5:
-            HW_SIM_SCGC1_SET(BM_SIM_SCGC1_UART5);
+            HW_SIM_SCGC1_SET(SIM_BASE, BM_SIM_SCGC1_UART5);
             break;
     }
 
@@ -177,22 +177,22 @@ void scuart_shutdown (UART_Type * uartch)
     switch((unsigned int)uartch)
     {
         case (unsigned int)UART0:
-            HW_SIM_SCGC4_CLR(BM_SIM_SCGC4_UART0);
+            HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART0);
             break;
         case (unsigned int)UART1:
-            HW_SIM_SCGC4_CLR(BM_SIM_SCGC4_UART1);
+            HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART1);
             break;
         case (unsigned int)UART2:
-            HW_SIM_SCGC4_CLR(BM_SIM_SCGC4_UART2);
+            HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART2);
             break;
         case (unsigned int)UART3:
-            HW_SIM_SCGC4_CLR(BM_SIM_SCGC4_UART3);
+            HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART3);
             break;
         case (unsigned int)UART4:
-            HW_SIM_SCGC1_CLR(BM_SIM_SCGC1_UART4);
+            HW_SIM_SCGC1_CLR(SIM_BASE, BM_SIM_SCGC1_UART4);
             break;
         case (unsigned int)UART5:
-            HW_SIM_SCGC1_CLR(BM_SIM_SCGC1_UART5);
+            HW_SIM_SCGC1_CLR(SIM_BASE, BM_SIM_SCGC1_UART5);
             break;
     }
 }
