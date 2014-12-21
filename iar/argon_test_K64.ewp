@@ -215,7 +215,7 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state>Pa050, Pa093</state>
+          <state>Pa050, Pa093, Pa082</state>
         </option>
         <option>
           <name>CCDiagRemark</name>
@@ -1007,20 +1007,20 @@
         <debug>0</debug>
         <option>
           <name>ExePath</name>
-          <state>output\K60\release\exe</state>
+          <state>output\K64\release\exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>output\K60\release\obj</state>
+          <state>output\K64\release\obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>output\K60\release\list</state>
+          <state>output\K64\release\list</state>
         </option>
         <option>
           <name>Variant</name>
           <version>21</version>
-          <state>39</state>
+          <state>40</state>
         </option>
         <option>
           <name>GEndianMode</name>
@@ -1051,7 +1051,7 @@
         <option>
           <name>FPU</name>
           <version>2</version>
-          <state>0</state>
+          <state>5</state>
         </option>
         <option>
           <name>OGCoreOrChip</name>
@@ -1077,7 +1077,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>6.70.1.5793</state>
+          <state>7.30.1.7765</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -1089,7 +1089,7 @@
         </option>
         <option>
           <name>OGChipSelectEditMenu</name>
-          <state>MK60DN512Zxxx10	Freescale MK60DN512Zxxx10</state>
+          <state>MK64FN1M0xxx12	Freescale MK64FN1M0xxx12</state>
         </option>
         <option>
           <name>GenLowLevelInterface</name>
@@ -1128,12 +1128,12 @@
         <option>
           <name>GFPUCoreSlave</name>
           <version>21</version>
-          <state>39</state>
+          <state>40</state>
         </option>
         <option>
           <name>GBECoreSlave</name>
           <version>21</version>
-          <state>39</state>
+          <state>40</state>
         </option>
         <option>
           <name>OGUseCmsis</name>
@@ -1162,8 +1162,10 @@
         </option>
         <option>
           <name>CCDefines</name>
-          <state>CPU_MK60DN512ZVMD10</state>
-          <state>NDEBUG</state>
+          <state>CPU_MK64FN1M0VLL12</state>
+          <state>DEBUG</state>
+          <state>TOOLCHAIN_IAR</state>
+          <state>TARGET_K64F</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -1203,7 +1205,7 @@
         </option>
         <option>
           <name>CCDiagSuppress</name>
-          <state>Pa050, Pa093</state>
+          <state>Pa050, Pa093, Pa082</state>
         </option>
         <option>
           <name>CCDiagRemark</name>
@@ -1295,12 +1297,45 @@
           <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\src\include</state>
           <state>$PROJ_DIR$\..\src\include\device</state>
+          <state>$PROJ_DIR$\..\src\include\device\MK64F12</state>
           <state>$PROJ_DIR$\..\src\startup</state>
+          <state>$PROJ_DIR$\..\src\startup\MK64F12</state>
           <state>$PROJ_DIR$\..\src\argon\cortex_m</state>
           <state>$PROJ_DIR$\..\src\drivers</state>
           <state>$PROJ_DIR$\..\src\mbed\hal</state>
           <state>$PROJ_DIR$\..\src\mbed\api</state>
-          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KL25Z</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_MCU_K64F</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_MCU_K64F\TARGET_FRDM</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\utilities</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\adc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\dac</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\dspi</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\enet</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\flextimer</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\gpio</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\i2c</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\llwu</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\lptmr</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\mcg</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\osc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pdb</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pit</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pmc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\port</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\rtc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sai</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sdhc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sim</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\smc</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\uart</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\wdog</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\clock</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\enet</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\interrupt</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\pit</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\pit\common</state>
+          <state>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\common\phyksz8081</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1710,7 +1745,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\config\512KB_Pflash.icf</state>
+          <state>$PROJ_DIR$\..\src\linker\MK64F12\iar\MK64FN1M0xxx12_flash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
