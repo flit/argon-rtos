@@ -2,6 +2,9 @@
 
 <workspace>
   <project>
+    <path>$WS_DIR$\argon_test_K22.ewp</path>
+  </project>
+  <project>
     <path>$WS_DIR$\argon_test_K60.ewp</path>
   </project>
   <project>

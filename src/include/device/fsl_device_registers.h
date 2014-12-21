@@ -68,7 +68,7 @@
     /* Extension register definitions */
     #include "device/MK22F51212/MK22F51212_registers.h"
     /* CPU specific feature definitions */
-    #include "device/MK22F51212/MK22F51212_features.h"
+//     #include "device/MK22F51212/MK22F51212_features.h"
 
 #elif (defined(CPU_MK64FX512VDC12) || defined(CPU_MK64FN1M0VDC12) || defined(CPU_MK64FX512VLL12) || \
     defined(CPU_MK64FN1M0VLL12) || defined(CPU_MK64FX512VLQ12) || defined(CPU_MK64FN1M0VLQ12) || \

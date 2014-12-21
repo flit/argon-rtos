@@ -80,15 +80,21 @@ status_t scuart_init (UART_Type * uartch, int uartclk, int baud)
         case (unsigned int)UART2:
             HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART2);
             break;
+#if defined(UART3)
         case (unsigned int)UART3:
             HW_SIM_SCGC4_SET(SIM_BASE, BM_SIM_SCGC4_UART3);
             break;
+#endif
+#if defined(UART4)
         case (unsigned int)UART4:
             HW_SIM_SCGC1_SET(SIM_BASE, BM_SIM_SCGC1_UART4);
             break;
+#endif
+#if defined(UART5)
         case (unsigned int)UART5:
             HW_SIM_SCGC1_SET(SIM_BASE, BM_SIM_SCGC1_UART5);
             break;
+#endif
     }
 
     //Make sure that the transmitter and receiver are disabled while we
@@ -185,15 +191,21 @@ void scuart_shutdown (UART_Type * uartch)
         case (unsigned int)UART2:
             HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART2);
             break;
+#if defined(UART3)
         case (unsigned int)UART3:
             HW_SIM_SCGC4_CLR(SIM_BASE, BM_SIM_SCGC4_UART3);
             break;
+#endif
+#if defined(UART4)
         case (unsigned int)UART4:
             HW_SIM_SCGC1_CLR(SIM_BASE, BM_SIM_SCGC1_UART4);
             break;
+#endif
+#if defined(UART5)
         case (unsigned int)UART5:
             HW_SIM_SCGC1_CLR(SIM_BASE, BM_SIM_SCGC1_UART5);
             break;
+#endif
     }
 }
 
