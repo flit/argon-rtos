@@ -29,15 +29,15 @@ The resources provided by Argon are those most important for building a threaded
 
 A memory allocator is not provided, as every Standard C Library includes malloc.
 
-No dynamic memory is not required under any circumstances. All kernel objects can be allocated statically. This lets you determine application memory requirements at link time. However, you can still use `new` or `malloc()` to allocate objects if you prefer.
+Dynamic memory is not required under any circumstance. All kernel objects can be allocated statically. This lets you determine application memory requirements at link time. However, you can still use `new` or `malloc()` to allocate objects if you prefer.
 
-There are no limits on the number of kernel objects. You may create as many threads, channels, etc., as you like at runtime.
+There are no limits on the number of kernel objects. You may create as many threads, channels, etc., as you like at runtime via dynamic allocation.
 
 Argon is primarily targeted at ARM Cortex-M processors, though it should be fairly easily portable to other architectures. The kernel itself is core agnostic. All core-specific code is isolated into a separate directory. The Cortex-M port only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB), so it should work on any other Cortex-M platform.
 
 ### Memory requirements
 
-Total code size with all features enabled is ~4 kB. Kernel objects are not explicitly disable-able, but the linker will exclude any unused code.
+Total code size with all features enabled is approximately 4 kB. Kernel objects are not explicitly disable-able, but the linker will exclude any unused code.
 
 RAM requirements are quite small. The kernel itself consumes 128 bytes plus the idle thread stack. Timers share the idle thread stack, so you don't need an extra stack to use timers.
 
