@@ -2042,27 +2042,6 @@
     </group>
     <group>
       <name>drivers</name>
-      <group>
-        <name>MMA8451Q</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\MMA8451Q\MMA8451Q.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\MMA8451Q\MMA8451Q.h</name>
-        </file>
-      </group>
-      <group>
-        <name>uart</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\uart\scuart.c</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\drivers\uart\scuart.h</name>
-        </file>
-      </group>
     </group>
     <group>
       <name>include</name>
@@ -2154,6 +2133,9 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\retarget.cpp</name>
+          <excluded>
+            <configuration>Debug</configuration>
+          </excluded>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\rtc_time.c</name>
