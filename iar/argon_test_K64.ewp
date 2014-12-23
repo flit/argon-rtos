@@ -1163,7 +1163,7 @@
         <option>
           <name>CCDefines</name>
           <state>CPU_MK64FN1M0VLL12</state>
-          <state>DEBUG</state>
+          <state>NDEBUG</state>
           <state>TOOLCHAIN_IAR</state>
           <state>TARGET_K64F</state>
         </option>

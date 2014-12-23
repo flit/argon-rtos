@@ -19,7 +19,43 @@
   <project>
     <path>$WS_DIR$\led_ringcoder_test_KL25.ewp</path>
   </project>
-  <batchBuild/>
+  <batchBuild>
+    <batchDefinition>
+      <name>K22, K64, KL25, KL43</name>
+      <member>
+        <project>argon_test_K22</project>
+        <configuration>Debug</configuration>
+      </member>
+      <member>
+        <project>argon_test_K22</project>
+        <configuration>Release</configuration>
+      </member>
+      <member>
+        <project>argon_test_K64</project>
+        <configuration>Debug</configuration>
+      </member>
+      <member>
+        <project>argon_test_K64</project>
+        <configuration>Release</configuration>
+      </member>
+      <member>
+        <project>argon_test_KL25</project>
+        <configuration>Debug</configuration>
+      </member>
+      <member>
+        <project>argon_test_KL25</project>
+        <configuration>Release</configuration>
+      </member>
+      <member>
+        <project>argon_test_KL43</project>
+        <configuration>Debug</configuration>
+      </member>
+      <member>
+        <project>argon_test_KL43</project>
+        <configuration>Release</configuration>
+      </member>
+    </batchDefinition>
+  </batchBuild>
 </workspace>
 
 

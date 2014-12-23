@@ -1163,7 +1163,7 @@
         <option>
           <name>CCDefines</name>
           <state>CPU_MK22FN512VLH12</state>
-          <state>DEBUG</state>
+          <state>NDEBUG</state>
           <state>TOOLCHAIN_IAR</state>
           <state>TARGET_K22F</state>
         </option>
@@ -1359,7 +1359,7 @@
         <option>
           <name>CCOptStrategy</name>
           <version>0</version>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCOptLevelSlave</name>
@@ -1434,7 +1434,7 @@
         <option>
           <name>CCOptStrategySlave</name>
           <version>0</version>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCGuardCalls</name>
