@@ -61,7 +61,9 @@ public:
 // Variables
 //------------------------------------------------------------------------------
 
-// Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
+#if !defined(__ICCARM__)
+Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
+#endif
 
 TEST_CASE_CLASS g_testCase;
 
@@ -194,13 +196,9 @@ void main_thread(void * arg)
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }
 
-void main(void)
+int main(void)
 {
     us_ticker_init();
-
-#if !defined(KL25Z4_SERIES)
-//     debug_init();
-#endif
 
     printf("Running test...\r\n");
 
@@ -213,17 +211,15 @@ void main(void)
     printf("sizeof(Timer)=%d\r\n", sizeof(Ar::Timer));
 #endif
 
+#if defined(__ICCARM__)
     main_thread(0);
-
-    // (const char * name, thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
-//     g_mainThread.init("main", main_thread, 0, 56);
-//     g_mainThread.resume();
-
-//     ar_kernel_run();
-
-//     Ar::_halt();
-
     Ar::Thread::getCurrent()->suspend();
+#else
+//     g_mainThread.init("main", main_thread, 0, 56);
+    g_mainThread.resume();
+    ar_kernel_run();
+    Ar::_halt();
+#endif
 }
 
 //------------------------------------------------------------------------------
