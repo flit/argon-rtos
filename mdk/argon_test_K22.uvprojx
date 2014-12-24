@@ -372,14 +372,14 @@
             <interw>1</interw>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <thumb>0</thumb>
+            <thumb>1</thumb>
             <SplitLS>0</SplitLS>
             <SwStkChk>0</SwStkChk>
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--cpreproc</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
@@ -469,11 +469,6 @@
               <FilePath>..\src\argon\src\ar_timer.cpp</FilePath>
             </File>
             <File>
-              <FileName>ar_handlers_cm4_armcc.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\src\argon\cortex_m\ar_handlers_cm4_armcc.s</FilePath>
-            </File>
-            <File>
               <FileName>ar_main_thread.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\src\argon\cortex_m\ar_main_thread.cpp</FilePath>
@@ -487,6 +482,11 @@
               <FileName>ar_port.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\src\argon\cortex_m\ar_port.h</FilePath>
+            </File>
+            <File>
+              <FileName>ar_handlers_cm4.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\src\argon\cortex_m\ar_handlers_cm4.s</FilePath>
             </File>
           </Files>
         </Group>

@@ -28,42 +28,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ar_asm_macros.h"
+
 // EXC_RETURN value to return to Thread mode, while restoring state from PSP.
-EXC_RETURN  equ 0xfffffffd
+_EQU(EXC_RETURN, 0xfffffffd)
 
-/* specify the section where this code belongs */
-            
-        section .text:CODE
-        thumb
 
-        import ar_kernel_yield_isr
+        /* specify the section where this code belongs */
+        _CODE_SECTION(.text)
+        _THUMB
 
-        public SVC_Handler
-        public PendSV_Handler
-        
-SVC_Handler
-PendSV_Handler
-        
+        _EXPORT(SVC_Handler)
+        _EXPORT(PendSV_Handler)
+
+        _FN_BEGIN(PendSV_Handler)
+        _FN_DECL(PendSV_Handler)
+_LABEL(PendSV_Handler)
+_LABEL(SVC_Handler)
+        _FN_BEGIN_POST
+        _FN_CANT_UNWIND
+
         // Get PSP
         mrs     r0, psp
-        
+
         // Save registers on the stack and update the stack pointer (r0).
         stmdb   r0!, {r4-r11}
-        
+
         // Invoke scheduler. On return, r0 contains the stack pointer for the new thread.
         ldr     r1, =ar_kernel_yield_isr
         blx     r1
-        
+
         // Unstack saved registers.
         ldmia   r0!, {r4-r11}
-        
+
         // Update PSP with new stack pointer.
         msr     psp, r0
-        
+
         // Exit handler. Using a bx to the special EXC_RETURN values causes the
         // processor to perform the exception return behavior.
         ldr     r0, =EXC_RETURN
         bx      r0
 
+        _FN_END(PendSV_Handler)
+        _FN_SIZE(PendSV_Handler)
 
-        end
+        _ALIGN(4)
+
+        _END

@@ -28,30 +28,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ar_asm_macros.h"
+
 // EXC_RETURN value to return to Thread mode, while restoring state from PSP.
-EXC_RETURN  equ 0xfffffffd
+_EQU(EXC_RETURN, 0xfffffffd)
 
 /* specify the section where this code belongs */
-            
-        section .text:CODE
-        thumb
 
-        import ar_kernel_yield_isr
+        _CODE_SECTION(.text)
+        _THUMB
 
-        public SVC_Handler
-        public PendSV_Handler
-        
-SVC_Handler
-PendSV_Handler
-        
+        _IMPORT(ar_kernel_yield_isr)
+
+        _EXPORT(SVC_Handler)
+        _EXPORT(PendSV_Handler)
+
+        _FN_BEGIN(PendSV_Handler)
+        _FN_DECL(PendSV_Handler)
+_LABEL(SVC_Handler)
+_LABEL(PendSV_Handler)
+        _FN_BEGIN_POST
+        _FN_CANT_UNWIND
+
         // Get PSP
         mrs     r0, psp
-        
+
         // Subtract room for the registers we are going to store. We have to pre-subtract
         // and use the incrementing store multiple instruction because the CM0+ doesn't
         // have the decrementing variant.
         subs    r0, r0, #32
-        
+
         // Save registers on the stack. This has to be done in two stages because
         // the stmia instruction cannot access the upper registers on the CM0+.
         stmia   r0!, {r4-r7}
@@ -60,15 +66,15 @@ PendSV_Handler
         mov     r6, r10
         mov     r7, r10
         stmia   r0!, {r4-r7}
-        
+
         // Get back to the bottom of the stack before we pass the current SP to the
         // ar_yield call.
         subs    r0, r0, #32
-        
+
         // Invoke scheduler. On return, r0 contains the stack pointer for the new thread.
         ldr     r1, =ar_kernel_yield_isr
         blx     r1
-        
+
         // Unstack saved registers.
         adds    r0, r0, #16
         ldmia   r0!, {r4-r7}
@@ -79,14 +85,18 @@ PendSV_Handler
         mov     r11, r7
         ldmia   r0!, {r4-r7}
         adds    r0, r0, #16
-        
+
         // Update PSP with new stack pointer.
         msr     psp, r0
-        
+
         // Exit handler. Using a bx to the special EXC_RETURN values causes the
         // processor to perform the exception return behavior.
         ldr     r0, =EXC_RETURN
         bx      r0
 
+        _FN_END(PendSV_Handler)
+        _FN_SIZE(PendSV_Handler)
 
-        end
+        _ALIGN(4)
+
+        _END
