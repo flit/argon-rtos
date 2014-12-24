@@ -77,6 +77,11 @@
     #define AR_IDLE_THREAD_STACK_SIZE (512)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 
+#if !defined(AR_THREAD_STACK_PATTERN_FILL)
+    //! Whether to fill a new thread's stack with a pattern.
+    #define AR_THREAD_STACK_PATTERN_FILL (1)
+#endif // AR_IDLE_THREAD_STACK_SIZE
+
 #if !defined(AR_ENABLE_MAIN_THREAD)
     //! Set to 1 to cause main() to be run in a thread.
     #define AR_ENABLE_MAIN_THREAD (1)
