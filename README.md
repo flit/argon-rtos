@@ -9,10 +9,12 @@ Supported cores:
 
 - ARM Cortex-M0+
 - ARM Cortex-M4
+- ARM Cortex-M4F
 
 Supported toolchains:
 
 - IAR EWARM
+- Keil MDK (armcc)
 
 ### Overview
 
