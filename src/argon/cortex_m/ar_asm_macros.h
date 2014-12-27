@@ -42,6 +42,7 @@
 #define _LABEL(name)            name
 #define _END                    end
 #define _FN_BEGIN(name)         CFI Block CFIBlock_##name Using CFICommon0
+#define _FN_LABEL(name)         _LABEL(name)
 #define _FN_DECL(name)          CFI Function name
 #define _FN_BEGIN_POST
 #define _FN_CANT_UNWIND
@@ -91,10 +92,11 @@
 #define _LABEL(name)            name
 #define _END                    END
 #define _FN_BEGIN(name)         EXPORT name
+#define _FN_LABEL(name)         name FUNCTION
 #define _FN_DECL(name)
 #define _FN_BEGIN_POST
 #define _FN_CANT_UNWIND
-#define _FN_END(name)
+#define _FN_END(name)           ENDFUNC
 #define _FN_SIZE(name)
 #define _EQU(name, value)       name EQU value
 #define _ALIGN(n)               align n
@@ -114,6 +116,7 @@
 #define _LABEL(name)            name:
 #define _END                    .end
 #define _FN_BEGIN(name)         .thumb_func
+#define _FN_LABEL(name)         _LABEL(name)
 #define _FN_DECL(name)          .type name, %function
 #define _FN_BEGIN_POST          .fnstart
 #define _FN_CANT_UNWIND         .cantunwind

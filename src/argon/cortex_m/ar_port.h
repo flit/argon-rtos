@@ -38,16 +38,30 @@
 
 #include "fsl_device_registers.h"
 
-#if defined(__cplusplus)
-
-namespace Ar {
-
 //! @addtogroup ar_port
 //! @{
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
+
+/*!
+ * @brief ARM Cortex-M specific thread struct fields.
+ */
+typedef struct _ar_thread_port_data {
+#if __FPU_USED
+    bool m_hasExtendedFrame;    //!< Whether the thread context has an extended stack frame with saved FP registers.
+#endif // __FPU_USED
+} ar_thread_port_data_t;
+
+//! @}
+
+#if defined(__cplusplus)
+
+namespace Ar {
+
+//! @addtogroup ar_port
+//! @{
 
 enum
 {

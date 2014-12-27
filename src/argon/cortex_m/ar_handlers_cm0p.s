@@ -45,7 +45,7 @@ _EQU(EXC_RETURN, 0xfffffffd)
 
         _FN_BEGIN(PendSV_Handler)
         _FN_DECL(PendSV_Handler)
-_LABEL(SVC_Handler)
+_FN_LABEL(SVC_Handler)
 _LABEL(PendSV_Handler)
         _FN_BEGIN_POST
         _FN_CANT_UNWIND

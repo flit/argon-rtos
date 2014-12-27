@@ -29,9 +29,8 @@
  */
 
 #include "argon/argon.h"
-#include "debug_uart.h"
 #include "kernel_tests.h"
-#include "us_ticker_api.h"
+#include "mbed.h"
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -69,6 +68,10 @@ TEST_CASE_CLASS g_testCase;
 
 Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 30);
 Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 20);
+
+Ar::Thread * g_fpThread1;
+Ar::Thread * g_fpThread2;
+Ar::TypedChannel<float> g_fchan("f");
 
 Ar::TypedChannel<int> g_chan("c");
 
@@ -165,7 +168,66 @@ void y_thread(void * arg)
     }
 }
 
-// #define CPPSTR #__cplusplus
+#define ADCR_VDD                (65535.0f)    /*! Maximum value when use 16b resolution */
+#define V_BG                    (1000.0f)     /*! BANDGAP voltage in mV (trim to 1.0V) */
+#define V_TEMP25                (716.0f)      /*! Typical VTEMP25 in mV */
+#define M                       (1620.0f)     /*! Typical slope: (mV x 1000)/oC */
+#define STANDARD_TEMP           (25.0f)
+
+static float adcrTemp25 = 0;             /*! Calibrated ADCR_TEMP25 */
+static float adcr100m = 0;
+
+void get_vdd()
+{
+    // Enable bandgap.
+    HW_PMC_REGSC(PMC_BASE).B.BGBE = 1;
+
+    AnalogIn bandgap(ADC0_BANDGAP);
+
+    // Get VDD value measured in mV: VDD = (ADCR_VDD x V_BG) / ADCR_BG
+    float vdd = ADCR_VDD * V_BG / (float)bandgap.read_u16();
+    printf("vdd=%.3f mV\n", vdd);
+
+    // Calibrate ADCR_TEMP25: ADCR_TEMP25 = ADCR_VDD x V_TEMP25 / VDD
+    adcrTemp25 = ADCR_VDD * V_TEMP25 / vdd;
+
+    // ADCR_100M = ADCR_VDD x M x 100 / VDD
+    adcr100m = (ADCR_VDD * M) / (vdd * 10);
+
+    // Disable bandgap.
+    HW_PMC_REGSC(PMC_BASE).B.BGBE = 0;
+}
+
+void fp1_thread(void * arg)
+{
+    get_vdd();
+    AnalogIn adc(ADC0_TEMP);
+
+    while (1)
+    {
+//         float v = adc.read();
+
+        // Temperature = 25 - (ADCR_T - ADCR_TEMP25) * 100 / ADCR_100M
+        float currentTemperature = (STANDARD_TEMP - ((float)adc.read_u16() - adcrTemp25) * 100.0f / adcr100m);
+
+
+        currentTemperature >> g_fchan;
+    }
+}
+
+void fp2_thread(void * arg)
+{
+    while (1)
+    {
+        float v;
+
+        v <<= g_fchan;
+
+        printf("temp=%.3f\n", v);
+
+        Ar::Thread::sleep(1000);
+    }
+}
 
 void dyn_test(void * arg)
 {
@@ -192,6 +254,12 @@ void main_thread(void * arg)
 
     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
     g_dyn->resume();
+
+    g_fpThread1 = new Ar::Thread("fp1", fp1_thread, 0, 1024, 100);
+    g_fpThread1->resume();
+
+    g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
+    g_fpThread2->resume();
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }

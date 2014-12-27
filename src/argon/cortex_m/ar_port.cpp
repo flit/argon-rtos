@@ -43,7 +43,7 @@ using namespace Ar;
 enum
 {
     kInitialxPSR = 0x01000000u, //!< Set T bit.
-    kInitialLR = 0xfffffffeu    //!< Lockup address.
+    kInitialLR = 0u //!< Set to 0 to stop stack crawl by debugger.
 };
 
 //! @brief Priorities for kernel exceptions.
@@ -58,6 +58,14 @@ enum _exception_priorities
 //------------------------------------------------------------------------------
 
 extern "C" void SysTick_Handler(void);
+extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
+
+//------------------------------------------------------------------------------
+// Variables
+//------------------------------------------------------------------------------
+
+//! @brief Global used solely to pass info back to asm PendSV handler code.
+bool g_ar_hasExtendedFrame = false;
 
 //------------------------------------------------------------------------------
 // Code
@@ -65,6 +73,16 @@ extern "C" void SysTick_Handler(void);
 
 void ar_port_init_system(void)
 {
+    // Enable FPU on Cortex-M4F.
+#if __FPU_USED
+    // Enable full access to coprocessors 10 and 11 to enable FPU access.
+    SCB->CPACR |= (3 << 20) | (3 << 22);
+
+    // Disable lazy FP context save.
+    FPU->FPCCR |= FPU_FPCCR_ASPEN_Msk;
+    FPU->FPCCR &= ~FPU_FPCCR_LSPEN_Msk;
+#endif // __FPU_USED
+
     // Init PSP.
     __set_PSP((uint32_t)g_ar.idleThread.m_stackPointer);
 }
@@ -87,6 +105,11 @@ void ar_port_init_tick_timer(void)
 //! as an easy way to tell what the high watermark of stack usage is.
 void ar_port_prepare_stack(ar_thread_t * thread, void * param)
 {
+#if __FPU_USED
+    // Clear the extended frame flag.
+    thread->m_portData.m_hasExtendedFrame = false;
+#endif // __FPU_USED
+
     // 8-byte align stack.
     uint32_t sp = reinterpret_cast<uint32_t>(thread->m_stackTop);
     uint32_t delta = sp & 7;
@@ -152,6 +175,27 @@ bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32
 void SysTick_Handler(void)
 {
     ar_kernel_periodic_timer_isr();
+}
+
+uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame)
+{
+#if __FPU_USED
+    // Save whether there is an extended frame.
+    if (g_ar.currentThread)
+    {
+        g_ar.currentThread->m_portData.m_hasExtendedFrame = isExtendedFrame;
+    }
+#endif // __FPU_USED
+
+    // Run the scheduler.
+    uint32_t stack = ar_kernel_yield_isr(topOfStack);
+
+#if __FPU_USED
+    // Pass whether there is an extended frame back to the asm code.
+    g_ar_hasExtendedFrame = g_ar.currentThread->m_portData.m_hasExtendedFrame;
+#endif // __FPU_USED
+
+    return stack;
 }
 
 //------------------------------------------------------------------------------

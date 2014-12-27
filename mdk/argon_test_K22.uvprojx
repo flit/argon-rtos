@@ -398,7 +398,7 @@
             <ScatterFile>..\src\linker\MK22F51212\arm\MK22FN512xxx12_flash.scf</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc></Misc>
+            <Misc>--predefine="-D__heap_size__=0x2000"</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>

@@ -200,6 +200,7 @@ typedef struct _ar_list {
  */
 typedef struct _ar_thread {
     volatile uint8_t * m_stackPointer;  //!< Current stack pointer.
+    ar_thread_port_data_t m_portData; //!< Port-specific thread data.
     const char * m_name;        //!< Thread name.
     uint8_t * m_stackTop;       //!< Original top of stack.
     uint32_t m_stackSize;       //!< Stack size in bytes.
