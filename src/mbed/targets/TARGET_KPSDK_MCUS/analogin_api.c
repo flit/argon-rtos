@@ -28,6 +28,8 @@
 
 #define MAX_FADC 6000000
 
+bool g_adcCalibrated[2] = {0};
+
 void analogin_init(analogin_t *obj, PinName pin) {
     obj->adc = (ADCName)pinmap_peripheral(pin, PinMap_ADC);
     MBED_ASSERT(obj->adc != (ADCName)NC);
@@ -49,6 +51,16 @@ void analogin_init(analogin_t *obj, PinName pin) {
     }
     /* adc is enabled/triggered when reading. */
     ADC_HAL_Init(adc_addrs[instance]);
+
+    if (!g_adcCalibrated[instance])
+    {
+        ADC_HAL_SetAutoCalibrationCmd(adc_addrs[instance], true);
+        while (ADC_HAL_GetAutoCalibrationActiveCmd(adc_addrs[instance]));
+        ADC_HAL_SetAutoCalibrationCmd(adc_addrs[instance], false);
+        ADC_HAL_SetPlusSideGainValue(adc_addrs[instance], ADC_HAL_GetAutoPlusSideGainValue(adc_addrs[instance]));
+        g_adcCalibrated[instance] = true;
+    }
+
     ADC_HAL_SetClkSrcMode(adc_addrs[instance], kAdcClkSrcOfBusClk);
     ADC_HAL_SetClkDividerMode(adc_addrs[instance], (adc_clk_divider_mode_t)(clkdiv & 0x3));
     ADC_HAL_SetRefVoltSrcMode(adc_addrs[instance], kAdcRefVoltSrcOfVref);
@@ -70,7 +82,7 @@ uint16_t analogin_read_u16(analogin_t *obj) {
     uint32_t instance = obj->adc >> ADC_INSTANCE_SHIFT;
     uint32_t adc_addrs[] = ADC_BASE_ADDRS;
     /* sw trigger (SC1A) */
-    ADC_HAL_ConfigChn(adc_addrs[instance], 0, false, false, obj->adc & 0xF);
+    ADC_HAL_ConfigChn(adc_addrs[instance], 0, false, false, obj->adc & 0xFF);
     while (!ADC_HAL_GetChnConvCompletedCmd(adc_addrs[instance], 0));
     return ADC_HAL_GetChnConvValueRAW(adc_addrs[instance], 0);
 }
