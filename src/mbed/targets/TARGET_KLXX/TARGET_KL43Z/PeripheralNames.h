@@ -74,7 +74,11 @@ typedef enum {
     ADC0_SE13 = 13,
     ADC0_SE14 = 14,
     ADC0_SE15 = 15,
-    ADC0_SE23 = 23
+    ADC0_SE23 = 23,
+    _ADC0_TEMP = 26,
+    _ADC0_BANDGAP = 27,
+    _ADC0_VREFH = 29,
+    _ADC0_VREFL = 30,
 } ADCName;
 
 typedef enum {

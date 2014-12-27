@@ -29,6 +29,12 @@ typedef enum {
 
 #define GPIO_PORT_SHIFT 12
 
+#define ADC_KEY (0xa000)
+#define ADC_KEY_MASK (0xf000)
+#define ADC_INSTANCE_MASK (0x0f00)
+#define ADC_CHANNEL_MASK (0x00ff)
+#define ADC_SIGNAL(instance, channel) (ADC_KEY | ((instance << 8) & ADC_INSTANCE_MASK) | ((channel) & ADC_CHANNEL_MASK))
+
 typedef enum {
     PTA0  = (0 << GPIO_PORT_SHIFT | 0 ),
     PTA1  = (0 << GPIO_PORT_SHIFT | 1 ),
@@ -226,7 +232,7 @@ typedef enum {
     D13 = PTD1,
     D14 = PTE25,
     D15 = PTE24,
-    
+
     I2C_SCL = D15,
     I2C_SDA = D14,
 
@@ -236,6 +242,26 @@ typedef enum {
     A3 = PTB11,
     A4 = PTC10,
     A5 = PTC11,
+
+    // ADC differential channels are not muxed with any other pins
+    ADC0_DP0 = ADC_SIGNAL(0, 0),    // s.e. ch 0, interleaved with ADC1_DP3
+    ADC0_DM0 = ADC_SIGNAL(0, 19),   // s.e. ch 19, interleaved with ADC1_DM3
+    ADC0_DP1 = ADC_SIGNAL(0, 1),    // s.e. ch 1
+    ADC0_DM1 = ADC_SIGNAL(0, 20),   // s.e. ch 20
+    ADC0_DP3 = ADC_SIGNAL(0, 3),    // s.e. ch 3, interleaved with ADC1_DP0
+    ADC1_DP0 = ADC_SIGNAL(1, 0),    // s.e. ch 0, interleaved with ADC0_DP3
+    ADC1_DM0 = ADC_SIGNAL(1, 19),   // s.e. ch 19, interleaved with ADC0_DM3
+    ADC1_DP1 = ADC_SIGNAL(1, 1),    // s.e. ch 1
+    ADC1_DM1 = ADC_SIGNAL(1, 20),   // s.e. ch 20
+    ADC1_DP3 = ADC_SIGNAL(1, 3),    // s.e. ch 3, interleaved with ADC0_DP0
+    ADC1_DM3 = ADC0_DM0,
+    ADC0_DM3 = ADC1_DM0,  // connected to ADC1 ch 19 (S.E.)
+
+    // ADC internal signals
+    ADC0_TEMP = ADC_SIGNAL(0, 26),     // s.e. ch 26
+    ADC0_BANDGAP = ADC_SIGNAL(0, 27),  // s.e. ch 27
+    ADC0_VREFH = ADC_SIGNAL(0, 29),    // s.e. ch 29
+    ADC0_VREFL = ADC_SIGNAL(0, 30),    // s.e. ch 30
 
     DAC0_OUT = 0xFEFE, /* DAC does not have Pin Name in RM */
 

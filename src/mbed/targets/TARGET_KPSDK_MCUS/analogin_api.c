@@ -59,7 +59,11 @@ void analogin_init(analogin_t *obj, PinName pin) {
     ADC_HAL_SetHwAverageMode(adc_addrs[instance], kAdcHwAverageCountOf4);
     ADC_HAL_SetChnMuxMode(adc_addrs[instance], kAdcChnMuxOfB); /* only B channels are avail */
 
-    pinmap_pinout(pin, PinMap_ADC);
+    // Don't map pin for internal ADC channels.
+    if ((pin & ADC_KEY_MASK) != ADC_KEY)
+    {
+        pinmap_pinout(pin, PinMap_ADC);
+    }
 }
 
 uint16_t analogin_read_u16(analogin_t *obj) {

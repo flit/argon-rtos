@@ -29,6 +29,12 @@ typedef enum {
 
 #define GPIO_PORT_SHIFT 12
 
+#define ADC_KEY (0xa000)
+#define ADC_KEY_MASK (0xf000)
+#define ADC_INSTANCE_MASK (0x0f00)
+#define ADC_CHANNEL_MASK (0x00ff)
+#define ADC_SIGNAL(instance, channel) (ADC_KEY | ((instance << 8) & ADC_INSTANCE_MASK) | ((channel) & ADC_CHANNEL_MASK))
+
 typedef enum {
     PTA0  = (0 << GPIO_PORT_SHIFT | 0 ),
     PTA1  = (0 << GPIO_PORT_SHIFT | 1 ),
@@ -210,7 +216,6 @@ typedef enum {
     USBRX = PTE1,
 
     // Arduino Headers
-    
     D0 = PTD2,
     D1 = PTD3,
     D2 = PTB16,
@@ -227,7 +232,7 @@ typedef enum {
     D13 = PTD5,
     D14 = PTE0,
     D15 = PTE1,
-    
+
     I2C_SCL = D15,
     I2C_SDA = D14,
 
@@ -237,7 +242,20 @@ typedef enum {
     A3 = PTC2,
     A4 = PTB3,
     A5 = PTB2,
-    
+
+    // ADC differential channels are not muxed with any other pins
+    ADC0_DP0 = ADC_SIGNAL(0, 0),  // s.e. ch 0
+    ADC0_DM0 = ADC_SIGNAL(0, 19),  // s.e. ch 19
+    ADC0_DP3 = ADC_SIGNAL(0, 3),  // s.e. ch 3
+    ADC0_DM3 = ADC_SIGNAL(1, 19),  // connected to ADC1 ch 19 (S.E.)
+
+    // ADC internal signals
+    ADC1_VBAT = ADC_SIGNAL(1, 22),     // VBAT is connected to ADC1 ch 22 (S.E.) only
+    ADC0_TEMP = ADC_SIGNAL(0, 26),     // s.e. ch 26
+    ADC0_BANDGAP = ADC_SIGNAL(0, 27),  // s.e. ch 27
+    ADC0_VREFH = ADC_SIGNAL(0, 29),    // s.e. ch 29
+    ADC0_VREFL = ADC_SIGNAL(0, 30),    // s.e. ch 30
+
     DAC0_OUT = 0xFEFE, /* DAC does not have Pin Name in RM */
 
     // Not connected

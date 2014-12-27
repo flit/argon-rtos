@@ -38,7 +38,7 @@ void analogin_init(analogin_t *obj, PinName pin) {
     if (obj->adc & (1 << CHANNELS_A_SHIFT)) {
         cfg2_muxsel = 0;
     }
-    
+
     // bus clk
     uint32_t PCLK = bus_frequency();
     uint32_t clkdiv;
@@ -67,7 +67,11 @@ void analogin_init(analogin_t *obj, PinName pin) {
     ADC0->SC3 = ADC_SC3_AVGE_MASK       // Hardware Average Enable
               | ADC_SC3_AVGS(0);        // 4 Samples Averaged
 
-    pinmap_pinout(pin, PinMap_ADC);
+    // Don't map pin for internal ADC channels.
+    if ((pin & ADC_KEY_MASK) != ADC_KEY)
+    {
+        pinmap_pinout(pin, PinMap_ADC);
+    }
 }
 
 uint16_t analogin_read_u16(analogin_t *obj) {

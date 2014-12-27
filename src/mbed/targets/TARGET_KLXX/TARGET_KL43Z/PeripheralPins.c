@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "PeripheralPins.h"
 
 /************RTC***************/
@@ -39,6 +39,10 @@ const PinMap PinMap_ADC[] = {
     {PTD1,  ADC0_SE5b, 0},
     {PTD5,  ADC0_SE6b, 0},
     {PTD6,  ADC0_SE7b, 0},
+    {ADC0_TEMP, _ADC0_TEMP, 0},
+    {ADC0_BANDGAP, _ADC0_BANDGAP, 0},
+    {ADC0_VREFH, _ADC0_VREFH, 0},
+    {ADC0_VREFL, _ADC0_VREFL, 0},
     {NC,    NC,        0}
 };
 
@@ -143,15 +147,15 @@ const PinMap PinMap_SPI_SSEL[] = {
 
 /************PWM***************/
 const PinMap PinMap_PWM[] = {
-    {PTA0,  PWM_6,  3}, // PTA0 , TPM0 CH5    
+    {PTA0,  PWM_6,  3}, // PTA0 , TPM0 CH5
     {PTA1,  PWM_9 , 3}, // PTA1 , TPM2 CH0
     {PTA2,  PWM_10, 3}, // PTA2 , TPM2 CH1
     {PTA3,  PWM_1,  3}, // PTA3 , TPM0 CH0
     {PTA4,  PWM_2 , 3}, // PTA4 , TPM0 CH1
     {PTA5,  PWM_3 , 3}, // PTA5 , TPM0 CH2
     {PTA12, PWM_7 , 3}, // PTA12, TPM1 CH0
-    {PTA13, PWM_8 , 3}, // PTA13, TPM1 CH1  
-    
+    {PTA13, PWM_8 , 3}, // PTA13, TPM1 CH1
+
     {PTB0,  PWM_7,  3}, // PTB0 , TPM1 CH0
     {PTB1,  PWM_8,  3}, // PTB1 , TPM1 CH1
     {PTB2,  PWM_9,  3}, // PTB2 , TPM2 CH0
@@ -163,11 +167,11 @@ const PinMap PinMap_PWM[] = {
     {PTC2,  PWM_2,  4}, // PTC2 , TPM0 CH1
     {PTC3,  PWM_3,  4}, // PTC3 , TPM0 CH2
     {PTC4,  PWM_4,  4}, // PTC4 , TPM0 CH3
-    
+
     {PTD0,  PWM_1 , 4}, // PTD0 , TPM0 CH0
     {PTD1,  PWM_2 , 4}, // PTD0 , TPM0 CH1
     {PTD2,  PWM_3 , 4}, // PTD2 , TPM0 CH2
-    {PTD3,  PWM_4 , 4}, // PTD3 , TPM0 CH3    
+    {PTD3,  PWM_4 , 4}, // PTD3 , TPM0 CH3
     {PTD4,  PWM_5 , 4}, // PTD4 , TPM0 CH4
     {PTD5,  PWM_6 , 4}, // PTD5 , TPM0 CH5
 

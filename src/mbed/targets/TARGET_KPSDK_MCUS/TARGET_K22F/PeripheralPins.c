@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "PeripheralPins.h"
 
 /************RTC***************/
@@ -40,6 +40,15 @@ const PinMap PinMap_ADC[] = {
     {PTB11, ADC1_SE15, 0},
     {PTC1 , ADC0_SE15, 0},
     {PTA17, ADC1_SE17, 0},
+    {ADC0_DP0, _ADC0_DP0, 0},
+    {ADC0_DM0, _ADC0_DM0, 0},
+    {ADC0_DP3, _ADC0_DP3, 0},
+    {ADC0_DM3, _ADC0_DM3, 0},
+    {ADC1_VBAT, _ADC1_VBAT, 0},
+    {ADC0_TEMP, _ADC0_TEMP, 0},
+    {ADC0_BANDGAP, _ADC0_BANDGAP, 0},
+    {ADC0_VREFH, _ADC0_VREFH, 0},
+    {ADC0_VREFL, _ADC0_VREFL, 0},
     //{PTE24, ADC0_SE17, 0}, //I2C pull up
     //{PTE25, ADC0_SE18, 0}, //I2C pull up
     {NC   , NC       , 0}
@@ -152,18 +161,18 @@ const PinMap PinMap_PWM[] = {
     {PTA11, PWM_21, 3},
     {PTA12, PWM_10, 3},
     {PTA13, PWM_11, 3},
-    
+
     {PTB0 , PWM_10, 3},
     {PTB1 , PWM_11, 3},
     {PTB18, PWM_20, 3},
     {PTB19, PWM_21, 3},
-    
+
     {PTC1 , PWM_00, 4},
     {PTC2 , PWM_01, 4},
     {PTC3 , PWM_02, 4},
     {PTC4 , PWM_03, 4},
     {PTC5 , PWM_02, 7},
-    
+
     {PTD0 , PWM_30, 4},
     {PTD1 , PWM_31, 4},
     {PTD2 , PWM_32, 4},
@@ -172,7 +181,7 @@ const PinMap PinMap_PWM[] = {
     {PTD5 , PWM_05, 4},
     {PTD6 , PWM_06, 4},
     {PTD7 , PWM_07, 4},
-    
+
     {PTE5 , PWM_30, 6},
     {PTE6 , PWM_31, 6},
     {NC   ,  NC   , 0}

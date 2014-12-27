@@ -29,6 +29,12 @@ typedef enum {
 
 #define PORT_SHIFT  12
 
+#define ADC_KEY (0xa000)
+#define ADC_KEY_MASK (0xf000)
+#define ADC_INSTANCE_MASK (0x0f00)
+#define ADC_CHANNEL_MASK (0x00ff)
+#define ADC_SIGNAL(instance, channel) (ADC_KEY | ((instance << 8) & ADC_INSTANCE_MASK) | ((channel) & ADC_CHANNEL_MASK))
+
 typedef enum {
     PTA0 = 0x0,
     PTA1 = 0x4,
@@ -238,6 +244,12 @@ typedef enum {
 
     TSI_ELEC0 = PTB16,
     TSI_ELEC1 = PTB17,
+
+    // ADC internal signals
+    ADC0_TEMP = ADC_SIGNAL(0, 26),     // s.e. ch 26
+    ADC0_BANDGAP = ADC_SIGNAL(0, 27),  // s.e. ch 27
+    ADC0_VREFH = ADC_SIGNAL(0, 29),    // s.e. ch 29
+    ADC0_VREFL = ADC_SIGNAL(0, 30),    // s.e. ch 30
 
     // Not connected
     NC = (int)0xFFFFFFFF
