@@ -641,6 +641,18 @@ public:
         return Channel::receive(&value, timeout);
     }
 
+    friend T& operator <<= (T& lhs, TypedChannel<T>& rhs)
+    {
+        lhs = rhs.receive();
+        return lhs;
+    }
+
+    friend T& operator >> (T& lhs, TypedChannel<T>& rhs)
+    {
+        rhs.send(lhs);
+        return lhs;
+    }
+
 private:
     //! @brief Disable copy constructor.
     TypedChannel(const TypedChannel<T> & other) {}
