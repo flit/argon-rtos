@@ -45,12 +45,6 @@ void TestMutex1::run()
 
     m_bThread.init("b", this, &TestMutex1::b_thread, 0, 70);
     m_bThread.resume();
-
-//     m_cThread.init("c", this, &TestMutex1::c_thread, 0, 80);
-//     m_cThread.resume();
-//
-//     m_dThread.init("d", this, &TestMutex1::d_thread, 0, 90);
-//     m_dThread.resume();
 }
 
 void TestMutex1::a_thread(void * param)
@@ -59,24 +53,30 @@ void TestMutex1::a_thread(void * param)
 
     while (1)
     {
-//         printf("%s sleeping for 2 sec\r\n", threadIdString());
+//         log("sleeping for 2 sec");
 //         Ar::Thread::sleep(2000);
 
-        printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
-        printf("%s getting mutex\r\n", threadIdString());
+        log("at priority %d", self()->getPriority());
+        ASSERT_TRUE(self()->getPriority() == 60, "priority check");
+        log("getting mutex");
+        ASSERT_EQUALS(m_mutex.getOwner(), (void *)NULL, "no mutex owner");
         m_mutex.get();
-        printf("%s got mutex\r\n", threadIdString());
-        printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
+        log("got mutex");
+        ASSERT_EQUALS(m_mutex.getOwner(), static_cast<ar_thread_t*>(&m_aThread), "thread a is mutex owner");
+        log("at priority %d", self()->getPriority());
+        ASSERT_TRUE(self()->getPriority() == 60, "priority check");
 
-        printf("%s sleeping for 5 sec\r\n", threadIdString());
+        log("sleeping for 5 sec");
         Ar::Thread::sleep(5000);
-        printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
+        log("at priority %d", self()->getPriority());
+        ASSERT_TRUE(self()->getPriority() == 70, "priority check");
 
-        printf("%s putting mutex\r\n", threadIdString());
+        log("putting mutex");
         m_mutex.put();
-        printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
+        log("at priority %d", self()->getPriority());
+        ASSERT_TRUE(self()->getPriority() == 60, "priority check");
 
-        printf("%s sleeping for 5 sec\r\n", threadIdString());
+        log("sleeping for 5 sec");
         Ar::Thread::sleep(5000);
     }
 }
@@ -87,38 +87,21 @@ void TestMutex1::b_thread(void * param)
 
     while (1)
     {
-        printf("%s has priority %d\r\n", threadIdString(), self()->getPriority());
-        printf("%s sleeping for 4 sec\r\n", threadIdString());
+        log("at priority %d", self()->getPriority());
+        ASSERT_TRUE(self()->getPriority() == 70, "priority check");
+        log("sleeping for 4 sec");
         Ar::Thread::sleep(4000);
 
-        printf("%s getting mutex\r\n", threadIdString());
+        log("getting mutex");
         m_mutex.get();
-        printf("%s got mutex\r\n", threadIdString());
+        log("got mutex");
+        ASSERT_EQUALS(m_mutex.getOwner(), static_cast<ar_thread_t*>(&m_bThread), "thread a is mutex owner");
         m_mutex.put();
-        printf("%s just put mutex\r\n", threadIdString());
+        log("just put mutex");
+        ASSERT_EQUALS(m_mutex.getOwner(), (void *)NULL, "no mutex owner");
 
-        printf("%s sleeping for 5 sec\r\n", threadIdString());
+        log("sleeping for 5 sec");
         Ar::Thread::sleep(5000);
-    }
-}
-
-void TestMutex1::c_thread(void * param)
-{
-    printHello();
-
-    while (1)
-    {
-        Ar::Thread::sleep(2000);
-    }
-}
-
-void TestMutex1::d_thread(void * param)
-{
-    printHello();
-
-    while (1)
-    {
-        Ar::Thread::sleep(2000);
     }
 }
 

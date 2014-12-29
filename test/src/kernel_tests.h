@@ -32,33 +32,11 @@
 #define _KERNEL_TESTS_H_
 
 #include "argon/argon.h"
+#include "argon/test/kernel_test.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
-
-/*!
- * @brief Abstract kernel test class.
- */
-class KernelTest
-{
-public:
-    KernelTest() {}
-
-    virtual ~KernelTest() {}
-
-    virtual void init() {}
-    virtual void run()=0;
-
-    Ar::Thread * self() const { return Ar::Thread::getCurrent(); }
-    const char * threadIdString() const;
-
-protected:
-
-    void printHello();
-    void printTicks();
-
-};
 
 /*!
  * @brief Thread sleep test.
