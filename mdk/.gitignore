@@ -2,4 +2,6 @@ Listings
 Objects
 JLink*.*
 *.uvguix.*
+*.pch
+pchfiles
 
