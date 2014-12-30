@@ -50,9 +50,13 @@ class Foo
 {
 public:
 
-    void entry(void * param)
+    void my_entry() //void * param)
     {
-        printf("hi from Foo!\n");
+        while (1)
+        {
+            printf("hi from Foo!\n");
+            Ar::Thread::sleep(1000);
+        }
     }
 };
 
@@ -75,7 +79,8 @@ Ar::TypedChannel<float> g_fchan("f");
 
 Ar::TypedChannel<int> g_chan("c");
 
-Ar::ThreadToMemberFunctionWithStack<512,Foo> g_fooThread;
+// Ar::ThreadToMemberFunctionWithStack<512,Foo> g_fooThread;
+Ar::Thread g_fooThread;
 
 Ar::Thread * g_dyn;
 
@@ -83,23 +88,13 @@ Ar::Thread * g_dyn;
 // Code
 //------------------------------------------------------------------------------
 
-const char * KernelTest::threadIdString() const
+#if defined(__MICROLIB)
+#pragma weak __aeabi_assert
+extern "C" void __aeabi_assert(const char *s, const char *f, int l)
 {
-    static char idString[32];
-    snprintf(idString, sizeof(idString), "[%d:%s]", us_ticker_read(), self()->getName());
-    return idString;
+    Ar::_halt();
 }
-
-void KernelTest::printHello()
-{
-    printf("%s running (prio=%d)\r\n", threadIdString(), self()->getPriority());
-}
-
-void KernelTest::printTicks()
-{
-    uint32_t ticks = ar_get_tick_count();
-    printf("%s ticks=%u!\r\n", threadIdString(), ticks);
-}
+#endif
 
 void x_thread(void * arg)
 {
@@ -249,7 +244,7 @@ void main_thread(void * arg)
     g_yThread.resume();
 
     Foo * foo = new Foo;
-    g_fooThread.init("foo", foo, &Foo::entry, 0, 120);
+    g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
     g_fooThread.resume();
 
     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);

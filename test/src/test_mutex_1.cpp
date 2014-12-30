@@ -40,14 +40,14 @@ void TestMutex1::run()
 {
     m_mutex.init("mutex");
 
-    m_aThread.init("a", this, &TestMutex1::a_thread, 0, 60);
+    m_aThread.init("a", this, &TestMutex1::a_thread, 60);
     m_aThread.resume();
 
-    m_bThread.init("b", this, &TestMutex1::b_thread, 0, 70);
+    m_bThread.init("b", this, &TestMutex1::b_thread, 70);
     m_bThread.resume();
 }
 
-void TestMutex1::a_thread(void * param)
+void TestMutex1::a_thread()
 {
     printHello();
 
@@ -81,7 +81,7 @@ void TestMutex1::a_thread(void * param)
     }
 }
 
-void TestMutex1::b_thread(void * param)
+void TestMutex1::b_thread()
 {
     printHello();
 

@@ -46,10 +46,10 @@ void TestSem1::run()
 //     m_bThread.init("b", _b_thread, this, 70);
 //     m_bThread.resume();
 
-    m_aThread.init("a", this, &TestSem1::a_thread, this, 60);
+    m_aThread.init("a", this, &TestSem1::a_thread, 60);
     m_aThread.resume();
 
-    m_bThread.init("b", this, &TestSem1::b_thread, this, 70);
+    m_bThread.init("b", this, &TestSem1::b_thread, 70);
     m_bThread.resume();
 }
 
@@ -65,7 +65,7 @@ void TestSem1::run()
 //     _this->b_thread();
 // }
 
-void TestSem1::a_thread(void * param)
+void TestSem1::a_thread()
 {
     printHello();
 
@@ -78,7 +78,7 @@ void TestSem1::a_thread(void * param)
     }
 }
 
-void TestSem1::b_thread(void * param)
+void TestSem1::b_thread()
 {
     printHello();
 

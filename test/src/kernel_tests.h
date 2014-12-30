@@ -56,8 +56,8 @@ protected:
     void a_thread();
     void b_thread();
 
-    static void _a_thread(void * arg);
-    static void _b_thread(void * arg);
+    static void _a_thread(void *);
+    static void _b_thread(void *);
 
 };
 
@@ -73,13 +73,13 @@ public:
 
 protected:
 
-    Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_aThread;
-    Ar::ThreadToMemberFunctionWithStack<512, TestSem1> m_bThread;
+    Ar::ThreadWithStack<512> m_aThread;
+    Ar::ThreadWithStack<512> m_bThread;
 
     Ar::Semaphore m_sem;
 
-    void a_thread(void * param);
-    void b_thread(void * param);
+    void a_thread();
+    void b_thread();
 
 };
 
@@ -95,17 +95,17 @@ public:
 
 protected:
 
-    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_aThread;
-    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_bThread;
-    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_cThread;
-    Ar::ThreadToMemberFunctionWithStack<512, TestMutex1> m_dThread;
+    Ar::ThreadWithStack<512> m_aThread;
+    Ar::ThreadWithStack<512> m_bThread;
+    Ar::ThreadWithStack<512> m_cThread;
+    Ar::ThreadWithStack<512> m_dThread;
 
     Ar::Mutex m_mutex;
 
-    void a_thread(void * param);
-    void b_thread(void * param);
-    void c_thread(void * param);
-    void d_thread(void * param);
+    void a_thread();
+    void b_thread();
+    void c_thread();
+    void d_thread();
 
 };
 

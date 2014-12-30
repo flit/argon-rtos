@@ -37,6 +37,7 @@
 #define _AR_CLASSES_H_
 
 #include "ar_kernel.h"
+#include <string.h>
 
 #if defined(__cplusplus)
 
@@ -111,10 +112,24 @@ public:
         init(name, entry, param, stack, stackSize, priority);
     }
 
+    //! @brief Constructor to set the thread entry to a member function.
+    template <class T>
+    Thread(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    {
+        init<T>(name, object, entry, stack, stackSize, priority);
+    }
+
     //! @brief Constructor to dynamically allocate the stack.
     Thread(const char * name, ar_thread_entry_t entry, void * param, unsigned stackSize, uint8_t priority)
     {
         init(name, entry, param, NULL, stackSize, priority);
+    }
+
+    //! @brief Constructor to set the thread entry to a member function, using a dynamic stack.
+    template <class T>
+    Thread(const char * name, T * object, void (T::*entry)(), unsigned stackSize, uint8_t priority)
+    {
+        init<T>(name, object, entry, NULL, stackSize, priority);
     }
 
     //! @brief Destructor.
@@ -140,6 +155,21 @@ public:
     //!
     //! @return kSuccess The thread was initialised without error.
     ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+
+    //! @brief Initializer to set the thread entry to a member function.
+    template <class T>
+    ar_status_t init(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    {
+        // Invoke the base initializer, passing the object pointer as the entry param.
+        ar_status_t result = init(name, member_thread_entry<T>, static_cast<void *>(object), stack, stackSize, priority);
+        if (result == kArSuccess)
+        {
+            // Save the member function pointer on the thread's stack.
+            uint8_t * storage = m_stackTop - (sizeof(ThreadContext) + sizeof(entry));
+            memcpy(storage, &entry, sizeof(entry));
+        }
+        return result;
+    }
     //@}
 
     //! @brief Get the thread's name.
@@ -231,55 +261,24 @@ protected:
     //! @brief Static thread entry callback to invoke the virtual method.
     static void thread_entry(void * param);
 
+    //! @brief Template function to invoke a thread entry point that is a member function.
+    template <class T>
+    static void member_thread_entry(void * param)
+    {
+        Thread * thread = getCurrent();
+        T * obj = static_cast<T *>(param);
+        void (T::*member)(void);
+        uint8_t * storage = thread->m_stackTop - (sizeof(ThreadContext) + sizeof(member));
+        memcpy((char*)&member, storage, sizeof(member));
+        (obj->*member)();
+    }
+
 private:
     //! @brief The copy constructor is disabled for thread objects.
     Thread(const Thread & other) {}
 
     //! @brief Disable assignment operator.
     void operator=(const Thread & other) {}
-};
-
-/*!
- * @brief Template to create a thread whose entry point is a member of a class.
- *
- * @ingroup ar_thread
- */
-template <typename T>
-class ThreadToMemberFunction : public Thread
-{
-public:
-
-    typedef void (T::*thread_member_entry_t)(void * param);
-
-    ThreadToMemberFunction() {}
-
-    ThreadToMemberFunction(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
-    {
-        init(name, obj, entry, param, stack, stackSize, priority);
-    }
-
-    ar_status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
-    {
-        m_object = obj;
-        m_entryMember = entry;
-        return Thread::init(name, thread_entry, param, stack, stackSize, priority);
-    }
-
-protected:
-    T * m_object;
-    thread_member_entry_t m_entryMember;
-
-    virtual void threadEntry(void * param)
-    {
-        (m_object->*m_entryMember)(param);
-    }
-
-private:
-    //! @brief The copy constructor is disabled for thread objects.
-    ThreadToMemberFunction(const ThreadToMemberFunction<T> & other) {}
-
-    //! @brief Disable assignment operator.
-    void operator=(const ThreadToMemberFunction<T> & other) {}
 };
 
 /*!
@@ -298,9 +297,22 @@ public:
         Thread::init(name, entry, param, m_stack, S, priority);
     }
 
+    //! @brief Constructor to set the thread entry to a member function.
+    template <class T>
+    ThreadWithStack(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    {
+        Thread::init<T>(name, object, entry, m_stack, S, priority);
+    }
+
     ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
+    }
+
+    template <class T>
+    ar_status_t init(const char * name, T * object, void (T::*entry)(), uint8_t priority)
+    {
+        return Thread::init<T>(name, object, entry, m_stack, S, priority);
     }
 
 protected:
@@ -312,41 +324,6 @@ private:
 
     //! @brief Disable assignment operator.
     void operator=(const ThreadWithStack<S> & other) {}
-};
-
-/*!
- * @brief Template to create a thread and its stack, with a member function entry point.
- *
- * @ingroup ar_thread
- */
-template <uint32_t S, typename T>
-class ThreadToMemberFunctionWithStack : public ThreadToMemberFunction<T>
-{
-public:
-
-    using typename ThreadToMemberFunction<T>::thread_member_entry_t;
-
-    ThreadToMemberFunctionWithStack() {}
-
-    ThreadToMemberFunctionWithStack(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
-    {
-        ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
-    }
-
-    ar_status_t init(const char * name, T * obj, thread_member_entry_t entry, void * param, uint8_t priority)
-    {
-        return ThreadToMemberFunction<T>::init(name, obj, entry, param, m_stack, S, priority);
-    }
-
-protected:
-    uint8_t m_stack[S];
-
-private:
-    //! @brief The copy constructor is disabled for thread objects.
-    ThreadToMemberFunctionWithStack(const ThreadToMemberFunctionWithStack<S,T> & other) {}
-
-    //! @brief Disable assignment operator.
-    void operator=(const ThreadToMemberFunctionWithStack<S,T> & other) {}
 };
 
 /*!
