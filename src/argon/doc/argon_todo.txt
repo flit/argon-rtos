@@ -5,40 +5,43 @@ Ideas
 -----
 
 √ Refactor list management code.
-* Add constructors and copy constructors.
+√ Add constructors and copy constructors.
 √ Get global object lists working.
 √ Implement timers.
 * Implement priority inheritence for mutexes.
 * Finish user interrupt support.
-- Clean up member function support for threads.
+√ Clean up member function support for threads.
 - Either implement or remove Thread::join().
 x More thorough testing using cppunit. [Massive effort to get cppunit compiling under IAR.]
 - Unpriveledged support on M4?
 x Event flags?
 x Invert thread priorities, so that 0 is highest priority? This is the more common arrangement for RTOSes.
-- Floating point support for M4F.
+√ Floating point support for M4F.
 √ Use circular linked lists instead of NULL terminated.
 - Use a lock on the scheduler instead of disabling interrupts.
 - Handle a thread changings its own priority when it owns a mutex and has been hoisted in priority.
 - Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
-* Sort thread sleeping list by wakeup time.
+√ Sort thread sleeping list by wakeup time.
 - Add link from thread to object it's blocked on.
 - Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
 - Support tickless idle.
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
-- Use MSP for idle thread and timers, as well as exceptions.
+- Use MSP for idle thread and timers. (?)
 - Handle changing system clock by updating SysTick.
 - Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
 - Replace queue with buffered channel?
-- Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
+√ Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
 - Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
-- Replace IrqDisableAndRestore class with a more generic kernel lock class that will work for any system.
+√ Replace IrqDisableAndRestore class with a more generic kernel lock class that will work for Cortex-M as well as any other system.
 - Write an automated test suite.
 - Rewrite mutex to not be based on sem.
 - Unblock blocked threads when deleting a queue.
-- Simplify Thread class variants.
-- Run main() in a thread.
+√ Simplify Thread class variants.
+* Run main() in a thread.
 - Add option to create threads resumed.
+- Have an installable error handler to deal with errors in ctors.
+√ armcc support
+- gcc support
 
 
 Issues
@@ -47,5 +50,6 @@ Issues
 - Use of timers requires another stack.
 - Timers all share a single stack.
 - Idle thread requires a stack.
+- Interrupts are disabled to protect kernel objects.
 
 
