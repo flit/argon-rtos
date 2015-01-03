@@ -197,7 +197,7 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
         return kArInvalidParameterError;
     }
 
-    if (priority == 0 && thread != &g_ar.idleThread)
+    if (priority == kArIdleThreadPriority && thread != &g_ar.idleThread)
     {
         return kArInvalidPriorityError;
     }
