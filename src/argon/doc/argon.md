@@ -22,3 +22,8 @@ There are several steps involved in starting the RTOS running.
     then only the idle thread will exist and the system will do nothing.
 -   Finally call ar_kernel_run() to start the scheduler. This call will
     not return.
+
+For certain toolchains, currently only IAR, there is special startup code that runs the `main()`
+function in its own thread. There is nothing extra you need to do to startup Argon.
+
+

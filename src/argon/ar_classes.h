@@ -53,52 +53,20 @@ namespace Ar {
  *
  * @ingroup ar_thread
  *
- * This thread class implements a preemptive threading system with priorities. The highest priority
- * thread that is ready to run will always get the processor. That means that if there is only one
- * high priority thread, it can starve lower priority threads if it never relinquishes control by
- * sleeping or blocking on a resource. Threads with the same priority will preempt each other in a
- * round robin order every system tick.
+ * This thread class implements a preemptive thread with variable priority.
  *
- * Thread priorities range from 0 to 255. Higher values are higher priorities, with 255 being the
- * highest priority. Priority 0 is reserved for the idle thread.
+ * Threads may be allocated either globally or with the new operator. You can also allocate a
+ * thread locally, but you must be careful to keep the stack valid as long as the thread is running.
+ * There are two options for initialization. Either use one of the non-default constructors, or
+ * use the default constructor and call an init() method at some later point. Both the constructors
+ * and init methods take the same arguments. They accept a name, entry point, stack, and priority.
  *
- * To create a thread, first allocate it either on the stack or with the new operator. Then call the
- * init() method passing in the name, entry point, entry parameter, stack information, and priority.
- * The entry point can be any non-member, i.e static, function that matches the #thread_entry_t
- * prototype. The init() method leaves the new thread suspended. To make the new thread eligible to
+ * The entry point can be a global or static function that matches the #ar_thread_entry_t
+ * prototype. Alternatively, there are constructor and init() variants that let you use a member
+ * function of a specific object as the entry point.
+ *
+ * The init() method leaves the new thread suspended. To make the new thread eligible to
  * run you must call the resume() method on it.
- *
- * If you want to fully encapsulate a thread you can create a subclass of Thread that provides its
- * own init() method which calls the original Thread::init(). You can either pass a pointer to a
- * static function to the base init() method, as usual, or you can override the virtual
- * Thread::threadEntry() method. In the latter case, you can simply pass NULL for the entry point to
- * the base init() method. To pass values to the thread function, simply create member variables and
- * set them in your subclass' init() method.
- *
- * Here's an example subclass that uses a member function as the entry point:
- * @code
- *      class MySubclassThread : public Ar::Thread
- *      {
- *      public:
- *          ar_status_t init()
- *          {
- *              // Pass NULL for the entry point. It's not needed because you are
- *              // overriding threadEntry() below.
- *              return Thread::init("my thread", NULL, this, m_stack, sizeof(m_stack), 32);
- *          }
- *
- *      protected:
- *          // Static memory for the stack.
- *          uint8_t m_stack[4096];
- *
- *          // Override the default Thread implementation.
- *          virtual void threadEntry()
- *          {
- *              // Implement your thread here.
- *          }
- *
- *      };
- * @endcode
  */
 class Thread : public _ar_thread
 {
@@ -107,12 +75,35 @@ public:
     Thread() {}
 
     //! @brief Constructor.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param entry Thread entry point taking one parameter and returning void.
+    //! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
+    //!     entry point.
+    //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
+    //!     not it's top. If this parameter is NULL, the stack will be dynamically allocated.
+    //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
+    //!     added to @a stack to get the initial top of stack address.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
     Thread(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
     {
         init(name, entry, param, stack, stackSize, priority);
     }
 
     //! @brief Constructor to set the thread entry to a member function.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param object Pointer to an instance of class T upon which the @a entry member function
+    //!     will be invoked when the thread is started.
+    //! @param entry Member function of class T that will be used as the thread's entry point.
+    //!     The member function must take no parameters and return void.
+    //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
+    //!     not it's top. If this parameter is NULL, the stack will be dynamically allocated.
+    //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
+    //!     added to @a stack to get the initial top of stack address.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
     template <class T>
     Thread(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
     {
@@ -120,12 +111,29 @@ public:
     }
 
     //! @brief Constructor to dynamically allocate the stack.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param entry Thread entry point taking one parameter and returning void.
+    //! @param param Arbitrary pointer-sized value passed as the single parameter to the thread
+    //!     entry point.
+    //! @param stackSize Number of bytes of stack space to allocate via <tt>new</tt> to the thread.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
     Thread(const char * name, ar_thread_entry_t entry, void * param, unsigned stackSize, uint8_t priority)
     {
         init(name, entry, param, NULL, stackSize, priority);
     }
 
     //! @brief Constructor to set the thread entry to a member function, using a dynamic stack.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param object Pointer to an instance of class T upon which the @a entry member function
+    //!     will be invoked when the thread is started.
+    //! @param entry Member function of class T that will be used as the thread's entry point.
+    //!     The member function must take no parameters and return void.
+    //! @param stackSize Number of bytes of stack space to allocate via <tt>new</tt> to the thread.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
     template <class T>
     Thread(const char * name, T * object, void (T::*entry)(), unsigned stackSize, uint8_t priority)
     {
@@ -139,7 +147,7 @@ public:
     //@{
     //! @brief Base initialiser.
     //!
-    //! The thread is in suspended state when this method exits. The make it eligible for
+    //! The thread is in suspended state when this method exits. To make it eligible for
     //! execution, call the resume() method.
     //!
     //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
@@ -153,10 +161,26 @@ public:
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
     //!
-    //! @return kSuccess The thread was initialised without error.
+    //! @retval #kArSuccess The thread was initialised without error.
+    //! @retval #kArOutOfMemoryError Failed to dynamically allocate the stack.
     ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
 
     //! @brief Initializer to set the thread entry to a member function.
+    //!
+    //! @param name Name of the thread. If NULL, the thread's name is set to an empty string.
+    //! @param object Pointer to an instance of class T upon which the @a entry member function
+    //!     will be invoked when the thread is started.
+    //! @param entry Member function of class T that will be used as the thread's entry point.
+    //!     The member function must take no parameters and return void.
+    //! @param stack Pointer to the start of the thread's stack. This should be the stack's bottom,
+    //!     not it's top. If this parameter is NULL, the stack will be dynamically allocated.
+    //! @param stackSize Number of bytes of stack space allocated to the thread. This value is
+    //!     added to @a stack to get the initial top of stack address.
+    //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
+    //!     reserved for the idle thread.
+    //!
+    //! @retval #kArSuccess The thread was initialised without error.
+    //! @retval #kArOutOfMemoryError Failed to dynamically allocate the stack.
     template <class T>
     ar_status_t init(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
     {
