@@ -224,7 +224,7 @@
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <RoSelD>3</RoSelD>
@@ -362,7 +362,7 @@
             <uC99>1</uC99>
             <useXO>0</useXO>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--no_exceptions</MiscControls>
               <Define>CPU_MK22FN512VLH12 DEBUG TARGET_K22F TOOLCHAIN_ARM</Define>
               <Undefine></Undefine>
               <IncludePath>..\src;..\src\include;..\src\include\device;..\src\include\device\MK22F51212;..\src\startup;..\src\startup\MK22F51212;..\src\argon\cortex_m;..\src\drivers;..\src\mbed\hal;..\src\mbed\api;..\src\mbed\targets\TARGET_KPSDK_MCUS;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_K22F;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_K22F\MK22F51212;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\utilities;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\adc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\dac;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\dspi;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\enet;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\flextimer;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\gpio;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\i2c;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\llwu;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\lptmr;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\mcg;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\osc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pdb;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pit;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\pmc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\port;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\rtc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sai;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sdhc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\sim;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\smc;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\uart;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\hal\wdog;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\clock;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\enet;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\interrupt;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\pit;..\src\mbed\targets\TARGET_KPSDK_MCUS\TARGET_KPSDK_CODE\drivers\pit\common</IncludePath>
@@ -1012,6 +1012,16 @@
               <FileName>test_sleep_1.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\test\src\test_sleep_1.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>kernel_test.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\src\argon\test\src\kernel_test.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>nrf.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\src\drivers\nrf\nrf.cpp</FilePath>
             </File>
           </Files>
         </Group>

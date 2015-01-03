@@ -693,7 +693,7 @@
         </option>
         <option>
           <name>IlinkConfigDefines</name>
-          <state></state>
+          <state>__heap_size__=8192</state>
         </option>
         <option>
           <name>IlinkMapFile</name>
@@ -1925,6 +1925,63 @@
   <group>
     <name>src</name>
     <group>
+      <name>argon</name>
+      <group>
+        <name>cortex_m</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm0p.s</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_main_thread.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
+        </file>
+      </group>
+      <group>
+        <name>src</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_channel.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_config.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
+        </file>
+      </group>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\ar_classes.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\argon.h</name>
+      </file>
+    </group>
+    <group>
       <name>drivers</name>
       <group>
         <name>MMA8451Q</name>
@@ -2150,63 +2207,6 @@
       </group>
     </group>
     <group>
-      <name>argon</name>
-      <group>
-        <name>cortex_m</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm0p.s</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_main_thread.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
-        </file>
-      </group>
-      <group>
-        <name>src</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_channel.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_config.h</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
-        </file>
-      </group>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\ar_classes.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\argon.h</name>
-      </file>
-    </group>
-    <group>
       <name>startup</name>
       <file>
         <name>$PROJ_DIR$\..\src\startup\startup.c</name>
@@ -2231,17 +2231,13 @@
       <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
-      <excluded>
-        <configuration>Debug</configuration>
-        <configuration>Release</configuration>
-      </excluded>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>
+      <name>$PROJ_DIR$\..\src\argon\test\src\kernel_test.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\kernel_tests.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\drivers\nrf\nrf.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\test_mutex_1.cpp</name>

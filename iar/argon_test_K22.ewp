@@ -103,7 +103,7 @@
         </option>
         <option>
           <name>GenLowLevelInterface</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>GEndianModeBE</name>
@@ -723,7 +723,7 @@
         </option>
         <option>
           <name>IlinkConfigDefines</name>
-          <state></state>
+          <state>__heap_size__=8192</state>
         </option>
         <option>
           <name>IlinkMapFile</name>
@@ -2133,9 +2133,6 @@
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\retarget.cpp</name>
-          <excluded>
-            <configuration>Debug</configuration>
-          </excluded>
         </file>
         <file>
           <name>$PROJ_DIR$\..\src\mbed\common\rtc_time.c</name>
@@ -2389,14 +2386,7 @@
       <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
-      <excluded>
-        <configuration>Debug</configuration>
-        <configuration>Release</configuration>
-      </excluded>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>
+      <name>$PROJ_DIR$\..\src\argon\test\src\kernel_test.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\kernel_tests.h</name>

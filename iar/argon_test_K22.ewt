@@ -575,10 +575,7 @@
       <name>$PROJ_DIR$\..\test\src\basic_test.cpp</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.cpp</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\test\src\debug_uart.h</name>
+      <name>$PROJ_DIR$\..\src\argon\test\src\kernel_test.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\test\src\kernel_tests.h</name>
