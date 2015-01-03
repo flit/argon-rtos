@@ -31,6 +31,10 @@
 #include "argon/ar_classes.h"
 #include "argon/src/ar_config.h"
 
+#if defined(__CC_ARM)
+#include <rt_misc.h>
+#endif // defined(__CC_ARM)
+
 #if AR_ENABLE_MAIN_THREAD
 
 namespace Ar {
@@ -71,6 +75,105 @@ __noreturn void __iar_program_start(void)
     ar_kernel_run();
     exit(0);
 }
+
+#elif defined(__CC_ARM)
+
+#if 0
+
+extern uint32_t Image$$ARM_LIB_STACK$$ZI$$Base[];
+extern uint32_t Image$$ARM_LIB_STACK$$ZI$$Limit[];
+extern uint32_t Image$$ARM_LIB_HEAP$$ZI$$Base[];
+extern uint32_t Image$$ARM_LIB_HEAP$$ZI$$Limit[];
+
+extern int main(void);
+
+#if defined(__MICROLIB)
+
+extern "C" void _main_init (void) __attribute__((section(".ARM.Collect$$$$000000FF")));
+
+void _main_init (void)
+{
+    uint32_t mainStack = (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Limit;
+    uint32_t mainStackSize = (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Limit - (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Base;
+    Ar::g_mainThread.init("main", (ar_thread_entry_t)x._main, 0, (void *)mainStack, mainStackSize, AR_MAIN_THREAD_PRIORITY);
+    Ar::g_mainThread.resume();
+    ar_kernel_run();
+    for (;;) {}
+}
+
+#else // defined(__MICROLIB)
+
+/* The single memory model is checking for stack collision at run time, verifing
+   that the heap pointer is underneath the stack pointer.
+
+   With the RTOS there is not only one stack above the heap, there are multiple
+   stacks and some of them are underneath the heap pointer.
+*/
+#pragma import(__use_two_region_memory)
+
+extern "C" {
+
+// __value_in_regs struct __initial_stackheap
+// __user_initial_stackheap(unsigned /*R0*/, unsigned /*SP*/,
+//                          unsigned /*R2*/, unsigned /*SL*/)
+// {
+//     struct __initial_stackheap x;
+//     x.heap_base = (unsigned)Image$$ARM_LIB_HEAP$$ZI$$Base;
+//     x.stack_base = (unsigned)Image$$ARM_LIB_STACK$$ZI$$Base;
+//     x.heap_limit = (unsigned)Image$$ARM_LIB_HEAP$$ZI$$Limit;
+//     x.stack_limit = (unsigned)Image$$ARM_LIB_STACK$$ZI$$Limit;
+//     return x;
+// }
+
+__asm void __user_setup_stackheap(void)
+{
+    IMPORT  |Image$$ARM_LIB_HEAP$$ZI$$Base|
+    IMPORT  |Image$$ARM_LIB_HEAP$$ZI$$Limit|
+
+    mov     r0,sp
+    mov     r2,#8
+    subs    r0,r0,r2
+    mov     sp,r0
+    ldr     r0,=|Image$$ARM_LIB_HEAP$$ZI$$Base|
+    ldr     r2,=|Image$$ARM_LIB_HEAP$$ZI$$Limit|
+    bx      lr
+
+    align
+}
+
+extern "C" void start_argon (ar_thread_entry_t _main)
+{
+    uint32_t mainStack = (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Limit;
+    uint32_t mainStackSize = (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Limit - (uint32_t)Image$$ARM_LIB_STACK$$ZI$$Base;
+    Ar::g_mainThread.init("main", _main, 0, (void *)mainStack, mainStackSize, AR_MAIN_THREAD_PRIORITY);
+    Ar::g_mainThread.resume();
+    ar_kernel_run();
+    for (;;) {}
+}
+
+__asm void __rt_entry(void)
+{
+//     IMPORT  __user_setup_stackheap
+    IMPORT  __rt_lib_init
+    IMPORT  exit
+    IMPORT  main
+    IMPORT  start_argon
+
+    bl      __user_setup_stackheap
+    movs    r1,r2
+    bl      __rt_lib_init
+    ldr     r0,=main
+    bl      start_argon
+    bl      exit
+
+    ALIGN
+}
+
+} // extern "C"
+
+#endif // defined(__MICROLIB)
+
+#endif // 0
 
 #endif // defined (__ICCARM__)
 
