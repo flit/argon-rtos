@@ -65,6 +65,7 @@ typedef struct _ar_kernel {
     bool needsReschedule;           //!< True if we need to reschedule once the kernel is unlocked.
     uint16_t lockCount;             //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
+    uint32_t nextWakeup;            //!< Time of the next wakeup event.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
     ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
 #if AR_GLOBAL_OBJECT_LISTS
@@ -90,8 +91,11 @@ extern ar_kernel_t g_ar;
 //@{
 void ar_port_init_system(void);
 void ar_port_init_tick_timer(void);
+void ar_port_set_timer_delay(bool enable, uint32_t delay_us);
+uint32_t ar_port_get_timer_elapsed_us();
 void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param);
 void ar_port_service_call(void);
+bool ar_port_get_irq_state(void);
 //@}
 
 //! @name Kernel internals
@@ -99,6 +103,7 @@ void ar_port_service_call(void);
 bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler(void);
 void ar_kernel_scheduler(void);
+uint32_t ar_kernel_get_next_wakeup_time();
 //@}
 
 //! @brief Thread entry point.

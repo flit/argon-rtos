@@ -85,17 +85,71 @@ void ar_port_init_system(void)
 
     // Init PSP.
     __set_PSP((uint32_t)g_ar.idleThread.m_stackPointer);
-}
-
-void ar_port_init_tick_timer(void)
-{
-    uint32_t ticks = SystemCoreClock / 1000 * kSchedulerQuanta_ms;
-    SysTick_Config(ticks);
 
     // Set priorities for the exceptions we use in the kernel.
     NVIC_SetPriority(SVCall_IRQn, kHandlerPriority);
     NVIC_SetPriority(PendSV_IRQn, kHandlerPriority);
     NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
+}
+
+void ar_port_init_tick_timer(void)
+{
+    // Set SysTick clock source to processor clock.
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
+
+    // Clear any pending SysTick IRQ.
+    SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+
+    ar_port_set_timer_delay(false, 0);
+}
+
+void ar_port_set_timer_delay(bool enable, uint32_t delay_us)
+{
+    // Disable SysTick while we adjust it.
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk; //&= ~(SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk);
+
+    if (enable)
+    {
+        // If the delay is 0, just make the SysTick interrupt pending.
+        if (delay_us == 0)
+        {
+            // Clear reload and counter so the elapsed time reads as 0 in ar_port_get_timer_elapsed_us().
+            SysTick->LOAD = 0;
+            SysTick->VAL = 0;
+
+            // Pend SysTick.
+            SCB->ICSR = SCB_ICSR_PENDSTSET_Msk;
+            return;
+        }
+
+        // Calculate SysTick reload value. If the desired delay overflows the SysTick counter,
+        // we just use the max delay (24 bits for SysTick).
+        uint32_t ticks = SystemCoreClock / 1000000 * delay_us; // TODO: need - 1 ?
+        if (ticks > SysTick_LOAD_RELOAD_Msk)
+        {
+            ticks = SysTick_LOAD_RELOAD_Msk;
+        }
+
+        // Update SysTick reload value.
+        SysTick->LOAD = ticks;
+
+        // Reset the timer to count from the new load value. This also clears COUNTFLAG.
+        SysTick->VAL = 0;
+
+        // Enable SysTick and its IRQ.
+        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+    }
+}
+
+uint32_t ar_port_get_timer_elapsed_us()
+{
+    uint32_t max = SysTick->LOAD;
+    uint32_t counter = max - SysTick->VAL;
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+    {
+        counter += max;
+    }
+    return counter / (SystemCoreClock / 1000000);
 }
 
 bool ar_port_set_lock(bool lockIt)

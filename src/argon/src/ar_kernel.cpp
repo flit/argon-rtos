@@ -194,8 +194,8 @@ void ar_kernel_enter_scheduler(void)
 
 //         if (!ar_port_get_irq_state())
 //         {
-            // In user mode we must SWI into the scheduler.
-            ar_port_service_call();
+        // In user mode we must SWI into the scheduler.
+        ar_port_service_call();
 //         }
 //         else
 //         {
@@ -217,6 +217,7 @@ void ar_kernel_run(void)
 
     // Init some misc fields.
     g_ar.needsReschedule = false;
+    g_ar.nextWakeup = 0;
 
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
@@ -256,10 +257,14 @@ void ar_kernel_periodic_timer_isr()
         return;
     }
 
-    ar_kernel_increment_tick_count(1);
+    // Get the elapsed time since the last timer tick.
+    uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 10000;
 
-    // Run the scheduler. It will modify s_currentThread if switching threads.
-    ar_port_service_call();
+    // Process elapsed time. Invoke the scheduler if any threads were woken.
+    if (ar_kernel_increment_tick_count(elapsed_ms))
+    {
+        ar_port_service_call();
+    }
 
     // This case should never happen because of the idle thread.
     assert(g_ar.currentThread);
@@ -301,10 +306,16 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 //! @return Flag indicating whether any threads were modified.
 bool ar_kernel_increment_tick_count(unsigned ticks)
 {
-    assert(ticks > 0);
+//     assert(ticks > 0);
 
     // Increment tick count.
     g_ar.tickCount += ticks;
+
+    // Compare against next wakeup time we previously computed.
+    if (g_ar.tickCount < g_ar.nextWakeup)
+    {
+        return false;
+    }
 
     // Scan list of sleeping threads to see if any should wake up.
     ar_list_node_t * node = g_ar.sleepingList.m_head;
@@ -357,7 +368,8 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
     // Check for an active timer whose wakeup time has expired.
     if (g_ar.activeTimers.m_head)
     {
-        if (g_ar.activeTimers.m_head->getObject<ar_timer_t>()->m_wakeupTime <= g_ar.tickCount)
+        ar_timer_t * timer = g_ar.activeTimers.m_head->getObject<ar_timer_t>();
+        if (timer->m_wakeupTime <= g_ar.tickCount)
         {
             // Raise the idle thread priority to maximum so it can execute the timer.
             // The idle thread will reduce its own priority when done.
@@ -431,6 +443,56 @@ void ar_kernel_scheduler()
     {
         THREAD_STACK_OVERFLOW_DETECTED();
     }
+
+    // Compute delay until next wakeup event and adjust timer.
+    g_ar.nextWakeup = ar_kernel_get_next_wakeup_time();
+    uint32_t delay = 0;
+    if (g_ar.nextWakeup)
+    {
+        delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
+        if (delay == 0)
+        {
+            printf("delay is 0\n");
+        }
+    }
+    bool enable = (g_ar.nextWakeup != 0);
+    ar_port_set_timer_delay(enable, delay);
+}
+
+//! @brief Determine the delay to the next wakeup event.
+//!
+//! Wakeup events are either sleeping threads that are scheduled to wake, or a timer that is
+//! scheduled to fire.
+//!
+//! @return The number of ticks until the next wakup event. If the result is 0, then there are no
+//!     wakeup events pending.
+uint32_t ar_kernel_get_next_wakeup_time()
+{
+    uint32_t wakeup = 0;
+
+    // Check for a sleeping thread. The sleeping list is sorted by wakeup time, so we only
+    // need to look at the list head.
+    ar_list_node_t * node = g_ar.sleepingList.m_head;
+    if (node)
+    {
+        ar_thread_t * thread = node->getObject<ar_thread_t>();
+        wakeup = thread->m_wakeupTime;
+    }
+
+    // Check for an active timer. Again, the list is sorted by wakeup time.
+    node = g_ar.activeTimers.m_head;
+    if (node)
+    {
+        ar_timer_t * timer = node->getObject<ar_timer_t>();
+        uint32_t timerWakeup = timer->m_wakeupTime;
+
+        if (timerWakeup < wakeup)
+        {
+            wakeup = timerWakeup;
+        }
+    }
+
+    return wakeup;
 }
 
 // See ar_kernel.h for documentation of this function.
