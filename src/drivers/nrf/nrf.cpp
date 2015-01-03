@@ -48,7 +48,9 @@ NordicRadio::NordicRadio(PinName ce, PinName cs, PinName sck, PinName mosi, PinN
 :   m_spi(mosi, miso, sck),
     m_cs(cs),
     m_ce(ce),
-    m_irq(irq)
+    m_irq(irq),
+    m_stationAddress(0),
+    m_channel(0)
 {
     m_spi.format(8, 0);
     m_spi.frequency();
@@ -100,14 +102,13 @@ void NordicRadio::init(uint32_t address)
     writeRegister(knRFRegister_TX_ADDR, buf, 4);
     writeRegister(knRFRegister_RX_ADDR_P0, buf, 4);
 
-    // Enable dynamic payload on pipe 0.
-    writeRegister(knRFRegister_DYNPD, 0x01);
-
-    // Enable rx pipe 0.
+    // Configure and enable pipe 0 with dynamic payload and set its width to max.
+    writeRegister(knRFRegister_DYNPD, 1);
     writeRegister(knRFRegister_EN_RXADDR, 1);
-
-    // Set width of pipe 0 to max.
     writeRegister(knRFRegister_RX_PW_P0, 32);
+
+    // Set default channel. This also clears PLOS_CNT.
+    setChannel(2);
 
     // Disable interrupts.
     uint8_t config = readRegister(knRFRegister_CONFIG);
@@ -128,6 +129,12 @@ void NordicRadio::init(uint32_t address)
     wait_ms(2);
 }
 
+void NordicRadio::setChannel(uint8_t channel)
+{
+    m_channel = channel & 0x7f;
+    writeRegister(knRFRegister_RF_CH, channel);
+}
+
 uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
 {
     // Write RX address.
@@ -143,7 +150,6 @@ uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
     m_ce = 1;
 
     // Spin until we get a packet.
-    volatile int dumpit = 0;
     Timer timeout;
     timeout.start();
     while (timeout_ms == 0 || timeout.read_ms() <= timeout_ms)
@@ -153,17 +159,13 @@ uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
         {
             break;
         }
-        if (dumpit)
-        {
-            dump();
-        }
     }
 
     // Disable reception.
     m_ce = 0;
 
     // Read received byte count.
-    uint8_t count;// = readRegister(knRFRegister_RX_PW_P0);
+    uint8_t count;
     readCommand(knRFCommand_R_RX_PL_WID, &count, 1);
 
     // Flush RX FIFO if count is invalid.
@@ -282,6 +284,7 @@ void NordicRadio::irqHandler(void)
 
 void NordicRadio::dump()
 {
+#if DEBUG
     uint8_t config = readRegister(knRFRegister_CONFIG);
     uint8_t en_aa = readRegister(knRFRegister_EN_AA);
     uint8_t en_rxaddr = readRegister(knRFRegister_EN_RXADDR);
@@ -318,6 +321,7 @@ void NordicRadio::dump()
     printf("RX_ADDR_P0={%02x %02x %02x %02x %02x}\nTX_ADDR={%02x %02x %02x %02x %02x}\n",
         rx_addr_p0[0], rx_addr_p0[1], rx_addr_p0[2], rx_addr_p0[3], rx_addr_p0[4],
         tx_addr[0], tx_addr[1], tx_addr[2], tx_addr[3], tx_addr[4]);
+#endif // DEBUG
 }
 
 //------------------------------------------------------------------------------

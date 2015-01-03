@@ -36,6 +36,7 @@
 // Definitions
 //------------------------------------------------------------------------------
 
+//! @brief nRF24L01 commands.
 enum {
     knRFCommand_R_REGISTER = 0x00,
     knRFCommand_W_REGISTER = 0x20,
@@ -51,6 +52,7 @@ enum {
     knRFCommand_NOP = 0xff,
 };
 
+//! @brief nRF24L01 register addresses.
 enum {
     knRFRegisterAddressMask = 0x1f,
     knRFRegister_CONFIG = 0x00,
@@ -71,6 +73,7 @@ enum {
     knRFRegister_FEATURE = 0x1d,
 };
 
+//! @brief nRF24L01 CONFIG register bitfield masks.
 enum {
     knRF_CONFIG_MASK_RX_DR = (1 << 6),
     knRF_CONFIG_MASK_TX_DS = (1 << 5),
@@ -81,6 +84,7 @@ enum {
     knRF_CONFIG_PRIM_RX = (1 << 0),
 };
 
+//! @brief nRF24L01 RF_SETUP register bitfield masks.
 enum {
     knRF_RF_SETUP_PLL_LOCK = (1 << 4),
     knRF_RF_SETUP_RF_DR = (1 << 3),
@@ -88,6 +92,7 @@ enum {
     knRF_RF_SETUP_LNA_HCURR = (1 << 0),
 };
 
+//! @brief nRF24L01 STATUS register bitfield masks.
 enum {
     knRF_STATUS_RX_DR = (1 << 6),
     knRF_STATUS_TX_DS = (1 << 5),
@@ -96,6 +101,7 @@ enum {
     knRF_STATUS_TX_FULL = (1 << 0),
 };
 
+//! @brief nRF24L01 FEATURE register bitfield masks.
 enum {
     knRF_FEATURE_EN_DPL = (1 << 2),
     knRF_FEATURE_EN_ACK_PAY = (1 << 1),
@@ -112,6 +118,8 @@ public:
     virtual ~NordicRadio();
 
     void init(uint32_t address);
+    void setChannel(uint8_t channel);
+    uint8_t getChannel() const { return m_channel; }
 
     uint8_t receive(uint8_t * buffer, uint32_t timeout_ms=0);
     bool send(uint32_t address, const uint8_t * buffer, uint32_t count, uint32_t timeout_ms=0);
@@ -124,6 +132,7 @@ protected:
     DigitalOut m_ce;
     InterruptIn m_irq;
     uint32_t m_stationAddress;
+    uint8_t m_channel;
 
     void readRegister(uint8_t address, uint8_t * data, uint32_t count);
     void writeRegister(uint8_t address, const uint8_t * data, uint32_t count);
