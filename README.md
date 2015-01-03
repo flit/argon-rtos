@@ -78,9 +78,9 @@ The [mbed](http://mbed.org) libraries are included under `src/mbed`, to provide 
 
 The Argon RTOS is released with a BSD three-clause license. See the included LICENSE.txt file for details.
 
-Copyright © 2007-2014 Immo Software.
+Copyright © 2007-2015 Immo Software.
 
 The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br/>
-Portions copyright © 2013 Freescale Semiconductor, Inc.<br/>
-Portions copyright © 2006-2013 ARM Limited
+Portions copyright © 2014 Freescale Semiconductor, Inc.<br/>
+Portions copyright © 2006-2014 ARM Limited
 
