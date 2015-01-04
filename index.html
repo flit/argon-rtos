@@ -36,19 +36,23 @@
 
 <p>Small embedded RTOS written almost entirely in C++.</p>
 
-<p>Status: Actively under development, but usable. The API is likely to change some more.</p>
+<p><em>Version</em>: 1.0a2<br>
+<em>Status</em>: Actively under development. Not all features are fully implemented. The API is likely to change some more.</p>
 
 <p>Supported cores:</p>
 
 <ul>
 <li>ARM Cortex-M0+</li>
 <li>ARM Cortex-M4</li>
+<li>ARM Cortex-M4F</li>
 </ul>
 
 <p>Supported toolchains:</p>
 
 <ul>
 <li>IAR EWARM</li>
+<li>Keil MDK (armcc)</li>
+<li>GNU Tools for ARM Embedded Processors (gcc)</li>
 </ul>
 
 <h3>
@@ -93,7 +97,7 @@
 <li>Timer = 60 bytes</li>
 </ul>
 
-<p>(These sizes are as of 21 Dec 2014, and will probably change in the future.)</p>
+<p>These sizes are as of 21 Dec 2014, and will probably change in the future. All above sizes were obtained using IAR EWARM 7.30 with full optimization enabled.</p>
 
 <h3>
 <a id="supported-chips-and-boards" class="anchor" href="#supported-chips-and-boards" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported chips and boards</h3>
@@ -148,13 +152,13 @@
 <h3>
 <a id="licensing" class="anchor" href="#licensing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Licensing</h3>
 
-<p>The Argon RTOS is released with a BSD three-clause license. See the included LICENSE.txt file for details.</p>
+<p>The Argon RTOS is open source software released with a BSD three-clause license. See the included LICENSE.txt file for details.</p>
 
-<p>Copyright © 2007-2014 Immo Software.</p>
+<p>Copyright © 2007-2015 Immo Software.</p>
 
 <p>The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br>
-Portions copyright © 2013 Freescale Semiconductor, Inc.<br>
-Portions copyright © 2006-2013 ARM Limited</p>
+Portions Copyright © 2014 Freescale Semiconductor, Inc.<br>
+Portions Copyright © 2006-2014 ARM Limited</p>
         </section>
 
         <footer>
