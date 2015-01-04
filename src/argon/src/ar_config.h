@@ -29,7 +29,7 @@
  */
 /*!
  * @file ar_config.h
- * @ingroup ar_port
+ * @ingroup ar
  * @brief Configuration settings for the Argon RTOS.
  */
 
@@ -40,63 +40,93 @@
 // Definitions
 //------------------------------------------------------------------------------
 
-// Determine whether this is a debug or release build.
-#if !defined(AR_DEBUG_ENABLED)
-    #if DEBUG
-        #define AR_DEBUG_ENABLED (1)
-    #else
-        #define AR_DEBUG_ENABLED (0)
-    #endif
-#endif
+//! @addtogroup ar_config
+//! @{
+
+//! @page Configuration
+//! @ingroup ar_config
+//!
+//! These configuration macros are used to control features of Argon. This file can be modified
+//! to change the configuration. Or compiler command line options can be used to override the
+//! default values of these macros.
+//! <br/><br/>
+//! Some configuration macros have defaults based on the debug or release build type. For these,
+//! the value of the DEBUG macro is used to determine the build type.
 
 #if !defined(AR_ANONYMOUS_OBJECT_NAME)
-    //! The string to use for the name of an object that wasn't provided a name.
+    //! @brief The string to use for the name of an object that wasn't provided a name.
     #define AR_ANONYMOUS_OBJECT_NAME ("<anon>")
 #endif
 
 #if !defined(AR_GLOBAL_OBJECT_LISTS)
-    //! Set to 1 to enable the lists of all created kernel objects. Default is enabled for
-    //! debug builds, disabled for release builds.
-    #define AR_GLOBAL_OBJECT_LISTS (AR_DEBUG_ENABLED)
+    //! @brief Set to 1 to enable the lists of all created kernel objects.
+    //!
+    //! Default is enabled for debug builds, disabled for release builds.
+    #define AR_GLOBAL_OBJECT_LISTS (DEBUG)
 #endif
 
+//! @name Idle thread config
+//@{
+
 #if !defined(AR_ENABLE_IDLE_SLEEP)
-    //! Controls whether the idle thread puts the processor to sleep until the next interrupt. Set
-    //! to 1 to enable. The default is to disable idle sleep for debug builds, enabled for release
-    //! builds.
-    #define AR_ENABLE_IDLE_SLEEP (!(AR_DEBUG_ENABLED))
+    //! @brief Controls whether the idle thread puts the processor to sleep until the next interrupt.
+    //!
+    //! Set to 1 to enable. The default is to disable idle sleep for debug builds, enabled for
+    //! release builds.
+    #define AR_ENABLE_IDLE_SLEEP (!(DEBUG))
 #endif
 
 #if !defined(AR_ENABLE_SYSTEM_LOAD)
-    //! When set to 1 the idle thread will compute the system load percentage.
+    //! @brief When set to 1 the idle thread will compute the system load percentage.
     #define AR_ENABLE_SYSTEM_LOAD (1)
 #endif
 
 #if !defined(AR_IDLE_THREAD_STACK_SIZE)
-    //! Size in bytes of the idle and timer thread's stack.
+    //! @brief Size in bytes of the idle and timer thread's stack.
     #define AR_IDLE_THREAD_STACK_SIZE (512)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 
+//@}
+
 #if !defined(AR_THREAD_STACK_PATTERN_FILL)
-    //! Whether to fill a new thread's stack with a pattern.
-    #define AR_THREAD_STACK_PATTERN_FILL (1)
+    //! @brief Whether to fill a new thread's stack with a pattern.
+    //!
+    //! Filling the stack with a pattern enables one to determine maximum stack usage of a thread.
+    //! The downside is that it takes longer to initialize a thread. Default is enabled for debug
+    //! builds, disabled for release.
+    #define AR_THREAD_STACK_PATTERN_FILL (DEBUG)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 
+//! @name Main thread config
+//@{
+
 #if !defined(AR_ENABLE_MAIN_THREAD)
-    //! Set to 1 to cause main() to be run in a thread.
+    //! @brief Set to 1 to cause main() to be run in a thread.
+    //!
+    //! Enabling this option will cause the kernel to automatically start prior to main() being
+    //! called. A thread is created for you with the entry point set to main(). The main thread's
+    //! priority is set with the #AR_MAIN_THREAD_PRIORITY macro. The stack size is determined by
+    //! a combination of the linker file and #AR_SCHEDULER_STACK_SIZE.
     #define AR_ENABLE_MAIN_THREAD (1)
 #endif // AR_ENABLE_MAIN_THREAD
 
 #if !defined(AR_SCHEDULER_STACK_SIZE)
-    //! Size in bytes of the stack used by the scheduler and interrupts if the main thread
+    //! @brief Size in bytes of the stack used by the scheduler and interrupts if the main thread
     //! is enabled.
+    //!
+    //! This size is subtracted from the C stack size specified by the linker file. The remainder
+    //! is used for the main thread itself.
     #define AR_SCHEDULER_STACK_SIZE (256)
 #endif // AR_SCHEDULER_STACK_SIZE
 
 #if !defined(AR_MAIN_THREAD_PRIORITY)
-    //! Priority for the main thread.
+    //! @brief Priority for the main thread.
     #define AR_MAIN_THREAD_PRIORITY (128)
 #endif // AR_MAIN_THREAD_PRIORITY
+
+//@}
+
+//! @}
 
 #endif // _AR_CONFIG_H_
 //------------------------------------------------------------------------------

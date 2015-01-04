@@ -1,4 +1,4 @@
-# Doxyfile 1.8.9
+# Doxyfile 1.8.9.1
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project.
@@ -657,7 +657,7 @@ SHOW_USED_FILES        = NO
 # (if specified).
 # The default value is: YES.
 
-SHOW_FILES             = NO
+SHOW_FILES             = YES
 
 # Set the SHOW_NAMESPACES tag to NO to disable the generation of the Namespaces
 # page. This will remove the Namespaces entry from the Quick Index and from the
@@ -771,7 +771,8 @@ WARN_LOGFILE           =
 INPUT                  = ../README.md \
                          ../src/argon/doc \
                          ../src/argon/ar_kernel.h \
-                         ../src/argon/ar_classes.h
+                         ../src/argon/ar_classes.h \
+                         ../src/argon/src/ar_config.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

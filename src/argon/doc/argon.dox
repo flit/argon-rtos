@@ -27,6 +27,9 @@
 @defgroup ar_atomic Atomic Operations
 @ingroup ar
 
+@defgroup ar_config Configuration
+@ingroup ar
+
  */
 
 /*

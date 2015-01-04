@@ -236,7 +236,7 @@ public:
     //!
     //! Does nothing if Ar is not running.
     //!
-    //! @param ticks The number of milliseconds to sleep the calling thread. A sleep time
+    //! @param milliseconds The number of milliseconds to sleep the calling thread. A sleep time
     //!     of 0 is ignored.
     static void sleep(unsigned milliseconds) { ar_thread_sleep(milliseconds); }
     //@}
@@ -260,7 +260,8 @@ public:
     //! @param priority Thread priority level from 1 to 255, where lower numbers have a lower
     //!     priority. Priority number 0 is not allowed because it is reserved for the idle thread.
     //!
-    //! @retval kInvalidPriorityError
+    //! @retval #kArSuccess
+    //! @retval #kArInvalidPriorityError
     ar_status_t setPriority(uint8_t priority) { return ar_thread_set_priority(this, priority); }
     //@}
 
@@ -314,8 +315,10 @@ template <uint32_t S>
 class ThreadWithStack : public Thread
 {
 public:
+    //! @brief Default constructor.
     ThreadWithStack() {}
 
+    //! @brief Constructor to use a normal function as entry poin.
     ThreadWithStack(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         Thread::init(name, entry, param, m_stack, S, priority);
@@ -328,11 +331,13 @@ public:
         Thread::init<T>(name, object, entry, m_stack, S, priority);
     }
 
+    //! @brief Initializer to use a normal function as entry point.
     ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
     {
         return Thread::init(name, entry, param, m_stack, S, priority);
     }
 
+    //! @brief Initializer to set the thread entry to a member function.
     template <class T>
     ar_status_t init(const char * name, T * object, void (T::*entry)(), uint8_t priority)
     {
@@ -340,7 +345,7 @@ public:
     }
 
 protected:
-    uint8_t m_stack[S];
+    uint8_t m_stack[S]; //!< Stack space for the thread.
 
 private:
     //! @brief The copy constructor is disabled for thread objects.
@@ -377,13 +382,13 @@ public:
     //!     to get() to block until put() is called. A value of 1 or greater will allow that many
     //!     calls to get() to succeed.
     //!
-    //! @retval kSuccess Semaphore initialised successfully.
+    //! @retval #kArSuccess Semaphore initialised successfully.
     ar_status_t init(const char * name, unsigned count=1) { return ar_semaphore_create(this, name, count); }
 
     //! @brief Destructor.
     //!
-    //! Any threads on the blocked list will be unblocked immediately. Their return status  from the
-    //! get() method will be #kObjectDeletedError.
+    //! Any threads on the blocked list will be unblocked immediately. Their return status from the
+    //! get() method will be #kArObjectDeletedError.
     virtual ~Semaphore() { ar_semaphore_delete(this); }
 
     //! @brief Get the semaphore's name.
@@ -397,20 +402,20 @@ public:
     //! are possible.
     //!
     //! @note This function may be called from interrupt context only if the timeout parameter is
-    //!     set to #Ar::kNoTimeout (or 0).
+    //!     set to #kArNoTimeout (or 0).
     //!
     //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
-    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kNoTimeout,
+    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kArNoTimeout,
     //!     then this method will return immediately if the semaphore cannot be obtained. Setting
-    //!     the timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to
+    //!     the timeout to #kArInfiniteTimeout will cause the thread to wait forever for a chance to
     //!     get the semaphore.
     //!
-    //! @retval kSuccess The semaphore was obtained without error.
-    //! @retval kTimeoutError The specified amount of time has elapsed before the semaphore could be
+    //! @retval #kArSuccess The semaphore was obtained without error.
+    //! @retval #kArTimeoutError The specified amount of time has elapsed before the semaphore could be
     //!     obtained.
-    //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
+    //! @retval #kArObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
-    //! @retval kNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
+    //! @retval #kArNotFromInterruptError A non-zero timeout is not alllowed from the interrupt
     //!     context.
     ar_status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_semaphore_get(this, timeout); }
 
@@ -419,6 +424,8 @@ public:
     //! The semaphore count is incremented.
     //!
     //! @note This call is safe from interrupt context.
+    //!
+    //! @retval #kArSuccess The semaphore was released without error.
     ar_status_t put() { return ar_semaphore_put(this); }
 
     //! @brief Returns the current semaphore count.
@@ -510,15 +517,15 @@ public:
     //! matching get() and put() calls.
     //!
     //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
-    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kNoTimeout,
+    //!     blocked state before the semaphore can be obtained. If this value is 0, or #kArNoTimeout,
     //!     then this method will return immediately if the lock cannot be obtained. Setting
-    //!     the timeout to #kInfiniteTimeout will cause the thread to wait forever for a chance to
+    //!     the timeout to #kArInfiniteTimeout will cause the thread to wait forever for a chance to
     //!     get the lock.
     //!
-    //! @retval kSuccess The mutex was obtained without error.
-    //! @retval kTimeoutError The specified amount of time has elapsed before the mutex could be
+    //! @retval #kArSuccess The mutex was obtained without error.
+    //! @retval #kArTimeoutError The specified amount of time has elapsed before the mutex could be
     //!     obtained.
-    //! @retval kObjectDeletedError Another thread deleted the semaphore while the caller was
+    //! @retval #kArObjectDeletedError Another thread deleted the semaphore while the caller was
     //!     blocked on it.
     ar_status_t get(uint32_t timeout=kArInfiniteTimeout) { return ar_mutex_get(this, timeout); }
 
@@ -529,8 +536,8 @@ public:
     //! semaphore is actually released. It is illegal to call put() when the mutex is not owned by
     //! the calling thread.
     //!
-    //! @retval kAlreadyUnlockedError The mutex is not locked.
-    //! @retval kNotOwnerError The caller is not the thread that owns the mutex.
+    //! @retval #kArAlreadyUnlockedError The mutex is not locked.
+    //! @retval #kArNotOwnerError The caller is not the thread that owns the mutex.
     ar_status_t put() { return ar_mutex_put(this); }
 
     //! @brief Returns the current owning thread, if there is one.
@@ -642,12 +649,14 @@ public:
         return Channel::receive(&value, timeout);
     }
 
+    //! @brief Receive from channel.
     friend T& operator <<= (T& lhs, TypedChannel<T>& rhs)
     {
         lhs = rhs.receive();
         return lhs;
     }
 
+    //! @brief Send to channel.
     friend T& operator >> (T& lhs, TypedChannel<T>& rhs)
     {
         rhs.send(lhs);
@@ -687,7 +696,7 @@ public:
     //! @param elementSize Size in bytes of each element in the queue.
     //! @param capacity The number of elements that the buffer pointed to by @a storage will hold.
     //!
-    //! @retval kSuccess The queue was initialised.
+    //! @retval #kArSuccess The queue was initialised.
     ar_status_t init(const char * name, void * storage, unsigned elementSize, unsigned capacity)
     {
         return ar_queue_create(this, name, storage, elementSize, capacity);
@@ -706,24 +715,24 @@ public:
     //! @param element Pointer to the element to post to the queue. The element size was specified
     //!     in the init() call.
     //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
-    //!     blocked state before the element can be sent. If this value is 0, or #kNoTimeout, then
+    //!     blocked state before the element can be sent. If this value is 0, or #kArNoTimeout, then
     //!     this method will return immediately if the queue is full. Setting the timeout to
-    //!     #kInfiniteTimeout will cause the thread to wait forever for a chance to send.
+    //!     #kArInfiniteTimeout will cause the thread to wait forever for a chance to send.
     //!
-    //! @retval kSuccess
-    //! @retval kQueueFullError
+    //! @retval #kArSuccess
+    //! @retval #kArQueueFullError
     ar_status_t send(const void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_send(this, element, timeout); }
 
     //! @brief Remove an item from the queue.
     //!
     //! @param[out] element
     //! @param timeout The maximum number of milliseconds that the caller is willing to wait in a
-    //!     blocked state before an element is received. If this value is 0, or #kNoTimeout, then
+    //!     blocked state before an element is received. If this value is 0, or #kArNoTimeout, then
     //!     this method will return immediately if the queue is empty. Setting the timeout to
-    //!     #kInfiniteTimeout will cause the thread to wait forever for receive an element.
+    //!     #kArInfiniteTimeout will cause the thread to wait forever for receive an element.
     //!
-    //! @retval kSuccess
-    //! @retval kQueueEmptyError
+    //! @retval #kArSuccess
+    //! @retval #kArQueueEmptyError
     ar_status_t receive(void * element, uint32_t timeout=kArInfiniteTimeout) { return ar_queue_receive(this, element, timeout); }
 
     //! @brief Returns whether the queue is currently empty.
