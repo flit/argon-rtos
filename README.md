@@ -3,7 +3,7 @@ Argon RTOS
 
 Small embedded RTOS written almost entirely in C++.
 
-*Version*: 1.0a2</br>
+*Version*: 1.0a2<br/>
 *Status*: Actively under development. Not all features are fully implemented. The API is likely to change some more.
 
 Supported cores:
