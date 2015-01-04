@@ -300,10 +300,10 @@ protected:
 
 private:
     //! @brief The copy constructor is disabled for thread objects.
-    Thread(const Thread & other) {}
+    Thread(const Thread & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Thread & other) {}
+    Thread& operator=(const Thread & other);
 };
 
 /*!
@@ -349,10 +349,10 @@ protected:
 
 private:
     //! @brief The copy constructor is disabled for thread objects.
-    ThreadWithStack(const ThreadWithStack<S> & other) {}
+    ThreadWithStack(const ThreadWithStack<S> & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const ThreadWithStack<S> & other) {}
+    ThreadWithStack<T>& operator=(const ThreadWithStack<S> & other);
 };
 
 /*!
@@ -462,10 +462,10 @@ public:
 
 private:
     //! @brief Disable copy constructor.
-    Semaphore(const Semaphore & other) {}
+    Semaphore(const Semaphore & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Semaphore & other) {}
+    Semaphore& operator=(const Semaphore & other);
 };
 
 /*!
@@ -574,10 +574,10 @@ public:
 
 private:
     //! @brief Disable copy constructor.
-    Mutex(const Mutex & other) {}
+    Mutex(const Mutex & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Mutex & other) {}
+    Mutex& operator=(const Mutex & other);
 };
 
 /*!
@@ -605,10 +605,10 @@ public:
 
 private:
     //! @brief Disable copy constructor.
-    Channel(const Channel & other) {}
+    Channel(const Channel & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Channel & other) {}
+    Channel& operator=(const Channel & other);
 };
 
 /*!
@@ -665,10 +665,10 @@ public:
 
 private:
     //! @brief Disable copy constructor.
-    TypedChannel(const TypedChannel<T> & other) {}
+    TypedChannel(const TypedChannel<T> & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const TypedChannel<T> & other) {}
+    TypedChannel& operator=(const TypedChannel<T> & other);
 };
 
 /*!
@@ -743,10 +743,10 @@ public:
 
 private:
     //! @brief Disable copy constructor.
-    Queue(const Queue & other) {}
+    Queue(const Queue & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Queue & other) {}
+    Queue& operator=(const Queue & other);
 };
 
 /*!
@@ -832,10 +832,10 @@ protected:
 
 private:
     //! @brief Disable copy constructor.
-    StaticQueue(const StaticQueue<T,N> & other) {}
+    StaticQueue(const StaticQueue<T,N> & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const StaticQueue<T,N> & other) {}
+    StaticQueue& operator=(const StaticQueue<T,N> & other);
 };
 
 /*!
@@ -892,10 +892,10 @@ protected:
 
 private:
     //! @brief Disable copy constructor.
-    Timer(const Timer & other) {}
+    Timer(const Timer & other);
 
     //! @brief Disable assignment operator.
-    void operator=(const Timer & other) {}
+    Timer& operator=(const Timer & other);
 };
 
 } // namespace Ar
