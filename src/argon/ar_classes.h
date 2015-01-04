@@ -352,7 +352,7 @@ private:
     ThreadWithStack(const ThreadWithStack<S> & other);
 
     //! @brief Disable assignment operator.
-    ThreadWithStack<T>& operator=(const ThreadWithStack<S> & other);
+    ThreadWithStack& operator=(const ThreadWithStack<S> & other);
 };
 
 /*!

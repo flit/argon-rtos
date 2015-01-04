@@ -117,9 +117,9 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
     thread->m_stackTop = reinterpret_cast<uint8_t *>(sp);
     thread->m_stackSize = (thread->m_stackSize - delta) & ~7;
 
+    uint32_t * stackBottom = (uint32_t *)(sp - thread->m_stackSize);
 #if AR_THREAD_STACK_PATTERN_FILL
     // Fill the stack with a pattern.
-    uint32_t * stackBottom = (uint32_t *)(sp - thread->m_stackSize);
     memset(stackBottom, 0xba, thread->m_stackSize);
 #endif // AR_THREAD_STACK_PATTERN_FILL
 
