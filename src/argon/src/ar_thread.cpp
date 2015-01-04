@@ -421,7 +421,7 @@ ar_status_t Thread::init(const char * name, ar_thread_entry_t entry, void * para
         {
             return kArOutOfMemoryError;
         }
-        stack = m_allocatedStack;
+        stack = static_cast<void *>(m_allocatedStack);
     }
     else
     {

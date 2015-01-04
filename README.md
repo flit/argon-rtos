@@ -3,7 +3,8 @@ Argon RTOS
 
 Small embedded RTOS written almost entirely in C++.
 
-Status: Actively under development, but usable. The API is likely to change some more.
+*Version*: 1.0a2</br>
+*Status*: Actively under development. Not all features are fully implemented. The API is likely to change some more.
 
 Supported cores:
 
@@ -15,6 +16,7 @@ Supported toolchains:
 
 - IAR EWARM
 - Keil MDK (armcc)
+- GNU Tools for ARM Embedded Processors (gcc)
 
 ### Overview
 
@@ -52,7 +54,7 @@ Kernel object sizes:
 - Queue = 60 bytes + element storage
 - Timer = 60 bytes
 
-(These sizes are as of 21 Dec 2014, and will probably change in the future.)
+These sizes are as of 21 Dec 2014, and will probably change in the future. All above sizes were obtained using IAR EWARM 7.30 with full optimization enabled.
 
 ### Supported chips and boards
 
@@ -76,11 +78,11 @@ The [mbed](http://mbed.org) libraries are included under `src/mbed`, to provide 
 
 ### Licensing
 
-The Argon RTOS is released with a BSD three-clause license. See the included LICENSE.txt file for details.
+The Argon RTOS is open source software released with a BSD three-clause license. See the included LICENSE.txt file for details.
 
 Copyright © 2007-2015 Immo Software.
 
 The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br/>
-Portions copyright © 2014 Freescale Semiconductor, Inc.<br/>
-Portions copyright © 2006-2014 ARM Limited
+Portions Copyright © 2014 Freescale Semiconductor, Inc.<br/>
+Portions Copyright © 2006-2014 ARM Limited
 

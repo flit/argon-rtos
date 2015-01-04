@@ -274,7 +274,7 @@ public:
 
 protected:
 
-    void * m_allocatedStack; //!< Dynamically allocated stack.
+    uint8_t * m_allocatedStack; //!< Dynamically allocated stack.
     ar_thread_entry_t m_userEntry;  //!< User-specified thread entry point function.
 
     //! @brief Virtual thread entry point.

@@ -95,7 +95,7 @@
 #define _FN_LABEL(name)         name FUNCTION
 #define _FN_DECL(name)
 #define _FN_BEGIN_POST
-#define _FN_CANT_UNWIND
+#define _FN_CANT_UNWIND         FRAME UNWIND OFF
 #define _FN_END(name)           ENDFUNC
 #define _FN_SIZE(name)
 #define _EQU(name, value)       name EQU value
@@ -108,8 +108,8 @@
  * GNU assembler
  */
 
-#define _CODE_SECTION(name)     .section name, "x"
-#define _DATA_SECTION(name)     .section name, "w"
+#define _CODE_SECTION(name)     .section name
+#define _DATA_SECTION(name)     .section name
 #define _THUMB                  .thumb
 #define _IMPORT(name)           .extern name
 #define _EXPORT(name)           .global name
@@ -124,6 +124,8 @@
 #define _FN_SIZE(name)          .size name, .-name
 #define _EQU(name, value)       .equ name, value
 #define _ALIGN(n)               .balign n
+
+    .syntax unified
 
 #else
 #error "Unsupported assembler"

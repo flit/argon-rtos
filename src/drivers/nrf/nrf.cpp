@@ -152,7 +152,7 @@ uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
     // Spin until we get a packet.
     Timer timeout;
     timeout.start();
-    while (timeout_ms == 0 || timeout.read_ms() <= timeout_ms)
+    while (timeout_ms == 0 || (uint32_t)timeout.read_ms() <= timeout_ms)
     {
         uint8_t status = readRegister(knRFRegister_STATUS);
         if (status & knRF_STATUS_RX_DR)
@@ -215,7 +215,7 @@ bool NordicRadio::send(uint32_t address, const uint8_t * buffer, uint32_t count,
     Timer timeout;
     timeout.start();
     uint8_t status = 0;
-    while (timeout_ms == 0 || timeout.read_ms() <= timeout_ms)
+    while (timeout_ms == 0 || (uint32_t)timeout.read_ms() <= timeout_ms)
     {
         status = readRegister(knRFRegister_STATUS);
         if (status & (knRF_STATUS_TX_DS | knRF_STATUS_MAX_RT))
