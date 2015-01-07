@@ -77,6 +77,25 @@ ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storag
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_queue_delete(ar_queue_t * queue)
 {
+    if (!queue)
+    {
+        return kArInvalidParameterError;
+    }
+
+    // Unblock all threads blocked on this queue.
+    ar_thread_t * thread;
+    while (queue->m_sendBlockedList.m_head)
+    {
+        thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(queue->m_sendBlockedList, kArObjectDeletedError);
+    }
+
+    while (queue->m_receiveBlockedList.m_head)
+    {
+        thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(queue->m_receiveBlockedList, kArObjectDeletedError);
+    }
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.queues.remove(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
