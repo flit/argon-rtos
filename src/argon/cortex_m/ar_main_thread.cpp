@@ -70,7 +70,7 @@ __noreturn void __iar_program_start(void)
 
     uint32_t mainStack = (uint32_t)__section_begin("CSTACK");
     uint32_t mainStackSize = __section_size("CSTACK") - AR_SCHEDULER_STACK_SIZE;
-    Ar::g_mainThread.init("main", (ar_thread_entry_t)_call_main, 0, (void *)mainStack, mainStackSize, AR_MAIN_THREAD_PRIORITY);
+    Ar::g_mainThread.init("main", (ar_thread_entry_t)_call_main, 0, (void *)mainStack, mainStackSize, AR_MAIN_THREAD_PRIORITY, kArStartThread);
     Ar::g_mainThread.resume();
     ar_kernel_run();
     exit(0);
