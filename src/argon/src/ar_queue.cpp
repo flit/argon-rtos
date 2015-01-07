@@ -65,9 +65,9 @@ ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storag
     queue->m_elements = reinterpret_cast<uint8_t *>(storage);
     queue->m_elementSize = elementSize;
     queue->m_capacity = capacity;
-    queue->m_createdNode.m_obj = queue;
 
 #if AR_GLOBAL_OBJECT_LISTS
+    queue->m_createdNode.m_obj = queue;
     g_ar.allObjects.queues.add(&queue->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 

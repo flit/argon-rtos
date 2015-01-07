@@ -60,9 +60,9 @@ ar_status_t ar_channel_create(ar_channel_t * channel, const char * name, uint32_
     memset(channel, 0, sizeof(ar_channel_t));
     channel->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     channel->m_width = (width == 0) ? sizeof(void *) : width;
-    channel->m_createdNode.m_obj = channel;
 
 #if AR_GLOBAL_OBJECT_LISTS
+    channel->m_createdNode.m_obj = channel;
     g_ar.allObjects.channels.add(&channel->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 

@@ -53,9 +53,9 @@ ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigne
     memset(sem, 0, sizeof(ar_semaphore_t));
     sem->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
     sem->m_count = count;
-    sem->m_createdNode.m_obj = sem;
 
 #if AR_GLOBAL_OBJECT_LISTS
+    sem->m_createdNode.m_obj = sem;
     g_ar.allObjects.semaphores.add(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 

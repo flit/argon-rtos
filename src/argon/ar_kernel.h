@@ -37,6 +37,7 @@
 #define _AR_KERNEL_H_
 
 #include "ar_port.h"
+#include "src/ar_config.h"
 
 //------------------------------------------------------------------------------
 // Constants
@@ -215,7 +216,9 @@ typedef struct _ar_thread {
     ar_thread_state_t m_state;  //!< Current thread state.
     ar_thread_entry_t m_entry;  //!< Function pointer for the thread's entry point.
     ar_list_node_t m_threadNode;    //!< Main thread list node.
+#if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_blockedNode;   //!< Blocked list node.
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
@@ -237,7 +240,9 @@ typedef struct _ar_semaphore {
     const char * m_name;            //!< Name of the semaphore.
     volatile unsigned m_count;      //!< Current semaphore count. Value of 0 means the semaphore is owned.
     ar_list_t m_blockedList;        //!< List of threads blocked on the semaphore.
+#if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_semaphore_t;
 
 /*!
@@ -262,7 +267,9 @@ typedef struct _ar_channel {
     uint32_t m_width;               //!< Size in bytes of the channel's data.
     ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
     ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
+#if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Node on the created channels list.
+#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_channel_t;
 
 /*!
@@ -280,7 +287,9 @@ typedef struct _ar_queue {
     unsigned m_count;       //!< Current number of elements in the queue.
     ar_list_t m_sendBlockedList;    //!< List of threads blocked waiting to send.
     ar_list_t m_receiveBlockedList; //!< List of threads blocked waiting to receive data.
+#if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_queue_t;
 
 /*!
@@ -291,7 +300,9 @@ typedef struct _ar_queue {
 typedef struct _ar_timer {
     const char * m_name;            //!< Name of the timer.
     ar_list_node_t m_activeNode;    //!< Node for the list of active timers.
+#if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
     ar_timer_entry_t m_callback;    //!< Timer expiration callback.
     void * m_param;                 //!< Arbitrary parameter for the callback.
     ar_timer_mode_t m_mode;         //!< One-shot or periodic mode.

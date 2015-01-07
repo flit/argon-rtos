@@ -58,9 +58,9 @@ ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entr
     timer->m_mode = timerMode;
     timer->m_delay = ar_milliseconds_to_ticks(delay);
     timer->m_activeNode.m_obj = timer;
-    timer->m_createdNode.m_obj = timer;
 
 #if AR_GLOBAL_OBJECT_LISTS
+    timer->m_createdNode.m_obj = timer;
     g_ar.allObjects.timers.add(&timer->m_createdNode);
 #endif
 

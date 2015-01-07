@@ -72,8 +72,12 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
 
     // Set list node references back to the thread object.
     thread->m_threadNode.m_obj = thread;
-    thread->m_createdNode.m_obj = thread;
     thread->m_blockedNode.m_obj = thread;
+
+#if AR_GLOBAL_OBJECT_LISTS
+    thread->m_createdNode.m_obj = thread;
+    g_ar.allObjects.threads.add(&thread->m_createdNode);
+#endif // AR_GLOBAL_OBJECT_LISTS
 
     // prepare top of stack
     ar_port_prepare_stack(thread, stackSize, param);
@@ -85,10 +89,6 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
         // add to suspended list
         g_ar.suspendedList.add(thread);
     }
-
-#if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.threads.add(&thread->m_createdNode);
-#endif // AR_GLOBAL_OBJECT_LISTS
 
     // Resume thread if requested.
     if (startImmediately)

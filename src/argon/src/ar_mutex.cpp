@@ -63,6 +63,7 @@ ar_status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
         mutex->m_sem.m_blockedList.m_predicate = ar_thread_sort_by_priority;
 
 #if AR_GLOBAL_OBJECT_LISTS
+        mutex->m_sem.m_createdNode.m_obj = mutex;
         g_ar.allObjects.semaphores.remove(&mutex->m_sem.m_createdNode);
         g_ar.allObjects.mutexes.add(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
