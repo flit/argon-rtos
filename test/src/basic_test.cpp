@@ -70,8 +70,8 @@ Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
 
 TEST_CASE_CLASS g_testCase;
 
-Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 30);
-Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 20);
+Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
+Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
 
 Ar::Thread * g_fpThread1;
 Ar::Thread * g_fpThread2;
@@ -79,7 +79,6 @@ Ar::TypedChannel<float> g_fchan("f");
 
 Ar::TypedChannel<int> g_chan("c");
 
-// Ar::ThreadToMemberFunctionWithStack<512,Foo> g_fooThread;
 Ar::Thread g_fooThread;
 
 Ar::Thread * g_dyn;
@@ -237,24 +236,23 @@ void main_thread(void * arg)
 
     printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
 
-    g_testCase.init();
-    g_testCase.run();
+//     while (1)
+//     {
+//         printf("hi\n");
+//         Ar::Thread::sleep(1000);
+//     }
 
-    g_xThread.resume();
-    g_yThread.resume();
+//     g_testCase.init();
+//     g_testCase.run();
 
     Foo * foo = new Foo;
     g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
-    g_fooThread.resume();
 
     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
-    g_dyn->resume();
 
     g_fpThread1 = new Ar::Thread("fp1", fp1_thread, 0, 1024, 100);
-    g_fpThread1->resume();
 
     g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
-    g_fpThread2->resume();
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }
@@ -279,7 +277,7 @@ int main(void)
     Ar::Thread::getCurrent()->suspend();
 #else
 //     g_mainThread.init("main", main_thread, 0, 56);
-    g_mainThread.resume();
+//     g_mainThread.resume();
     ar_kernel_run();
     Ar::_halt();
 #endif

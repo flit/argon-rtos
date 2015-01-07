@@ -41,13 +41,8 @@ void TestQueue1::run()
     m_q.init("q");
 
     m_producerThread.init("producer", _producer_thread, this, 20);
-    m_producerThread.resume();
-
     m_consumerAThread.init("consumerA", _consumer_a_thread, this, 30);
-    m_consumerAThread.resume();
-
     m_consumerBThread.init("consumerB", _consumer_b_thread, this, 31);
-    m_consumerBThread.resume();
 }
 
 void TestQueue1::_producer_thread(void * arg)

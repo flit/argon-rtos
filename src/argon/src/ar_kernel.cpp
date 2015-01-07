@@ -208,7 +208,7 @@ void ar_kernel_run(void)
 
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
-    ar_thread_create(&g_ar.idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1);
+    ar_thread_create(&g_ar.idleThread, "idle", idle_entry, 0, s_idleThreadStack, sizeof(s_idleThreadStack), 1, kArSuspendThread);
     g_ar.idleThread.m_priority = 0;
     ar_thread_resume(&g_ar.idleThread);
 
@@ -407,7 +407,7 @@ void ar_kernel_scheduler()
 
     // Check for stack overflow on the selected thread.
     assert(g_ar.currentThread);
-    uint32_t check = *(uint32_t *)((uint32_t)g_ar.currentThread->m_stackTop - g_ar.currentThread->m_stackSize);
+    uint32_t check = *(g_ar.currentThread->m_stackBottom);
     if (check != kStackCheckValue)
     {
         THREAD_STACK_OVERFLOW_DETECTED();

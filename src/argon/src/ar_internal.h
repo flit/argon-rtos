@@ -87,7 +87,7 @@ extern ar_kernel_t g_ar;
 //@{
 void ar_port_init_system(void);
 void ar_port_init_tick_timer(void);
-void ar_port_prepare_stack(ar_thread_t * thread, void * param);
+void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param);
 void ar_port_service_call(void);
 //@}
 

@@ -99,6 +99,14 @@ typedef enum _ar_status {
     kArOutOfMemoryError,
 } ar_status_t;
 
+//! @brief Options for creating a new thread.
+//!
+//! These constants are meant to be used for the @a startImmediately parameter.
+enum {
+    kArStartThread = true,      //!< Automatically run the thread.
+    kArSuspendThread = false    //!< Create the thread suspended.
+};
+
 //! @brief Potential thread states.
 //!
 //! @ingroup ar_thread
@@ -202,8 +210,7 @@ typedef struct _ar_thread {
     volatile uint8_t * m_stackPointer;  //!< Current stack pointer.
     ar_thread_port_data_t m_portData; //!< Port-specific thread data.
     const char * m_name;        //!< Thread name.
-    uint8_t * m_stackTop;       //!< Original top of stack.
-    uint32_t m_stackSize;       //!< Stack size in bytes.
+    uint32_t * m_stackBottom;   //!< Beginning of stack.
     uint8_t m_priority;         //!< Thread priority. 0 is the lowest priority.
     ar_thread_state_t m_state;  //!< Current thread state.
     ar_thread_entry_t m_entry;  //!< Function pointer for the thread's entry point.
@@ -212,7 +219,6 @@ typedef struct _ar_thread {
     ar_list_node_t m_blockedNode;   //!< Blocked list node.
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
-    void * m_ref;               //!< Arbitrary reference value.
     void * m_channelData;       //!< Receive or send data pointer for blocked channel.
 
     // Internal utility methods.
@@ -342,8 +348,11 @@ uint32_t ar_get_system_load(void);
 /*!
  * @brief Create a new thread.
  *
- * The thread is in suspended state when this function exits. To make it eligible for
- * execution, call the resume() method.
+ * The state of the new thread is determined by the @a startImmediately parameter. If true,
+ * the thread is created in the ready state. Otherwise, the thread is suspended when this function
+ * exits. In this case, to make it eligible for execution you must call the ar_thread_resume()
+ * function. When @a startImmediately is true, the new thread may start execution before this
+ * function returns.
  *
  * @param thread Pointer to the thread structure.
  * @param name Name of the thread. If NULL, the thread's name is set to an empty string.
@@ -356,10 +365,13 @@ uint32_t ar_get_system_load(void);
  *     added to @a stack to get the initial top of stack address.
  * @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
  *     reserved for the idle thread.
+ * @param startImmediately Whether the new thread will start to run automatically. If false, the
+ *      thread will be created in a suspended state. The constants #kArStartThread and
+ *      #kArSuspendThread can be used to better document this parameter value.
  *
  * @return kArSuccess The thread was initialised without error.
  */
-ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately);
 
 /*!
  * @brief Delete a thread.

@@ -39,11 +39,7 @@
 void TestSleep1::run()
 {
     m_aThread.init("a", _a_thread, this, 60);
-    m_aThread.resume();
-
     m_bThread.init("b", _b_thread, this, 70);
-    m_bThread.resume();
-
 }
 
 void TestSleep1::_a_thread(void * arg)

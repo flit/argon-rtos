@@ -44,7 +44,7 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately)
 {
     // Assertions.
     if (!thread)
@@ -65,9 +65,7 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
 
     // init member variables
     thread->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
-    thread->m_stackTop = reinterpret_cast<uint8_t *>(stack) + stackSize;
-    thread->m_stackSize = stackSize;
-    thread->m_stackPointer = thread->m_stackTop;
+    thread->m_stackBottom = reinterpret_cast<uint32_t *>(stack);
     thread->m_priority = priority;
     thread->m_state = kArThreadSuspended;
     thread->m_entry = entry;
@@ -78,7 +76,7 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
     thread->m_blockedNode.m_obj = thread;
 
     // prepare top of stack
-    ar_port_prepare_stack(thread, param);
+    ar_port_prepare_stack(thread, stackSize, param);
 
     {
         // disable interrupts
@@ -91,6 +89,12 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.threads.add(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
+
+    // Resume thread if requested.
+    if (startImmediately)
+    {
+        ar_thread_resume(thread);
+    }
 
     return kArSuccess;
 }
@@ -412,7 +416,7 @@ Thread::~Thread()
 }
 
 // See ar_classes.h for documentation of this function.
-ar_status_t Thread::init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+ar_status_t Thread::init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately)
 {
     if (!stack)
     {
@@ -427,9 +431,28 @@ ar_status_t Thread::init(const char * name, ar_thread_entry_t entry, void * para
     {
         m_allocatedStack = NULL;
     }
-    ar_status_t result = ar_thread_create(this, name, thread_entry, param, stack, stackSize, priority);
-    m_ref = this;
     m_userEntry = entry;
+    ar_status_t result = ar_thread_create(this, name, thread_entry, param, stack, stackSize, priority, startImmediately);
+    return result;
+}
+
+// See ar_classes.h for documentation of this function.
+ar_status_t Thread::initForMemberFunction(const char * name, void * object, ar_thread_entry_t entry, void * memberPointer, uint32_t memberPointerSize, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately)
+{
+    // Invoke the base initializer, passing the object pointer as the entry param.
+    ar_status_t result = init(name, entry, object, stack, stackSize, priority, kArSuspendThread);
+    if (result == kArSuccess)
+    {
+        // Save the member function pointer on the thread's stack. Add 1 to skip over check value.
+        uint32_t * storage = m_stackBottom + 1;
+        memcpy(storage, memberPointer, memberPointerSize);
+
+        // Resume the thread if it's supposed to start right away.
+        if (startImmediately)
+        {
+            ar_thread_resume(this);
+        }
+    }
     return result;
 }
 
@@ -446,6 +469,7 @@ void Thread::threadEntry(void * param)
 void Thread::thread_entry(void * param)
 {
     Thread * thread = getCurrent();
+    assert(thread);
     thread->threadEntry(param);
 }
 

@@ -103,7 +103,7 @@ void ar_port_init_tick_timer(void)
 //!
 //! The entire remainder of the stack is filled with the pattern 0xba
 //! as an easy way to tell what the high watermark of stack usage is.
-void ar_port_prepare_stack(ar_thread_t * thread, void * param)
+void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param)
 {
 #if __FPU_USED
     // Clear the extended frame flag.
@@ -111,16 +111,15 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
 #endif // __FPU_USED
 
     // 8-byte align stack.
-    uint32_t sp = reinterpret_cast<uint32_t>(thread->m_stackTop);
+    uint32_t sp = reinterpret_cast<uint32_t>(thread->m_stackBottom) + stackSize;
     uint32_t delta = sp & 7;
     sp -= delta;
-    thread->m_stackTop = reinterpret_cast<uint8_t *>(sp);
-    thread->m_stackSize = (thread->m_stackSize - delta) & ~7;
+    stackSize = (stackSize - delta) & ~7;
+    thread->m_stackBottom = reinterpret_cast<uint32_t *>(sp - stackSize);
 
-    uint32_t * stackBottom = (uint32_t *)(sp - thread->m_stackSize);
 #if AR_THREAD_STACK_PATTERN_FILL
     // Fill the stack with a pattern.
-    memset(stackBottom, 0xba, thread->m_stackSize);
+    memset(thread->m_stackBottom, 0xba, stackSize);
 #endif // AR_THREAD_STACK_PATTERN_FILL
 
     // Save new top of stack. Also, make sure stack is 8-byte aligned.
@@ -151,7 +150,7 @@ void ar_port_prepare_stack(ar_thread_t * thread, void * param)
 #endif
 
     // Write a check value to the bottom of the stack.
-    *stackBottom = kStackCheckValue;
+    *thread->m_stackBottom = kStackCheckValue;
 }
 
 void ar_atomic_add(uint32_t * value, uint32_t delta)

@@ -86,9 +86,12 @@ public:
     //!     added to @a stack to get the initial top of stack address.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
-    Thread(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority)
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
+    Thread(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        init(name, entry, param, stack, stackSize, priority);
+        init(name, entry, param, stack, stackSize, priority, startImmediately);
     }
 
     //! @brief Constructor to set the thread entry to a member function.
@@ -104,10 +107,13 @@ public:
     //!     added to @a stack to get the initial top of stack address.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
     template <class T>
-    Thread(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    Thread(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        init<T>(name, object, entry, stack, stackSize, priority);
+        init<T>(name, object, entry, stack, stackSize, priority, startImmediately);
     }
 
     //! @brief Constructor to dynamically allocate the stack.
@@ -119,9 +125,12 @@ public:
     //! @param stackSize Number of bytes of stack space to allocate via <tt>new</tt> to the thread.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
-    Thread(const char * name, ar_thread_entry_t entry, void * param, unsigned stackSize, uint8_t priority)
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
+    Thread(const char * name, ar_thread_entry_t entry, void * param, unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        init(name, entry, param, NULL, stackSize, priority);
+        init(name, entry, param, NULL, stackSize, priority, startImmediately);
     }
 
     //! @brief Constructor to set the thread entry to a member function, using a dynamic stack.
@@ -134,10 +143,13 @@ public:
     //! @param stackSize Number of bytes of stack space to allocate via <tt>new</tt> to the thread.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
     template <class T>
-    Thread(const char * name, T * object, void (T::*entry)(), unsigned stackSize, uint8_t priority)
+    Thread(const char * name, T * object, void (T::*entry)(), unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        init<T>(name, object, entry, NULL, stackSize, priority);
+        init<T>(name, object, entry, NULL, stackSize, priority, startImmediately);
     }
 
     //! @brief Destructor.
@@ -160,10 +172,13 @@ public:
     //!     added to @a stack to get the initial top of stack address.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
     //!
     //! @retval #kArSuccess The thread was initialised without error.
     //! @retval #kArOutOfMemoryError Failed to dynamically allocate the stack.
-    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority);
+    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true);
 
     //! @brief Initializer to set the thread entry to a member function.
     //!
@@ -178,21 +193,16 @@ public:
     //!     added to @a stack to get the initial top of stack address.
     //! @param priority Thread priority. The accepted range is 1 through 255. Priority 0 is
     //!     reserved for the idle thread.
+    //! @param startImmediately Whether the new thread will start to run automatically. If false, the
+    //!     thread will be created in a suspended state. The constants #kArStartThread and
+    //!     #kArSuspendThread can be used to better document this parameter value.
     //!
     //! @retval #kArSuccess The thread was initialised without error.
     //! @retval #kArOutOfMemoryError Failed to dynamically allocate the stack.
     template <class T>
-    ar_status_t init(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    ar_status_t init(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        // Invoke the base initializer, passing the object pointer as the entry param.
-        ar_status_t result = init(name, member_thread_entry<T>, static_cast<void *>(object), stack, stackSize, priority);
-        if (result == kArSuccess)
-        {
-            // Save the member function pointer on the thread's stack.
-            uint8_t * storage = m_stackTop - (sizeof(ThreadContext) + sizeof(entry));
-            memcpy(storage, &entry, sizeof(entry));
-        }
-        return result;
+        return initForMemberFunction(name, object, member_thread_entry<T>, &entry, sizeof(entry), stack, stackSize, priority, startImmediately);
     }
     //@}
 
@@ -270,7 +280,7 @@ public:
     //! Static members to get system-wide information.
     //@{
     //! @brief Returns the currently running thread object.
-    static Thread * getCurrent() { return static_cast<Thread *>(ar_thread_get_current()->m_ref); }
+    static Thread * getCurrent() { return static_cast<Thread *>(ar_thread_get_current()); }
     //@}
 
 protected:
@@ -293,10 +303,13 @@ protected:
         Thread * thread = getCurrent();
         T * obj = static_cast<T *>(param);
         void (T::*member)(void);
-        uint8_t * storage = thread->m_stackTop - (sizeof(ThreadContext) + sizeof(member));
+        uint32_t * storage = thread->m_stackBottom + 1; // Add 1 to skip over check value.
         memcpy((char*)&member, storage, sizeof(member));
         (obj->*member)();
     }
+
+    //! @brief Special init method to deal with member functions.
+    ar_status_t initForMemberFunction(const char * name, void * object, ar_thread_entry_t entry, void * memberPointer, uint32_t memberPointerSize, void * stack, unsigned stackSize, uint8_t priority, bool startImmediately);
 
 private:
     //! @brief The copy constructor is disabled for thread objects.
@@ -319,29 +332,29 @@ public:
     ThreadWithStack() {}
 
     //! @brief Constructor to use a normal function as entry poin.
-    ThreadWithStack(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
+    ThreadWithStack(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority, bool startImmediately=true)
     {
-        Thread::init(name, entry, param, m_stack, S, priority);
+        Thread::init(name, entry, param, m_stack, S, priority, startImmediately);
     }
 
     //! @brief Constructor to set the thread entry to a member function.
     template <class T>
-    ThreadWithStack(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority)
+    ThreadWithStack(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)
     {
-        Thread::init<T>(name, object, entry, m_stack, S, priority);
+        Thread::init<T>(name, object, entry, m_stack, S, priority, startImmediately);
     }
 
     //! @brief Initializer to use a normal function as entry point.
-    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority)
+    ar_status_t init(const char * name, ar_thread_entry_t entry, void * param, uint8_t priority, bool startImmediately=true)
     {
-        return Thread::init(name, entry, param, m_stack, S, priority);
+        return Thread::init(name, entry, param, m_stack, S, priority, startImmediately);
     }
 
     //! @brief Initializer to set the thread entry to a member function.
     template <class T>
-    ar_status_t init(const char * name, T * object, void (T::*entry)(), uint8_t priority)
+    ar_status_t init(const char * name, T * object, void (T::*entry)(), uint8_t priority, bool startImmediately=true)
     {
-        return Thread::init<T>(name, object, entry, m_stack, S, priority);
+        return Thread::init<T>(name, object, entry, m_stack, S, priority, startImmediately);
     }
 
 protected:
