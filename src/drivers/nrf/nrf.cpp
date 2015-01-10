@@ -33,6 +33,91 @@
 #include <assert.h>
 
 //------------------------------------------------------------------------------
+// Definitions
+//------------------------------------------------------------------------------
+
+//! @brief nRF24L01 commands.
+enum {
+    knRFCommand_R_REGISTER = 0x00,
+    knRFCommand_W_REGISTER = 0x20,
+    knRFCommand_R_RX_PAYLOAD = 0x61,
+    knRFCommand_W_TX_PAYLOAD = 0xa0,
+    knRFCommand_FLUSH_TX = 0xe1,
+    knRFCommand_FLUSH_RX = 0xe2,
+    knRFCommand_REUSE_TX_PL = 0xe3,
+    knRFCommand_ACTIVATE = 0x50,
+    knRFCommand_R_RX_PL_WID = 0x60,
+    knRFCommand_W_ACK_PAYLOAD = 0xa7,
+    knRFCommand_W_TX_PAYLOAD_NOACK = 0xb0,
+    knRFCommand_NOP = 0xff,
+};
+
+//! @brief nRF24L01 register addresses.
+enum {
+    knRFRegisterAddressMask = 0x1f,
+    knRFRegister_CONFIG = 0x00,
+    knRFRegister_EN_AA = 0x01,
+    knRFRegister_EN_RXADDR = 0x02,
+    knRFRegister_SETUP_AW = 0x03,
+    knRFRegister_SETUP_RETR = 0x04,
+    knRFRegister_RF_CH = 0x05,
+    knRFRegister_RF_SETUP = 0x06,
+    knRFRegister_STATUS = 0x07,
+    knRFRegister_OBSERVE_TX = 0x08,
+    knRFRegister_CD = 0x09,
+    knRFRegister_RX_ADDR_P0 = 0x0a,
+    knRFRegister_TX_ADDR = 0x10,
+    knRFRegister_RX_PW_P0 = 0x11,
+    knRFRegister_FIFO_STATUS = 0x17,
+    knRFRegister_DYNPD = 0x1c,
+    knRFRegister_FEATURE = 0x1d,
+};
+
+//! @brief nRF24L01 CONFIG register bitfield masks.
+enum {
+    knRF_CONFIG_MASK_RX_DR = (1 << 6),
+    knRF_CONFIG_MASK_TX_DS = (1 << 5),
+    knRF_CONFIG_MASK_MAX_RT = (1 << 4),
+    knRF_CONFIG_EN_CRC = (1 << 3),
+    knRF_CONFIG_CRCO = (1 << 2),
+    knRF_CONFIG_PWR_UP = (1 << 1),
+    knRF_CONFIG_PRIM_RX = (1 << 0),
+};
+
+//! @brief nRF24L01 RF_SETUP register bitfield masks.
+enum {
+    knRF_RF_SETUP_PLL_LOCK = (1 << 4),
+    knRF_RF_SETUP_RF_DR = (1 << 3),
+    knRF_RF_SETUP_RF_PWR = (3 << 1),
+    knRF_RF_SETUP_LNA_HCURR = (1 << 0),
+};
+
+//! @brief nRF24L01 STATUS register bitfield masks.
+enum {
+    knRF_STATUS_RX_DR = (1 << 6),
+    knRF_STATUS_TX_DS = (1 << 5),
+    knRF_STATUS_MAX_RT = (1 << 4),
+    knRF_STATUS_RX_P_NO = (7 << 1),
+    knRF_STATUS_TX_FULL = (1 << 0),
+};
+
+//! @brief nRF24L01 FIFO_STATUS register bitfield masks.
+enum {
+    knRF_FIFO_STATUS_TX_REUSE = (1 << 6),
+    knRF_FIFO_STATUS_TX_FULL = (1 << 5),
+    knRF_FIFO_STATUS_TX_EMPTY = (1 << 4),
+    knRF_FIFO_STATUS_RX_FULL = (1 << 1),
+    knRF_FIFO_STATUS_RX_EMPTY = (1 << 0),
+};
+
+//! @brief nRF24L01 FEATURE register bitfield masks.
+enum {
+    knRF_FEATURE_EN_DPL = (1 << 2),
+    knRF_FEATURE_EN_ACK_PAY = (1 << 1),
+    knRF_FEATURE_EN_DYN_ACK = (1 << 0),
+};
+
+//------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
 
@@ -50,7 +135,9 @@ NordicRadio::NordicRadio(PinName ce, PinName cs, PinName sck, PinName mosi, PinN
     m_ce(ce),
     m_irq(irq),
     m_stationAddress(0),
-    m_channel(0)
+    m_channel(0),
+    m_mode(kPTX),
+    m_receiveSem(NULL)
 {
     m_spi.format(8, 0);
     m_spi.frequency();
@@ -110,10 +197,10 @@ void NordicRadio::init(uint32_t address)
     // Set default channel. This also clears PLOS_CNT.
     setChannel(2);
 
-    // Disable interrupts.
-    uint8_t config = readRegister(knRFRegister_CONFIG);
-    config |= knRF_CONFIG_MASK_RX_DR | knRF_CONFIG_MASK_TX_DS | knRF_CONFIG_MASK_MAX_RT;
+    // Disable interrupts, set mode to PTX
+    uint8_t config = knRF_CONFIG_MASK_RX_DR | knRF_CONFIG_MASK_TX_DS | knRF_CONFIG_MASK_MAX_RT | knRF_CONFIG_EN_CRC;
     writeRegister(knRFRegister_CONFIG, config);
+    m_mode = kPTX;
 
     // Flush FIFOs.
     writeCommand(knRFCommand_FLUSH_TX);
@@ -135,16 +222,20 @@ void NordicRadio::setChannel(uint8_t channel)
     writeRegister(knRFRegister_RF_CH, channel);
 }
 
-uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
+uint32_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
 {
-    // Write RX address.
-    uint8_t addressBuf[4];
-    word_to_array(m_stationAddress, addressBuf);
-    writeRegister(knRFRegister_RX_ADDR_P0, addressBuf, 4);
+    if (m_mode != kPRX)
+    {
+        // Write RX address.
+        uint8_t addressBuf[4];
+        word_to_array(m_stationAddress, addressBuf);
+        writeRegister(knRFRegister_RX_ADDR_P0, addressBuf, 4);
 
-    // Set RX mode.
-    uint8_t config = readRegister(knRFRegister_CONFIG);
-    writeRegister(knRFRegister_CONFIG, config | knRF_CONFIG_PRIM_RX);
+        // Set RX mode.
+        uint8_t config = readRegister(knRFRegister_CONFIG);
+        writeRegister(knRFRegister_CONFIG, config | knRF_CONFIG_PRIM_RX);
+        m_mode = kPRX;
+    }
 
     // Enable reception.
     m_ce = 1;
@@ -164,21 +255,8 @@ uint8_t NordicRadio::receive(uint8_t * buffer, uint32_t timeout_ms)
     // Disable reception.
     m_ce = 0;
 
-    // Read received byte count.
-    uint8_t count;
-    readCommand(knRFCommand_R_RX_PL_WID, &count, 1);
-
-    // Flush RX FIFO if count is invalid.
-    if (count > 32)
-    {
-        writeCommand(knRFCommand_FLUSH_RX);
-        count = 0;
-    }
-    else
-    {
-        // Read packet.
-        readCommand(knRFCommand_R_RX_PAYLOAD, buffer, count);
-    }
+    // Read packet.
+    uint32_t count = readPacket(buffer);
 
     // Clear rx flag.
     writeRegister(knRFRegister_STATUS, knRF_STATUS_RX_DR);
@@ -199,9 +277,13 @@ bool NordicRadio::send(uint32_t address, const uint8_t * buffer, uint32_t count,
     // Clear tx flags.
     writeRegister(knRFRegister_STATUS, knRF_STATUS_TX_DS | knRF_STATUS_MAX_RT);
 
-    // Set TX mode.
-    uint8_t config = readRegister(knRFRegister_CONFIG);
-    writeRegister(knRFRegister_CONFIG, config & ~knRF_CONFIG_PRIM_RX);
+    if (m_mode != kPTX)
+    {
+        // Set TX mode.
+        uint8_t config = readRegister(knRFRegister_CONFIG);
+        writeRegister(knRFRegister_CONFIG, config & ~knRF_CONFIG_PRIM_RX);
+        m_mode = kPTX;
+    }
 
     // Fill the TX FIFO.
     writeCommand(knRFCommand_W_TX_PAYLOAD, buffer, count);
@@ -228,6 +310,99 @@ bool NordicRadio::send(uint32_t address, const uint8_t * buffer, uint32_t count,
     writeRegister(knRFRegister_STATUS, knRF_STATUS_TX_DS | knRF_STATUS_MAX_RT);
 
     return (status & knRF_STATUS_TX_DS);
+}
+
+void NordicRadio::startReceive()
+{
+    if (m_mode != kPRX)
+    {
+        // Write RX address.
+        uint8_t addressBuf[4];
+        word_to_array(m_stationAddress, addressBuf);
+        writeRegister(knRFRegister_RX_ADDR_P0, addressBuf, 4);
+
+        // Set RX mode.
+        uint8_t config = readRegister(knRFRegister_CONFIG);
+        writeRegister(knRFRegister_CONFIG, config | knRF_CONFIG_PRIM_RX);
+        m_mode = kPRX;
+    }
+
+    // Clear RX flag.
+//     writeRegister(knRFRegister_STATUS, knRF_STATUS_RX_DR);
+
+    // Enable RX interrupt.
+    uint8_t config = readRegister(knRFRegister_CONFIG);
+    writeRegister(knRFRegister_CONFIG, config & ~knRF_CONFIG_MASK_RX_DR);
+
+    // Enable reception.
+    m_ce = 1;
+}
+
+void NordicRadio::stopReceive()
+{
+    // Disable reception.
+    m_ce = 0;
+
+    // Disable RX interrupt.
+    uint8_t config = readRegister(knRFRegister_CONFIG);
+    writeRegister(knRFRegister_CONFIG, config | knRF_CONFIG_MASK_RX_DR);
+}
+
+uint32_t NordicRadio::readPacket(uint8_t * buffer)
+{
+    // Make sure there is something in the fifo.
+    uint8_t status = readRegister(knRFRegister_FIFO_STATUS);
+    if (status & knRF_FIFO_STATUS_RX_EMPTY)
+    {
+        return 0;
+    }
+
+    // Read received byte count.
+    uint8_t count;
+    readCommand(knRFCommand_R_RX_PL_WID, &count, 1);
+
+    // Flush RX FIFO if count is invalid.
+    if (count > 32)
+    {
+        writeCommand(knRFCommand_FLUSH_RX);
+        count = 0;
+    }
+    else
+    {
+        // Read packet.
+        readCommand(knRFCommand_R_RX_PAYLOAD, buffer, count);
+    }
+
+    return count;
+}
+
+bool NordicRadio::isPacketAvailable()
+{
+    uint8_t status = readRegister(knRFRegister_FIFO_STATUS);
+    return (status & knRF_FIFO_STATUS_RX_EMPTY) == 0;
+}
+
+void NordicRadio::clearReceiveFlag()
+{
+    // Clear rx flag.
+    writeRegister(knRFRegister_STATUS, knRF_STATUS_RX_DR);
+}
+
+void NordicRadio::irqHandler(void)
+{
+    if (m_mode != kPRX)
+    {
+        return;
+    }
+
+    // Signal semaphore.
+    if (m_receiveSem)
+    {
+        m_receiveSem->put();
+    }
+
+    // Clear rx flag.
+//     writeRegister(knRFRegister_STATUS, knRF_STATUS_RX_DR);
 }
 
 void NordicRadio::readRegister(uint8_t address, uint8_t * data, uint32_t count)
@@ -276,10 +451,6 @@ void NordicRadio::writeCommand(uint8_t command, const uint8_t * buffer, uint32_t
         m_spi.write(*buffer++);
     }
     m_cs = 1;
-}
-
-void NordicRadio::irqHandler(void)
-{
 }
 
 void NordicRadio::dump()
