@@ -20,11 +20,11 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 √ Use circular linked lists instead of NULL terminated.
 - Use a lock on the scheduler instead of disabling interrupts.
 - Handle a thread changings its own priority when it owns a mutex and has been hoisted in priority.
-- Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
+√ Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
 √ Sort thread sleeping list by wakeup time.
-- Add link from thread to object it's blocked on.
+- Add link from thread to object it's blocked on. (?)
 - Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
-- Support tickless idle.
+* Support tickless idle.
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
 - Use MSP for idle thread and timers. (?)
 - Handle changing system clock by updating SysTick.
@@ -33,23 +33,66 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 √ Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
 - Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 √ Replace IrqDisableAndRestore class with a more generic kernel lock class that will work for Cortex-M as well as any other system.
-- Write an automated test suite.
-- Rewrite mutex to not be based on sem.
-- Unblock blocked threads when deleting a queue.
+* Write an automated test suite.
+- Rewrite mutex to not be based on sem. (?)
+√ Unblock blocked threads when deleting a queue.
 √ Simplify Thread class variants.
 * Run main() in a thread.
-- Add option to create threads resumed.
-- Have an installable error handler to deal with errors in ctors.
+√ Add option to create threads resumed.
+- Have an installable error handler to deal with errors in ctors. (?)
 √ armcc support
-- gcc support
+√ gcc support
+- Reduce kernel object sizes as much as possible.
+- Make ar_kernel_run() set the current thread to the idle thread so the scheduler doesn't need a special case the first time it is executed.
+- Improve thread init and port APIs so that Thread class doesn't require an extra entry point wrapper.
+- Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
+- Separate tick timer routines so they can easily be replaced by the user.
+- Do we even need the suspended thread list?
+- Deal with wrapping of tick counter.
+- Clean up enter_scheduler() vs ar_port_service_call() usage, switch threads.
+√ Save stack bottom instead of top in thread struct?
+- Support member function callbacks in Timer.
+√ Remove m_createdNode members of kernel object structs if AR_GLOBAL_OBJECT_LISTS is not set.
+- Need to be able to restart a thread once it has completed execution.
+- Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
+- Move more internal stuff into Ar namespace.
 
 
 Issues
 ------
 
-- Use of timers requires another stack.
+x Use of timers requires another stack.
 - Timers all share a single stack.
 - Idle thread requires a stack.
 - Interrupts are disabled to protect kernel objects.
+
+- It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
+
+
+Renaming
+--------
+
+ar::thread
+ar::thread_with_stack<S>
+ar::sem
+ar::sem::guard
+ar::mutex
+ar::mutex::guard
+ar::base_chan
+ar::chan<T>
+ar::tchan<T>
+ar::base_queue
+ar::queue<T,N>
+ar::bufchan<T,N>
+ar::timer
+
+
+Tickless idle
+-------------
+
+- Change to higher res than 10 ms.
+- Losing bits of time all over the place as we enable and disable the timer.
+- Round robin for threads with the same priority doesn't work.
+
 
 
