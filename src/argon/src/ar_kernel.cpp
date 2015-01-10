@@ -182,15 +182,30 @@ void idle_entry(void * param)
 //! directly and any change will take effect when the ISR exits.
 void ar_kernel_enter_scheduler(void)
 {
-    if (!ar_port_get_irq_state())
+    // Do nothing if kernel isn't running yet.
+    if (!g_ar.isRunning)
     {
-        // In user mode we must SWI into the scheduler.
-        ar_port_service_call();
+        return;
+    }
+
+    if (!g_ar.lockCount)
+    {
+        g_ar.needsReschedule = false;
+
+//         if (!ar_port_get_irq_state())
+//         {
+            // In user mode we must SWI into the scheduler.
+            ar_port_service_call();
+//         }
+//         else
+//         {
+//             // We're in IRQ mode so just call the scheduler directly
+//             ar_kernel_scheduler();
+//         }
     }
     else
     {
-        // We're in IRQ mode so just call the scheduler directly
-        ar_kernel_scheduler();
+        assert(false);
     }
 }
 
@@ -199,6 +214,9 @@ void ar_kernel_run(void)
 {
     // Assert if there is no thread ready to run.
     assert(g_ar.readyList.m_head);
+
+    // Init some misc fields.
+    g_ar.needsReschedule = false;
 
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
@@ -215,6 +233,7 @@ void ar_kernel_run(void)
     // Set up system tick timer
     ar_port_init_tick_timer();
 
+    // Init port.
     ar_port_init_system();
 
     // We're now ready to run

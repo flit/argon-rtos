@@ -116,16 +116,15 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
     thread->block(myDirList, timeout);
 
     // Enable interrupts for this block, so we can enter the scheduler.
-    {
-        KernelUnlock guard;
+//     {
+//         KernelUnlock guard;
+//
+//         // Yield to the scheduler. We'll return when a call for the other direction, or
+//         // a timeout, wakes this thread.
+//         ar_kernel_enter_scheduler();
+//     }
 
-        // Yield to the scheduler. We'll return when a call for the other direction, or
-        // a timeout, wakes this thread.
-        ar_kernel_enter_scheduler();
-    }
-
-    // We're back from the scheduler. Interrupts are still disabled.
-    // Check for errors and exit early if there was one.
+    // We're back from the scheduler. Check for errors and exit early if there was one.
     if (thread->m_unblockStatus != kArSuccess)
     {
         myDirList.remove(&thread->m_blockedNode);
@@ -184,12 +183,12 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         thread->unblockWithStatus(otherDirList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            guard.enable();
-
-            ar_kernel_enter_scheduler();
-        }
+//         if (thread->m_priority > g_ar.currentThread->m_priority)
+//         {
+//             guard.enable();
+//
+//             ar_kernel_enter_scheduler();
+//         }
     }
 
     return kArSuccess;

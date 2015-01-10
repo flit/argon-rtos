@@ -135,7 +135,7 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
-    {
+//     {
         KernelLock guard;
 
         if (thread->m_state == kArThreadReady)
@@ -148,13 +148,14 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
             thread->m_state = kArThreadReady;
             g_ar.readyList.add(thread);
         }
-    }
+//     }
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
-    if (g_ar.isRunning && thread->m_priority > g_ar.currentThread->m_priority)
+    if (thread->m_priority > g_ar.currentThread->m_priority)
     {
-        ar_kernel_enter_scheduler();
+        g_ar.needsReschedule = true;
+//         ar_kernel_enter_scheduler();
     }
 
     return kArSuccess;
@@ -168,7 +169,7 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
-    {
+//     {
         KernelLock guard;
 
         if (thread->m_state == kArThreadSuspended)
@@ -182,12 +183,13 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
             thread->m_state = kArThreadSuspended;
             g_ar.suspendedList.add(thread);
         }
-    }
+//     }
 
     // are we suspending the current thread?
-    if (g_ar.isRunning && thread == g_ar.currentThread)
+    if (thread == g_ar.currentThread)
     {
-        ar_kernel_enter_scheduler();
+        g_ar.needsReschedule = true;
+//         ar_kernel_enter_scheduler();
     }
 
     return kArSuccess;
@@ -208,7 +210,7 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
 
     if (priority != thread->m_priority)
     {
-        {
+//         {
             KernelLock guard;
 
             // Set new priority.
@@ -224,12 +226,13 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
             {
                 //! @todo Resort blocked list and handle priority inheritence.
             }
-        }
+//         }
 
-        if (g_ar.isRunning)
-        {
-            ar_kernel_enter_scheduler();
-        }
+//         if (g_ar.isRunning)
+//         {
+            g_ar.needsReschedule = true;
+//             ar_kernel_enter_scheduler();
+//         }
     }
 
     return kArSuccess;
@@ -244,7 +247,7 @@ void ar_thread_sleep(uint32_t milliseconds)
         return;
     }
 
-    {
+//     {
         KernelLock guard;
 
         // put the current thread on the sleeping list
@@ -253,10 +256,11 @@ void ar_thread_sleep(uint32_t milliseconds)
         g_ar.readyList.remove(g_ar.currentThread);
         g_ar.currentThread->m_state = kArThreadSleeping;
         g_ar.sleepingList.add(g_ar.currentThread);
-    }
+//     }
 
     // run scheduler and switch to another thread
-    ar_kernel_enter_scheduler();
+//     ar_kernel_enter_scheduler();
+    g_ar.needsReschedule = true;
 }
 
 //! The thread wrapper calls the thread entry function that was set in
@@ -350,6 +354,14 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
         // Signal when unblocking that this thread is not on the sleeping list.
         m_wakeupTime = 0;
     }
+
+    // Enter scheduler now that this thread is blocked.
+    {
+        KernelUnlock guard;
+
+        // Yield to the scheduler. We'll return when the thread is unblocked by another thread.
+        ar_kernel_enter_scheduler();
+    }
 }
 
 //! If the thread had a valid timeout when it was blocked, it is removed from
@@ -377,6 +389,12 @@ void _ar_thread::unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockS
     m_state = kArThreadReady;
     m_unblockStatus = unblockStatus;
     g_ar.readyList.add(this);
+
+    // Invoke the scheduler if the unblocked thread is higher priority than the current one.
+    if (m_priority > g_ar.currentThread->m_priority)
+    {
+        g_ar.needsReschedule = true;
+    }
 }
 
 // See ar_kernel.h for documentation of this function.

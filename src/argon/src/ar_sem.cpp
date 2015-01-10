@@ -111,14 +111,14 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         ar_thread_t * thread = g_ar.currentThread;
         thread->block(sem->m_blockedList, timeout);
 
-        guard.enable();
-
-        // Yield to the scheduler. We'll return when a call to put()
-        // wakes this thread. If another thread gains control, interrupts will be
-        // set to that thread's last state.
-        ar_kernel_enter_scheduler();
-
-        guard.disable();
+//         guard.enable();
+//
+//         // Yield to the scheduler. We'll return when a call to put()
+//         // wakes this thread. If another thread gains control, interrupts will be
+//         // set to that thread's last state.
+//         ar_kernel_enter_scheduler();
+//
+//         guard.disable();
 
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -157,12 +157,12 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            guard.enable();
-
-            ar_kernel_enter_scheduler();
-        }
+//         if (thread->m_priority > g_ar.currentThread->m_priority)
+//         {
+//             guard.enable();
+//
+//             ar_kernel_enter_scheduler();
+//         }
     }
 
     return kArSuccess;

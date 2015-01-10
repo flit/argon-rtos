@@ -98,6 +98,26 @@ void ar_port_init_tick_timer(void)
     NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
 }
 
+bool ar_port_set_lock(bool lockIt)
+{
+    bool wasLocked = (SysTick->CTRL & SysTick_CTRL_TICKINT_Msk) == 0;
+    if (lockIt)
+    {
+        SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+    }
+    else
+    {
+        SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+
+        // Need to set SysTick exception pending if it rolled over while it was disabled.
+        if (wasLocked && (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk))
+        {
+            SCB->ICSR = SCB_ICSR_PENDSTSET_Msk;
+        }
+    }
+    return wasLocked;
+}
+
 //! A total of 64 bytes of stack space is required to hold the initial
 //! thread context.
 //!

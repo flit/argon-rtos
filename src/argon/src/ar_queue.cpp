@@ -127,14 +127,14 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
         thread->block(queue->m_sendBlockedList, timeout);
 
         // Reenable interrupts to allow switching contexts.
-        guard.enable();
-
-        // Yield to the scheduler. While other threads are executing, interrupts
-        // will be restored to the state on those threads. When we come back to
-        // this thread, interrupts will still be disabled.
-        ar_kernel_enter_scheduler();
-
-        guard.disable();
+//         guard.enable();
+//
+//         // Yield to the scheduler. While other threads are executing, interrupts
+//         // will be restored to the state on those threads. When we come back to
+//         // this thread, interrupts will still be disabled.
+//         ar_kernel_enter_scheduler();
+//
+//         guard.disable();
 
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -162,13 +162,13 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
         thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            // Reenable interrupts to allow switching contexts.
-            guard.enable();
-
-            ar_kernel_enter_scheduler();
-        }
+//         if (thread->m_priority > g_ar.currentThread->m_priority)
+//         {
+//             // Reenable interrupts to allow switching contexts.
+//             guard.enable();
+//
+//             ar_kernel_enter_scheduler();
+//         }
     }
 
     return kArSuccess;
@@ -197,14 +197,14 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
         thread->block(queue->m_receiveBlockedList, timeout);
 
         // Reenable interrupts to allow switching contexts.
-        guard.enable();
-
-        // Yield to the scheduler. While other threads are executing, interrupts
-        // will be restored to the state on those threads. When we come back to
-        // this thread, interrupts will still be disabled.
-        ar_kernel_enter_scheduler();
-
-        guard.disable();
+//         guard.enable();
+//
+//         // Yield to the scheduler. While other threads are executing, interrupts
+//         // will be restored to the state on those threads. When we come back to
+//         // this thread, interrupts will still be disabled.
+//         ar_kernel_enter_scheduler();
+//
+//         guard.disable();
 
         // We're back from the scheduler. Interrupts are still disabled.
         // Check for errors and exit early if there was one.
@@ -232,13 +232,13 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
         thread->unblockWithStatus(queue->m_sendBlockedList, kArSuccess);
 
         // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            // Reenable interrupts to allow switching contexts.
-            guard.enable();
-
-            ar_kernel_enter_scheduler();
-        }
+//         if (thread->m_priority > g_ar.currentThread->m_priority)
+//         {
+//             // Reenable interrupts to allow switching contexts.
+//             guard.enable();
+//
+//             ar_kernel_enter_scheduler();
+//         }
     }
 
     return kArSuccess;
