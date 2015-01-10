@@ -31,12 +31,31 @@
 #include "argon/argon.h"
 #include "kernel_tests.h"
 #include "mbed.h"
+#include "drivers/nrf/nrf.h"
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
 #define TEST_CASE_CLASS TestMutex1
+
+#if TARGET_K22F
+#define ROLE_TRANSMITTER 0
+#define ROLE_RECEIVER 1
+#else
+#define ROLE_TRANSMITTER 1
+#define ROLE_RECEIVER 0
+#endif
+
+enum {
+    kRadioAddress = 0xdeadbeef
+};
+
+#define ADCR_VDD                (65535.0f)    /*! Maximum value when use 16b resolution */
+#define V_BG                    (1000.0f)     /*! BANDGAP voltage in mV (trim to 1.0V) */
+#define V_TEMP25                (716.0f)      /*! Typical VTEMP25 in mV */
+#define M                       (1620.0f)     /*! Typical slope: (mV x 1000)/oC */
+#define STANDARD_TEMP           (25.0f)
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -45,6 +64,7 @@
 void main_thread(void * arg);
 void x_thread(void * arg);
 void y_thread(void * arg);
+void rf_thread(void * arg);
 
 class Foo
 {
@@ -68,20 +88,33 @@ public:
 Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
 #endif
 
-TEST_CASE_CLASS g_testCase;
+// TEST_CASE_CLASS g_testCase;
 
-Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
-Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
+// Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
+// Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
 
 Ar::Thread * g_fpThread1;
 Ar::Thread * g_fpThread2;
 Ar::TypedChannel<float> g_fchan("f");
+Ar::TypedChannel<float> g_avgTempChan("avgtemp");
 
 Ar::TypedChannel<int> g_chan("c");
 
 Ar::Thread g_fooThread;
 
-Ar::Thread * g_dyn;
+// Ar::Thread * g_dyn;
+
+// (ce, cs, sck, mosi, miso, irq)
+NordicRadio g_nrf(D0, D10, D13, D11, D12, D1);
+Ar::Semaphore g_receiveSem;
+Ar::Thread * g_rfThread;
+
+float adcrTemp25 = 0;             /*! Calibrated ADCR_TEMP25 */
+float adcr100m = 0;
+
+#if ROLE_TRANSMITTER
+DigitalOut g_led(LED_RED);
+#endif
 
 //------------------------------------------------------------------------------
 // Code
@@ -162,15 +195,6 @@ void y_thread(void * arg)
     }
 }
 
-#define ADCR_VDD                (65535.0f)    /*! Maximum value when use 16b resolution */
-#define V_BG                    (1000.0f)     /*! BANDGAP voltage in mV (trim to 1.0V) */
-#define V_TEMP25                (716.0f)      /*! Typical VTEMP25 in mV */
-#define M                       (1620.0f)     /*! Typical slope: (mV x 1000)/oC */
-#define STANDARD_TEMP           (25.0f)
-
-static float adcrTemp25 = 0;             /*! Calibrated ADCR_TEMP25 */
-static float adcr100m = 0;
-
 void get_vdd()
 {
     // Enable bandgap.
@@ -204,20 +228,43 @@ void fp1_thread(void * arg)
         // Temperature = 25 - (ADCR_T - ADCR_TEMP25) * 100 / ADCR_100M
         float currentTemperature = (STANDARD_TEMP - ((float)adc.read_u16() - adcrTemp25) * 100.0f / adcr100m);
 
-
+        printf("sending temp=%.3f\n", currentTemperature);
         currentTemperature >> g_fchan;
     }
 }
 
 void fp2_thread(void * arg)
 {
+    const int kHistoryCount = 10;
+    float history[kHistoryCount];
+    int count = 0;
     while (1)
     {
         float v;
-
         v <<= g_fchan;
+        printf("received temp=%.3f\n", v);
 
-        printf("temp=%.3f\n", v);
+        if (count >= kHistoryCount)
+        {
+            memcpy(&history[0], &history[1], sizeof(float)*(kHistoryCount-1));
+            --count;
+        }
+        history[count] = v;
+        ++count;
+
+        float sum = 0;
+        int i;
+        for (i=0; i < count; ++i)
+        {
+            sum += history[i];
+        }
+        float avg = sum / float(count);
+
+        printf("average temp=%.3f over last %d samples\n", avg, count);
+
+#if ROLE_TRANSMITTER
+        avg >> g_avgTempChan;
+#endif
 
         Ar::Thread::sleep(1000);
     }
@@ -229,12 +276,72 @@ void dyn_test(void * arg)
     printf("__cplusplus = '%d'\n", __cplusplus);
 }
 
+void rf_thread(void * arg)
+{
+    g_nrf.init(kRadioAddress);
+    g_nrf.setReceiveSem(&g_receiveSem);
+    g_nrf.dump();
+
+#if ROLE_TRANSMITTER
+
+    while (1)
+    {
+        float temp;
+        temp <<= g_avgTempChan;
+
+        g_led = 0;
+
+        uint8_t buf[32];// = "Hello world!";
+        memcpy(buf, &temp, sizeof(temp));
+        g_nrf.send(kRadioAddress, buf, sizeof(temp));
+
+        g_led = 1;
+
+        Ar::Thread::sleep(2000);
+    }
+
+#else
+
+    while (1)
+    {
+        g_nrf.startReceive();
+
+        g_receiveSem.get(1000);
+//         g_nrf.dump();
+
+        g_nrf.stopReceive();
+
+        while (g_nrf.isPacketAvailable())
+        {
+            uint8_t buf[32];
+            uint32_t count = g_nrf.readPacket(buf);
+            if (count)
+            {
+                float temp;
+                memcpy(&temp, buf, sizeof(temp));
+                printf("Remote temperature = %.3f deg\n", temp);
+            }
+
+            g_nrf.clearReceiveFlag();
+        }
+
+        Ar::Thread::sleep(1500);
+    }
+
+#endif
+}
+
 void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
 
     printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
+
+#if ROLE_TRANSMITTER
+    // Turn off LED
+    g_led = 1;
+#endif
 
 //     while (1)
 //     {
@@ -245,16 +352,20 @@ void main_thread(void * arg)
 //     g_testCase.init();
 //     g_testCase.run();
 
-    Foo * foo = new Foo;
-    g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
+//     Foo * foo = new Foo;
+//     g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
+//
+//     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
 
-    g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
-
+#if ROLE_TRANSMITTER
     g_fpThread1 = new Ar::Thread("fp1", fp1_thread, 0, 1024, 100);
-
     g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
+#endif
+
+    g_rfThread = new Ar::Thread("rf", rf_thread, 0, 1536, 80);
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
+
 }
 
 int main(void)
