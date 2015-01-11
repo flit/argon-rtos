@@ -100,7 +100,11 @@ void ar_port_init_tick_timer(void)
     // Clear any pending SysTick IRQ.
     SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
 
+#if AR_ENABLE_TICKLESS_IDLE
     ar_port_set_timer_delay(false, 0);
+#else // AR_ENABLE_TICKLESS_IDLE
+    ar_port_set_timer_delay(true, kSchedulerQuanta_ms * 1000);
+#endif // AR_ENABLE_TICKLESS_IDLE
 }
 
 void ar_port_set_timer_delay(bool enable, uint32_t delay_us)

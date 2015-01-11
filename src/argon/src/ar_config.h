@@ -124,6 +124,11 @@
     #define AR_MAIN_THREAD_PRIORITY (128)
 #endif // AR_MAIN_THREAD_PRIORITY
 
+#if !defined(AR_ENABLE_TICKLESS_IDLE)
+    //! @brief
+    #define AR_ENABLE_TICKLESS_IDLE (0)
+#endif
+
 //@}
 
 //! @}

@@ -258,6 +258,7 @@ void ar_kernel_periodic_timer_isr()
     }
 
     // Get the elapsed time since the last timer tick.
+#if AR_ENABLE_TICKLESS_IDLE
     uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 10000;
 
     // Process elapsed time. Invoke the scheduler if any threads were woken.
@@ -265,6 +266,10 @@ void ar_kernel_periodic_timer_isr()
     {
         ar_port_service_call();
     }
+#else // AR_ENABLE_TICKLESS_IDLE
+    ar_kernel_increment_tick_count(1);
+    ar_port_service_call();
+#endif // AR_ENABLE_TICKLESS_IDLE
 
     // This case should never happen because of the idle thread.
     assert(g_ar.currentThread);
@@ -444,6 +449,7 @@ void ar_kernel_scheduler()
         THREAD_STACK_OVERFLOW_DETECTED();
     }
 
+#if AR_ENABLE_TICKLESS_IDLE
     // Compute delay until next wakeup event and adjust timer.
     g_ar.nextWakeup = ar_kernel_get_next_wakeup_time();
     uint32_t delay = 0;
@@ -457,6 +463,7 @@ void ar_kernel_scheduler()
     }
     bool enable = (g_ar.nextWakeup != 0);
     ar_port_set_timer_delay(enable, delay);
+#endif // AR_ENABLE_TICKLESS_IDLE
 }
 
 //! @brief Determine the delay to the next wakeup event.
