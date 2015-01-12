@@ -146,6 +146,7 @@ public:
     //! @brief Saves lock state then modifies it.
     KernelGuard()
     {
+        m_savedMask = ar_port_set_lock(E);
         if (E)
         {
             ++g_ar.lockCount;
@@ -158,20 +159,20 @@ public:
             }
             --g_ar.lockCount;
         }
-        m_savedMask = ar_port_set_lock(E);
     }
 
     //! @brief Restores previous lock state.
     ~KernelGuard()
     {
-        ar_port_set_lock(m_savedMask);
         if (E)
         {
             if (g_ar.lockCount == 0)
             {
                 Ar::_halt();
             }
-            if (--g_ar.lockCount == 0 && g_ar.needsReschedule)
+            --g_ar.lockCount;
+            ar_port_set_lock(m_savedMask);
+            if (g_ar.lockCount == 0 && g_ar.needsReschedule)
             {
                 ar_kernel_enter_scheduler();
             }
@@ -179,6 +180,7 @@ public:
         else
         {
             ++g_ar.lockCount;
+            ar_port_set_lock(m_savedMask);
         }
     }
 
