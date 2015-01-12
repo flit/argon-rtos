@@ -80,24 +80,28 @@ enum
  */
 struct ThreadContext
 {
-    // Stacked manually by us
-    uint32_t r4;    // Lowest address on stack
-    uint32_t r5;
-    uint32_t r6;
-    uint32_t r7;
-    uint32_t r8;
-    uint32_t r9;
-    uint32_t r10;
-    uint32_t r11;
-    // Stacked automatically by Cortex-M hardware
-    uint32_t r0;
-    uint32_t r1;
-    uint32_t r2;
-    uint32_t r3;
-    uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t xpsr;  // Highest address on stack
+    ///! @name Stacked manually by us
+    //@{
+    uint32_t r4;    //!< [SP+0] Lowest address on stack
+    uint32_t r5;    //!< [SP+4]
+    uint32_t r6;    //!< [SP+8]
+    uint32_t r7;    //!< [SP+12]
+    uint32_t r8;    //!< [SP+16]
+    uint32_t r9;    //!< [SP+20]
+    uint32_t r10;   //!< [SP+24]
+    uint32_t r11;   //!< [SP+28]
+    //@}
+    //! @name Stacked automatically by Cortex-M hardware
+    //@{
+    uint32_t r0;    //!< [SP+32]
+    uint32_t r1;    //!< [SP+36]
+    uint32_t r2;    //!< [SP+40]
+    uint32_t r3;    //!< [SP+44]
+    uint32_t r12;   //!< [SP+48]
+    uint32_t lr;    //!< [SP+52]
+    uint32_t pc;    //!< [SP+56]
+    uint32_t xpsr;  //!< [SP+60] Highest address on stack
+    //@}
 };
 
 //! @brief Stop the CPU because of a serious error.
