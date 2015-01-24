@@ -476,14 +476,38 @@ void ar_kernel_scheduler()
 uint32_t ar_kernel_get_next_wakeup_time()
 {
     uint32_t wakeup = 0;
+    ar_list_node_t * node;
+    ar_thread_t * thread;
+
+    // See if round-robin needs to be used. Round-robin is required if there are multiple ready
+    // threads with the same priority. Since the ready list is sorted by priority, we can just
+    // check the first two nodes to see if they are the same priority.
+    node = g_ar.readyList.m_head;
+    assert(node);
+    uint8_t pri1 = node->getObject<ar_thread_t>()->m_priority;
+    node = node->m_next;
+    if (node)
+    {
+        uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
+
+        // Check
+        if (pri1 == pri2)
+        {
+            wakeup = g_ar.tickCount + kSchedulerQuanta_ms;
+        }
+    }
 
     // Check for a sleeping thread. The sleeping list is sorted by wakeup time, so we only
     // need to look at the list head.
-    ar_list_node_t * node = g_ar.sleepingList.m_head;
+    node = g_ar.sleepingList.m_head;
     if (node)
     {
-        ar_thread_t * thread = node->getObject<ar_thread_t>();
-        wakeup = thread->m_wakeupTime;
+        thread = node->getObject<ar_thread_t>();
+        uint32_t sleepWakeup = thread->m_wakeupTime;
+        if (wakeup == 0 || sleepWakeup < wakeup)
+        {
+            wakeup = sleepWakeup;
+        }
     }
 
     // Check for an active timer. Again, the list is sorted by wakeup time.
@@ -493,7 +517,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
         ar_timer_t * timer = node->getObject<ar_timer_t>();
         uint32_t timerWakeup = timer->m_wakeupTime;
 
-        if (timerWakeup < wakeup)
+        if (wakeup == 0 || timerWakeup < wakeup)
         {
             wakeup = timerWakeup;
         }
