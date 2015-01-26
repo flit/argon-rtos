@@ -931,22 +931,22 @@ static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return 
 /*!
  * @brief Atomic add.
  */
-void ar_atomic_add(uint32_t * value, int32_t delta);
+int32_t ar_atomic_add(volatile int32_t * value, int32_t delta);
 
 /*!
  * @brief Atomic increment.
  */
-static inline void ar_atomic_increment(uint32_t * value) { ar_atomic_add(value, 1); }
+static inline int32_t ar_atomic_increment(volatile int32_t * value) { return ar_atomic_add(value, 1); }
 
 /*!
  * @brief Atomic decrement.
  */
-static inline void ar_atomic_decrement(uint32_t * value) { ar_atomic_add(value, -1); }
+static inline int32_t ar_atomic_decrement(volatile int32_t * value) { return ar_atomic_add(value, -1); }
 
 /*!
  * @brief Atomic compare-and-swap operation.
  */
-bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue);
+bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue);
 //@}
 
 //! @}

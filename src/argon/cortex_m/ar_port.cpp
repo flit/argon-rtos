@@ -231,21 +231,26 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
     *thread->m_stackBottom = kStackCheckValue;
 }
 
-void ar_atomic_add(uint32_t * value, uint32_t delta)
+int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 {
-    KernelLock guard;
+    __disable_irq();
+    uint32_t originalValue = *value;
     *value += delta;
+    __enable_irq();
+    return originalValue;
 }
 
-bool ar_atomic_compare_and_swap(uint32_t * value, uint32_t expectedValue, uint32_t newValue)
+bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
 {
-    KernelLock guard;
+    __disable_irq();
     uint32_t oldValue = *value;
     if (oldValue == expectedValue)
     {
         *value = newValue;
+        __enable_irq();
         return true;
     }
+    __enable_irq();
     return false;
 }
 
