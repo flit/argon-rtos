@@ -51,6 +51,32 @@ enum
     kStackCheckValue = 0xdeadbeef
 };
 
+//! @brief Types of deferred actions.
+typedef enum _ar_deferred_action_type {
+    kArDeferredActionValue,
+    kArDeferredSemaphorePut,
+    kArDeferredSemaphoreGet,
+    kArDeferredMutexPut,
+    kArDeferredMutexGet,
+    kArDeferredChannelSend,
+    kArDeferredQueueSend,
+    kArDeferredTimerStart,
+    kArDeferredTimerStop,
+} ar_deferred_action_type_t;
+
+//! @brief Queue containing deferred actions.
+//!
+//! The deferred action types and objects are stored in separate arrays in order to allow for
+//! the most compact possible storage in memory. With a queue size of 8 this saves 24 bytes.
+typedef struct _ar_deferred_action_queue {
+    volatile int m_count;  //!< Number of queue entries.
+    ar_deferred_action_type_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
+    void * m_objects[AR_DEFERRED_ACTION_QUEUE_SIZE];    //!< Kernel objects for enqueued actions.
+
+    //! @brief Returns whether the queue is currently empty.
+    bool isEmpty() { return m_count == 0; }
+} ar_deferred_action_queue_t;
+
 /*!
  * @brief Argon kernel state.
  */
@@ -61,6 +87,7 @@ typedef struct _ar_kernel {
     ar_list_t suspendedList;     //!< List of suspended threads.
     ar_list_t sleepingList;      //!< List of sleeping threads.
     ar_list_t activeTimers;       //!< List of running timers
+    ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
     bool isRunning;                 //!< True if the kernel has been started.
     bool needsReschedule;           //!< True if we need to reschedule once the kernel is unlocked.
     uint16_t lockCount;             //!< Whether the kernel is locked.
@@ -102,6 +129,7 @@ bool ar_port_get_irq_state(void);
 //@{
 bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler(void);
+void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
 //@}

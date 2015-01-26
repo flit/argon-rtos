@@ -95,6 +95,17 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     // The callback should have been verified by the create function.
     assert(timer->m_callback);
 
+    // Handle locked kernel in irq state by deferring the operation.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredTimerStart;
+        g_ar.deferredActions.m_objects[index] = timer;
+
+        return kArSuccess;
+    }
+
     KernelLock guard;
 
     // Handle a timer that is already active.
@@ -120,6 +131,17 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     if (!timer->m_isActive)
     {
         return kArTimerNotRunningError;
+    }
+
+    // Handle locked kernel in irq state by deferring the operation.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredTimerStop;
+        g_ar.deferredActions.m_objects[index] = timer;
+
+        return kArSuccess;
     }
 
     KernelLock guard;

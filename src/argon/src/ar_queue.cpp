@@ -111,6 +111,19 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
         return kArInvalidParameterError;
     }
 
+    // Handle locked kernel in irq state by deferring the operation.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_add(&g_ar.deferredActions.m_count, 2);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredQueueSend;
+        g_ar.deferredActions.m_objects[index] = queue;
+        g_ar.deferredActions.m_actions[index+1] = kArDeferredActionValue;
+        g_ar.deferredActions.m_objects[index+1] = const_cast<void *>(element);
+
+        return kArSuccess;
+    }
+
     KernelLock guard;
 
     // Check for full queue

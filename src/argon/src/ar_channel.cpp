@@ -138,9 +138,25 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
 ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    if (ar_port_get_irq_state() && timeout != 0)
+    if (ar_port_get_irq_state())
     {
-        return kArNotFromInterruptError;
+        if (!isSending || timeout != 0)
+        {
+            return kArNotFromInterruptError;
+        }
+
+        // Handle locked kernel in irq state by deferring the operation.
+        if (g_ar.lockCount)
+        {
+            int index = ar_atomic_add(&g_ar.deferredActions.m_count, 2);
+
+            g_ar.deferredActions.m_actions[index] = kArDeferredChannelSend;
+            g_ar.deferredActions.m_objects[index] = channel;
+            g_ar.deferredActions.m_actions[index+1] = kArDeferredActionValue;
+            g_ar.deferredActions.m_objects[index+1] = value;
+
+            return kArSuccess;
+        }
     }
 
     KernelLock guard;

@@ -96,6 +96,17 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
         return kArInvalidParameterError;
     }
 
+    // Handle locked kernel in irq state by deferring the put.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredMutexGet;
+        g_ar.deferredActions.m_objects[index] = mutex;
+
+        return kArSuccess;
+    }
+
     KernelLock guard;
 
     // If this thread already owns the mutex, just increment the count.
@@ -151,6 +162,17 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
     if (!mutex)
     {
         return kArInvalidParameterError;
+    }
+
+    // Handle locked kernel in irq state by deferring the put.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredMutexPut;
+        g_ar.deferredActions.m_objects[index] = mutex;
+
+        return kArSuccess;
     }
 
     KernelLock guard;

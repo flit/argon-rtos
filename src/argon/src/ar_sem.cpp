@@ -92,9 +92,23 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
     }
 
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
-    if (ar_port_get_irq_state() && timeout != 0)
+    if (ar_port_get_irq_state())
     {
-        return kArNotFromInterruptError;
+        if (timeout != 0)
+        {
+            return kArNotFromInterruptError;
+        }
+
+        // Handle locked kernel in irq state by deferring the get.
+        if (g_ar.lockCount)
+        {
+            int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+            g_ar.deferredActions.m_actions[index] = kArDeferredSemaphoreGet;
+            g_ar.deferredActions.m_objects[index] = sem;
+
+            return kArSuccess;
+        }
     }
 
     KernelLock guard;
@@ -142,6 +156,17 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
     if (!sem)
     {
         return kArInvalidParameterError;
+    }
+
+    // Handle locked kernel in irq state by deferring the put.
+    if (ar_port_get_irq_state() && g_ar.lockCount)
+    {
+        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+        g_ar.deferredActions.m_actions[index] = kArDeferredSemaphorePut;
+        g_ar.deferredActions.m_objects[index] = sem;
+
+        return kArSuccess;
     }
 
     KernelLock guard;

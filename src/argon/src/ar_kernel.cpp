@@ -218,6 +218,7 @@ void ar_kernel_run(void)
     // Init some misc fields.
     g_ar.needsReschedule = false;
     g_ar.nextWakeup = 0;
+    g_ar.deferredActions.m_count = 0;
 
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
@@ -287,6 +288,9 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
     {
         g_ar.currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
+
+    // Process any deferred actions.
+    ar_kernel_run_deferred_actions();
 
     // Run the scheduler. It will modify s_currentThread if switching threads.
     ar_kernel_scheduler();
@@ -383,6 +387,59 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
     }
 
     return wasThreadWoken;
+}
+
+//! @brief Execute actions deferred from interrupt context.
+void ar_kernel_run_deferred_actions()
+{
+    // Nothing to do if the queue is empty.
+    if (g_ar.deferredActions.isEmpty())
+    {
+        return;
+    }
+
+    // Examine and process each action in sequence.
+    int i = 0;
+    ar_deferred_action_queue_t & queue = g_ar.deferredActions;
+    for (; i < queue.m_count; ++i)
+    {
+        void * object = queue.m_objects[i];
+        switch (queue.m_actions[i])
+        {
+            case kArDeferredActionValue:
+                // This entry contained the value for the previous action.
+                break;
+            case kArDeferredSemaphorePut:
+                ar_semaphore_put(reinterpret_cast<ar_semaphore_t *>(object));
+                break;
+            case kArDeferredSemaphoreGet:
+                ar_semaphore_get(reinterpret_cast<ar_semaphore_t *>(object), kArNoTimeout);
+                break;
+            case kArDeferredMutexPut:
+                ar_mutex_put(reinterpret_cast<ar_mutex_t *>(object));
+                break;
+            case kArDeferredMutexGet:
+                ar_mutex_get(reinterpret_cast<ar_mutex_t *>(object), kArNoTimeout);
+                break;
+            case kArDeferredChannelSend:
+                assert(i + 1 < queue.m_count);
+                ar_channel_send(reinterpret_cast<ar_channel_t *>(object), queue.m_objects[i + 1], kArNoTimeout);
+                break;
+            case kArDeferredQueueSend:
+                assert(i + 1 < queue.m_count);
+                ar_queue_send(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[i + 1], kArNoTimeout);
+                break;
+            case kArDeferredTimerStart:
+                ar_timer_start(reinterpret_cast<ar_timer_t *>(object));
+                break;
+            case kArDeferredTimerStop:
+                ar_timer_stop(reinterpret_cast<ar_timer_t *>(object));
+                break;
+        }
+    }
+
+    // Clear the queue.
+    g_ar.deferredActions.m_count = 0;
 }
 
 //! @brief Function to make it clear what happened.

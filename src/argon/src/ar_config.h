@@ -129,6 +129,11 @@
     #define AR_ENABLE_TICKLESS_IDLE (0)
 #endif
 
+#if !defined(AR_DEFERRED_ACTION_QUEUE_SIZE)
+    //! @brief
+    #define AR_DEFERRED_ACTION_QUEUE_SIZE (8)
+#endif
+
 //@}
 
 //! @}
