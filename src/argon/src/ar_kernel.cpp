@@ -493,7 +493,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
         // Check
         if (pri1 == pri2)
         {
-            wakeup = g_ar.tickCount + kSchedulerQuanta_ms;
+            wakeup = g_ar.tickCount + 1;
         }
     }
 
