@@ -729,7 +729,7 @@ void _ar_list::remove(ar_list_node_t * item)
 
 ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object)
 {
-    if (g_ar.deferredActions.m_count >= (AR_DEFERRED_ACTION_QUEUE_SIZE - 1))
+    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE)
     {
         assert(false);
         return kArQueueFullError;
@@ -745,7 +745,7 @@ ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * obj
 
 ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg)
 {
-    if (g_ar.deferredActions.m_count >= (AR_DEFERRED_ACTION_QUEUE_SIZE - 1))
+    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE)
     {
         assert(false);
         return kArQueueFullError;
