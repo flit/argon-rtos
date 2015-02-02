@@ -649,10 +649,10 @@ public:
     }
 
     //! @brief Receive from channel.
-    T receive()
+    T receive(uint32_t timeout=kArInfiniteTimeout)
     {
         T temp;
-        Channel::receive(&temp, kArInfiniteTimeout);
+        Channel::receive(&temp, timeout);
         return temp;
     }
 
