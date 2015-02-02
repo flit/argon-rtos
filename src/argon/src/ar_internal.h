@@ -134,6 +134,12 @@ void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
 //@}
 
+//! @name Deferred actions
+//@{
+ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object);
+ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg);
+//@}
+
 //! @brief Thread entry point.
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
 

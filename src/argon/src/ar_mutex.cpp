@@ -99,12 +99,7 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
     // Handle locked kernel in irq state by deferring the put.
     if (ar_port_get_irq_state() && g_ar.lockCount)
     {
-        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
-
-        g_ar.deferredActions.m_actions[index] = kArDeferredMutexGet;
-        g_ar.deferredActions.m_objects[index] = mutex;
-
-        return kArSuccess;
+        return ar_post_deferred_action(kArDeferredMutexGet, mutex);
     }
 
     KernelLock guard;
@@ -167,12 +162,7 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
     // Handle locked kernel in irq state by deferring the put.
     if (ar_port_get_irq_state() && g_ar.lockCount)
     {
-        int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
-
-        g_ar.deferredActions.m_actions[index] = kArDeferredMutexPut;
-        g_ar.deferredActions.m_objects[index] = mutex;
-
-        return kArSuccess;
+        return ar_post_deferred_action(kArDeferredMutexPut, mutex);
     }
 
     KernelLock guard;

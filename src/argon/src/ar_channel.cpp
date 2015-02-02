@@ -148,14 +148,7 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         // Handle locked kernel in irq state by deferring the operation.
         if (g_ar.lockCount)
         {
-            int index = ar_atomic_add(&g_ar.deferredActions.m_count, 2);
-
-            g_ar.deferredActions.m_actions[index] = kArDeferredChannelSend;
-            g_ar.deferredActions.m_objects[index] = channel;
-            g_ar.deferredActions.m_actions[index+1] = kArDeferredActionValue;
-            g_ar.deferredActions.m_objects[index+1] = value;
-
-            return kArSuccess;
+            return ar_post_deferred_action2(kArDeferredChannelSend, channel, value);
         }
     }
 

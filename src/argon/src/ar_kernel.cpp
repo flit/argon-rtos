@@ -269,7 +269,14 @@ void ar_kernel_periodic_timer_isr()
     }
 #else // AR_ENABLE_TICKLESS_IDLE
     ar_kernel_increment_tick_count(1);
-    ar_port_service_call();
+    if (g_ar.lockCount)
+    {
+        g_ar.needsReschedule = true;
+    }
+    else
+    {
+        ar_port_service_call();
+    }
 #endif // AR_ENABLE_TICKLESS_IDLE
 
     // This case should never happen because of the idle thread.
@@ -397,6 +404,8 @@ void ar_kernel_run_deferred_actions()
     {
         return;
     }
+
+    assert(g_ar.lockCount == 0);
 
     // Examine and process each action in sequence.
     int i = 0;
@@ -716,6 +725,40 @@ void _ar_list::remove(ar_list_node_t * item)
 
         node = node->m_next;
     } while (node != m_head);
+}
+
+ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object)
+{
+    if (g_ar.deferredActions.m_count >= (AR_DEFERRED_ACTION_QUEUE_SIZE - 1))
+    {
+        assert(false);
+        return kArQueueFullError;
+    }
+
+    int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+
+    g_ar.deferredActions.m_actions[index] = action;
+    g_ar.deferredActions.m_objects[index] = object;
+
+    return kArSuccess;
+}
+
+ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg)
+{
+    if (g_ar.deferredActions.m_count >= (AR_DEFERRED_ACTION_QUEUE_SIZE - 1))
+    {
+        assert(false);
+        return kArQueueFullError;
+    }
+
+    int index = ar_atomic_add(&g_ar.deferredActions.m_count, 2);
+
+    g_ar.deferredActions.m_actions[index] = action;
+    g_ar.deferredActions.m_objects[index] = object;
+    g_ar.deferredActions.m_actions[index+1] = kArDeferredActionValue;
+    g_ar.deferredActions.m_objects[index+1] = arg;
+
+    return kArSuccess;
 }
 
 //------------------------------------------------------------------------------
