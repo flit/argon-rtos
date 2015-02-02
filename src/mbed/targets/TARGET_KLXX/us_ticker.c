@@ -36,7 +36,7 @@ void us_ticker_init(void) {
  ******************************************************************************/
 static void pit_init(void) {
     SIM->SCGC6 |= SIM_SCGC6_PIT_MASK;   // Clock PIT
-    PIT->MCR = 0;                       // Enable PIT
+    PIT->MCR = PIT_MCR_FRZ_MASK;                       // Enable PIT
 
     // Channel 1
     PIT->CHANNEL[1].LDVAL = 0xFFFFFFFF;
