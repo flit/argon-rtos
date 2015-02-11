@@ -265,7 +265,14 @@ void ar_kernel_periodic_timer_isr()
     // Process elapsed time. Invoke the scheduler if any threads were woken.
     if (ar_kernel_increment_tick_count(elapsed_ms))
     {
-        ar_port_service_call();
+        if (g_ar.lockCount)
+        {
+            g_ar.needsReschedule = true;
+        }
+        else
+        {
+            ar_port_service_call();
+        }
     }
 #else // AR_ENABLE_TICKLESS_IDLE
     ar_kernel_increment_tick_count(1);
