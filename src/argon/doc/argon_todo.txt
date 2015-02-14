@@ -13,13 +13,13 @@ Ideas
 √ Clean up member function support for threads.
 - Either implement or remove Thread::join().
 x More thorough testing using cppunit. [Massive effort to get cppunit compiling under IAR.]
-- Unpriveledged support on M4?
+- Unpriveledged support?
 x Event flags?
 x Invert thread priorities, so that 0 is highest priority? This is the more common arrangement for RTOSes.
 √ Floating point support for M4F.
 √ Use circular linked lists instead of NULL terminated.
-- Use a lock on the scheduler instead of disabling interrupts.
-- Handle a thread changings its own priority when it owns a mutex and has been hoisted in priority.
+* Use a lock on the scheduler instead of disabling interrupts.
+- Handle a thread changing its own priority when it owns a mutex and has been hoisted in priority.
 √ Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
 √ Sort thread sleeping list by wakeup time.
 - Add link from thread to object it's blocked on. (?)
@@ -28,10 +28,10 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
 - Use MSP for idle thread and timers. (?)
 - Handle changing system clock by updating SysTick.
-- Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
-- Replace queue with buffered channel?
+* Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
+x Replace queue with buffered channel?
 √ Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
-- Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
+x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 √ Replace IrqDisableAndRestore class with a more generic kernel lock class that will work for Cortex-M as well as any other system.
 * Write an automated test suite.
 - Rewrite mutex to not be based on sem. (?)
@@ -44,9 +44,9 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 √ gcc support
 - Reduce kernel object sizes as much as possible.
 - Make ar_kernel_run() set the current thread to the idle thread so the scheduler doesn't need a special case the first time it is executed.
-- Improve thread init and port APIs so that Thread class doesn't require an extra entry point wrapper.
+- Improve thread init and port APIs so the Thread class doesn't require an extra entry point wrapper.
 - Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
-- Separate tick timer routines so they can easily be replaced by the user.
+- Separate tick timer routine sources so they can easily be replaced by the user.
 - Do we even need the suspended thread list?
 - Deal with wrapping of tick counter.
 - Clean up enter_scheduler() vs ar_port_service_call() usage, switch threads.
@@ -54,8 +54,18 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 - Support member function callbacks in Timer.
 √ Remove m_createdNode members of kernel object structs if AR_GLOBAL_OBJECT_LISTS is not set.
 - Need to be able to restart a thread once it has completed execution.
-- Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
+√ Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
 - Move more internal stuff into Ar namespace.
+- Consider possibilities of run-to-completion threads that share a stack.
+- Add a deferred call mechanism that works from ISRs.
+- Channels only need one blocked list.
+- Some timer code is included even if timers are not used in the application.
+- Reset MSP when kernel starts so there is no wasted stack space.
+- Rename _halt() to ar_port_halt_cpu().
+- Restore stack size or stack top in thread struct so we can compute stack usage.
+- ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
+- Add comprehensive kernel trace capability.
+
 
 
 Issues
@@ -65,8 +75,10 @@ x Use of timers requires another stack.
 - Timers all share a single stack.
 - Idle thread requires a stack.
 - Interrupts are disabled to protect kernel objects.
-
+- System load has garbage value if idle thread is only run to invoke timers.
 - It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
+- Sometimes deferred actions are not being executed as soon as the kernel is unlocked, or the kernel is not being properly unlocked, causing a situation where the deferred action queue can overflow.
+- Idle thread will WFI sometimes when we don't want it to, like when running timers back to back.
 
 
 Renaming
@@ -92,7 +104,10 @@ Tickless idle
 
 - Change to higher res than 10 ms.
 - Losing bits of time all over the place as we enable and disable the timer.
-- Round robin for threads with the same priority doesn't work.
+√ Round robin for threads with the same priority doesn't work.
 
+- Use a two timer model
+    - One timer for a µs wall clock
+    - Another timer as the wakeup timer
 
 
