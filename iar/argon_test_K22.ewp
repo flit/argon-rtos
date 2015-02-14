@@ -60,7 +60,7 @@
         </option>
         <option>
           <name>FPU</name>
-          <version>2</version>
+          <version>3</version>
           <state>5</state>
         </option>
         <option>
@@ -87,7 +87,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>7.30.1.7765</state>
+          <state>7.30.4.8186</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -655,6 +655,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -1050,7 +1051,7 @@
         </option>
         <option>
           <name>FPU</name>
-          <version>2</version>
+          <version>3</version>
           <state>5</state>
         </option>
         <option>
@@ -1644,6 +1645,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -1988,6 +1990,9 @@
       <group>
         <name>cortex_m</name>
         <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_atomics_cm4.S</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
         </file>
         <file>
@@ -2042,6 +2047,9 @@
     </group>
     <group>
       <name>drivers</name>
+      <file>
+        <name>$PROJ_DIR$\..\src\drivers\nrf\nrf.cpp</name>
+      </file>
     </group>
     <group>
       <name>include</name>

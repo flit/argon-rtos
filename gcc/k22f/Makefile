@@ -24,6 +24,7 @@ SOURCES = $(PROJ_ROOT)/test/src/basic_test.cpp \
     $(PROJ_ROOT)/src/argon/cortex_m/ar_handlers_cm4.S \
     $(PROJ_ROOT)/src/argon/cortex_m/ar_port.cpp \
     $(PROJ_ROOT)/src/argon/cortex_m/ar_main_thread.cpp \
+    $(PROJ_ROOT)/src/argon/cortex_m/ar_atomics_cm4.S \
     $(PROJ_ROOT)/src/drivers/nrf/nrf.cpp \
     $(PROJ_ROOT)/src/mbed/common/assert.c \
     $(PROJ_ROOT)/src/mbed/common/board.c \

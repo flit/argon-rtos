@@ -177,6 +177,9 @@
       <group>
         <name>cortex_m</name>
         <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_atomics_cm4.S</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
         </file>
         <file>
@@ -231,6 +234,9 @@
     </group>
     <group>
       <name>drivers</name>
+      <file>
+        <name>$PROJ_DIR$\..\src\drivers\nrf\nrf.cpp</name>
+      </file>
     </group>
     <group>
       <name>include</name>

@@ -58,11 +58,11 @@ extern "C" {
 //! A memory barrier is performed prior to the compare and swap operation.
 //!
 //! @param value Pointer to the word to compare and swap.
-//! @param oldValue Value to compare against.
+//! @param expectedValue Value to compare against.
 //! @param newValue Value to value to swap in if *value is equal to oldValue.
 //! @retval false No change was made to *value.
 //! @retval true The swap was performed, and *value is now equal to newValue.
-bool atomic_compare_and_swap(volatile uint32_t * value, uint32_t oldValue, uint32_t newValue);
+bool ar_atomic_compare_and_swap(volatile uint32_t * value, int32_t expectedValue, int32_t newValue);
 
 //! @brief Atomic add operation.
 //!
@@ -71,19 +71,19 @@ bool atomic_compare_and_swap(volatile uint32_t * value, uint32_t oldValue, uint3
 //! @param value Pointer to the word to add to.
 //! @param delta Signed value to atomically add to *value.
 //! @return The original value is returned.
-int32_t atomic_add(volatile int32_t * value, int32_t delta);
+int32_t ar_atomic_add(volatile int32_t * value, int32_t delta);
 
 //! @brief Atomically increment a value.
 //!
 //! @param value Pointer to the word to increment.
 //! @return The original value is returned.
-int32_t atomic_increment(volatile int32_t * value);
+int32_t ar_atomic_increment(volatile int32_t * value);
 
 //! @brief Atomically decrement a value.
 //!
 //! @param value Pointer to the word to decrement.
 //! @return The original value is returned.
-int32_t atomic_decrement(volatile int32_t * value);
+int32_t ar_atomic_decrement(volatile int32_t * value);
 
 //@}
 

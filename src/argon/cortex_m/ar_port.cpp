@@ -231,10 +231,12 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
     *thread->m_stackBottom = kStackCheckValue;
 }
 
+#if (__CORTEX_M < 3)
 int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 {
     __disable_irq();
-    uint32_t originalValue = *value;
+    __DSB();
+    int32_t originalValue = *value;
     *value += delta;
     __enable_irq();
     return originalValue;
@@ -243,7 +245,8 @@ int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
 {
     __disable_irq();
-    uint32_t oldValue = *value;
+    __DSB();
+    int32_t oldValue = *value;
     if (oldValue == expectedValue)
     {
         *value = newValue;
@@ -253,6 +256,7 @@ bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue,
     __enable_irq();
     return false;
 }
+#endif // (__CORTEX_M < 3)
 
 void SysTick_Handler(void)
 {

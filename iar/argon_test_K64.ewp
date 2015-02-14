@@ -60,7 +60,7 @@
         </option>
         <option>
           <name>FPU</name>
-          <version>2</version>
+          <version>3</version>
           <state>5</state>
         </option>
         <option>
@@ -87,7 +87,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>7.30.1.7765</state>
+          <state>7.30.4.8186</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -655,6 +655,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -1050,7 +1051,7 @@
         </option>
         <option>
           <name>FPU</name>
-          <version>2</version>
+          <version>3</version>
           <state>5</state>
         </option>
         <option>
@@ -1645,6 +1646,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -1985,6 +1987,66 @@
   <group>
     <name>src</name>
     <group>
+      <name>argon</name>
+      <group>
+        <name>cortex_m</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_atomics_cm4.S</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_main_thread.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
+        </file>
+      </group>
+      <group>
+        <name>src</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_channel.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_config.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
+        </file>
+      </group>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\ar_classes.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\argon.h</name>
+      </file>
+    </group>
+    <group>
       <name>drivers</name>
       <group>
         <name>MMA8451Q</name>
@@ -2007,6 +2069,9 @@
           <name>$PROJ_DIR$\..\src\drivers\uart\scuart.h</name>
         </file>
       </group>
+      <file>
+        <name>$PROJ_DIR$\..\src\drivers\nrf\nrf.cpp</name>
+      </file>
     </group>
     <group>
       <name>include</name>
@@ -2346,63 +2411,6 @@
           <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_KPSDK_MCUS\us_ticker.c</name>
         </file>
       </group>
-    </group>
-    <group>
-      <name>argon</name>
-      <group>
-        <name>cortex_m</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_main_thread.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
-        </file>
-      </group>
-      <group>
-        <name>src</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_channel.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_config.h</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
-        </file>
-      </group>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\ar_classes.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\argon.h</name>
-      </file>
     </group>
     <group>
       <name>startup</name>

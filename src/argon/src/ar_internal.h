@@ -69,7 +69,7 @@ typedef enum _ar_deferred_action_type {
 //! The deferred action types and objects are stored in separate arrays in order to allow for
 //! the most compact possible storage in memory. With a queue size of 8 this saves 24 bytes.
 typedef struct _ar_deferred_action_queue {
-    volatile int m_count;  //!< Number of queue entries.
+    volatile int32_t m_count;  //!< Number of queue entries.
     ar_deferred_action_type_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
     void * m_objects[AR_DEFERRED_ACTION_QUEUE_SIZE];    //!< Kernel objects for enqueued actions.
 

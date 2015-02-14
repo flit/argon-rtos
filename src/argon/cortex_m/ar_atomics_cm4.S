@@ -33,10 +33,13 @@
         _CODE_SECTION(.text)
         _THUMB
 
-        // bool atomic_compare_and_swap(volatile uint32_t * value, uint32_t oldValue, uint32_t newValue)
-        _FN_BEGIN(atomic_compare_and_swap)
-        _FN_DECL(atomic_compare_and_swap)
-_FN_LABEL(atomic_compare_and_swap)
+        _EXPORT(ar_atomic_compare_and_swap)
+        _EXPORT(ar_atomic_add)
+
+        // bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
+        _FN_BEGIN(ar_atomic_compare_and_swap)
+        _FN_DECL(ar_atomic_compare_and_swap)
+_FN_LABEL(ar_atomic_compare_and_swap)
         _FN_BEGIN_POST
         _FN_CANT_UNWIND
 
@@ -46,17 +49,17 @@ _FN_LABEL(atomic_compare_and_swap)
         cmp         r3, r1              // does current value equal "old" value?
         itt         eq
         strexeq     r12, r2, [r0]       // if it does, then store exclusive the new value
-        eoreq       r12, #1             // invert the strex result
+        eoreq       r12, r12, #1        // invert the strex result
         mov         r0, r12             // return the result of strex
         bx          lr                  // return to caller
 
-        _FN_END(atomic_compare_and_swap)
-        _FN_SIZE(atomic_compare_and_swap)
+        _FN_END(ar_atomic_compare_and_swap)
+        _FN_SIZE(ar_atomic_compare_and_swap)
 
-        // int32_t atomic_add(volatile int32_t * value, int32_t delta)
-        _FN_BEGIN(atomic_add)
-        _FN_DECL(atomic_add)
-_FN_LABEL(atomic_add)
+        // int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
+        _FN_BEGIN(ar_atomic_add)
+        _FN_DECL(ar_atomic_add)
+_FN_LABEL(ar_atomic_add)
         _FN_BEGIN_POST
         _FN_CANT_UNWIND
 
@@ -65,38 +68,12 @@ _FN_LABEL(atomic_add)
         add         r2, r3, r1          // add delta into original
         strex       r12, r2, [r0]       // store exclusive the new value, r12==0 if store was successful
         cmp         r12, #0             // check if the store succeeded
-        bne         atomic_add          // if the store failed, try again
+        bne         ar_atomic_add          // if the store failed, try again
         mov         r0, r3              // return the original value
         bx          lr
 
-        _FN_END(atomic_add)
-        _FN_SIZE(atomic_add)
-
-        // int32_t atomic_increment(volatile int32_t * value)
-        _FN_BEGIN(atomic_increment)
-        _FN_DECL(atomic_increment)
-_FN_LABEL(atomic_increment)
-        _FN_BEGIN_POST
-        _FN_CANT_UNWIND
-
-        mov         r1, #1              // load increment value into r1
-        b           atomic_add
-
-        _FN_END(atomic_increment)
-        _FN_SIZE(atomic_increment)
-
-        // int32_t atomic_decrement(volatile int32_t * value)
-        _FN_BEGIN(atomic_decrement)
-        _FN_DECL(atomic_decrement)
-_FN_LABEL(atomic_decrement)
-        _FN_BEGIN_POST
-        _FN_CANT_UNWIND
-
-        mov         r1, #0xffffffff         // load -1 into r1
-        b           atomic_add
-
-        _FN_END(atomic_decrement)
-        _FN_SIZE(atomic_decrement)
+        _FN_END(ar_atomic_add)
+        _FN_SIZE(ar_atomic_add)
 
         _ALIGN(4)
 
