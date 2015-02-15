@@ -84,14 +84,16 @@ public:
 // Variables
 //------------------------------------------------------------------------------
 
+extern serial_t stdio_uart;
+
 #if !defined(__ICCARM__)
-Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 56);
+Ar::ThreadWithStack<512> g_mainThread("main", main_thread, 0, 128);
 #endif
 
 // TEST_CASE_CLASS g_testCase;
 
-// Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
-// Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
+Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
+Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
 
 Ar::Thread * g_fpThread1;
 Ar::Thread * g_fpThread2;
@@ -102,19 +104,30 @@ Ar::TypedChannel<int> g_chan("c");
 
 Ar::Thread g_fooThread;
 
-// Ar::Thread * g_dyn;
+Ar::Thread * g_dyn;
 
 // (ce, cs, sck, mosi, miso, irq)
+#if TARGET_K22F
+NordicRadio g_nrf(PTC11, PTD4, PTD1, PTD2, PTD3, PTD0);
+#else
 NordicRadio g_nrf(D0, D10, D13, D11, D12, D1);
-Ar::Semaphore g_receiveSem;
+#endif
+
+Ar::Semaphore g_receiveSem("rx");
 Ar::Thread * g_rfThread;
 
 float adcrTemp25 = 0;             /*! Calibrated ADCR_TEMP25 */
 float adcr100m = 0;
 
+Ar::Mutex g_adcMutex("adc");
+
 #if ROLE_TRANSMITTER
 DigitalOut g_led(LED_RED);
 #endif
+
+Ticker g_ticker;
+
+Ar::Mutex g_someMutex("foobar");
 
 //------------------------------------------------------------------------------
 // Code
@@ -197,6 +210,8 @@ void y_thread(void * arg)
 
 void get_vdd()
 {
+    Ar::Mutex::Guard guard(g_adcMutex);
+
     // Enable bandgap.
     HW_PMC_REGSC(PMC_BASE).B.BGBE = 1;
 
@@ -218,6 +233,7 @@ void get_vdd()
 
 void fp1_thread(void * arg)
 {
+    Ar::TypedChannel<float> & chan = *reinterpret_cast<Ar::TypedChannel<float> *>(arg);
     get_vdd();
     AnalogIn adc(ADC0_TEMP);
 
@@ -225,11 +241,16 @@ void fp1_thread(void * arg)
     {
 //         float v = adc.read();
 
-        // Temperature = 25 - (ADCR_T - ADCR_TEMP25) * 100 / ADCR_100M
-        float currentTemperature = (STANDARD_TEMP - ((float)adc.read_u16() - adcrTemp25) * 100.0f / adcr100m);
+        float currentTemperature;
+        {
+            Ar::Mutex::Guard guard(g_adcMutex);
+
+            // Temperature = 25 - (ADCR_T - ADCR_TEMP25) * 100 / ADCR_100M
+            currentTemperature = (STANDARD_TEMP - ((float)adc.read_u16() - adcrTemp25) * 100.0f / adcr100m);
+        }
 
         printf("sending temp=%.3f\n", currentTemperature);
-        currentTemperature >> g_fchan;
+        currentTemperature >> chan; // g_fchan;
     }
 }
 
@@ -291,7 +312,7 @@ void rf_thread(void * arg)
 
         g_led = 0;
 
-        uint8_t buf[32];// = "Hello world!";
+        uint8_t buf[32];
         memcpy(buf, &temp, sizeof(temp));
         g_nrf.send(kRadioAddress, buf, sizeof(temp));
 
@@ -306,11 +327,12 @@ void rf_thread(void * arg)
     {
         g_nrf.startReceive();
 
+        // Wait up to 1 sec to receive a packet.
         g_receiveSem.get(1000);
-//         g_nrf.dump();
 
         g_nrf.stopReceive();
 
+        // Read packets from the rx FIFO.
         while (g_nrf.isPacketAvailable())
         {
             uint8_t buf[32];
@@ -331,12 +353,111 @@ void rf_thread(void * arg)
 #endif
 }
 
+Ar::Thread g_spinner;
+// Ar::Semaphore sem("s", 0);
+void sem_spin_thread(void * arg)
+{
+    Ar::Semaphore sem("s", 0);
+
+    while (1)
+    {
+        g_someMutex.get();
+        sem.put();
+        sem.get();
+        g_someMutex.put();
+    }
+}
+
+Ar::Semaphore tsem("tsem", 0);
+void ticker_thread(void * arg)
+{
+    while (1)
+    {
+        tsem.get();
+    }
+}
+
+Ar::Thread g_tickThread("ticker", ticker_thread, 0, 1024, 90);
+
+void ticker_handler(void)
+{
+//     printf("ticker called\n");
+    tsem.put();
+
+}
+
+// #if TARGET_K22F
+// int g_bytesSent = 0;
+// Ar::StaticQueue<int, 8> g_countQ("count");
+// void uart_tx_handler(uint32_t id, SerialIrq event)
+// {
+//     ++g_bytesSent;
+//     g_countQ.send(g_bytesSent, kArNoTimeout);
+// }
+//
+// void uart_thread(void * arg)
+// {
+//     while (1)
+//     {
+//         int n = g_countQ.receive();
+//
+//         if (n % 20)
+//         {
+//             printf("sent %d bytes\n", n);
+//         }
+//     }
+// }
+// Ar::Thread g_uartThread("uart_rx", uart_thread, 0, 1024, 92);
+// #endif // TARGET_K22F
+
+Ar::TypedChannel<float> g_tempchan("temp");
+void my_timer_fn(Ar::Timer * t, void * arg)
+{
+    float temp = g_tempchan.receive(kArNoTimeout);
+}
+Ar::Timer g_myTimer("mine", my_timer_fn, 0, kArPeriodicTimer, 1500);
+Ar::Thread * g_timerFeederThread;
+
+void created_thread(void * arg)
+{
+    Ar::Semaphore * doneSem = reinterpret_cast<Ar::Semaphore *>(arg);
+    printf("hello from a created thread\n");
+    doneSem->put();
+}
+
+void creator_thread(void * arg)
+{
+    while (1)
+    {
+        Ar::Semaphore * doneSem = new Ar::Semaphore("done", 0);
+        Ar::Thread * created = new Ar::Thread("created", created_thread, doneSem, 512, 97);
+
+        printf("creator thread: waiting on done sem\n");
+        doneSem->get();
+        printf("creator thread: got done sem\n");
+
+        delete created;
+        delete doneSem;
+
+        Ar::Thread::sleep(1250);
+    }
+}
+Ar::Thread g_creatorThread("creator", creator_thread, 0, 512, 96);
+
 void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
 
     printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
+
+    g_myTimer.start();
+
+// #if TARGET_K22F
+//     // Hook up uart rx irq.
+//     serial_irq_handler(&stdio_uart, uart_tx_handler, 1);
+//     serial_irq_set(&stdio_uart, TxIrq, true);
+// #endif // TARGET_K22F
 
 #if ROLE_TRANSMITTER
     // Turn off LED
@@ -352,17 +473,23 @@ void main_thread(void * arg)
 //     g_testCase.init();
 //     g_testCase.run();
 
-//     Foo * foo = new Foo;
-//     g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
-//
-//     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
+    Foo * foo = new Foo;
+    g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
 
-#if ROLE_TRANSMITTER
-    g_fpThread1 = new Ar::Thread("fp1", fp1_thread, 0, 1024, 100);
+    g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
+
+// #if ROLE_TRANSMITTER
+    g_fpThread1 = new Ar::Thread("fp1", fp1_thread, &g_fchan, 1024, 100);
     g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
-#endif
+// #endif
+
+    g_timerFeederThread = new Ar::Thread("temp2", fp1_thread, &g_tempchan, 512, 100);
 
     g_rfThread = new Ar::Thread("rf", rf_thread, 0, 1536, 80);
+
+    g_spinner.init("spinner", sem_spin_thread, 0, NULL, 512, 70);
+
+    g_ticker.attach_us(ticker_handler, 250000);
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 
