@@ -306,7 +306,13 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
     // Process any deferred actions.
     ar_kernel_run_deferred_actions();
 
-    // Run the scheduler. It will modify s_currentThread if switching threads.
+#if AR_ENABLE_TICKLESS_IDLE
+    // Process elapsed time to keep tick count up to date.
+    uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 10000;
+    ar_kernel_increment_tick_count(elapsed_ms);
+#endif // AR_ENABLE_TICKLESS_IDLE
+
+    // Run the scheduler. It will modify g_ar.currentThread if switching threads.
     ar_kernel_scheduler();
 
     // The idle thread prevents this condition.
@@ -526,7 +532,7 @@ void ar_kernel_scheduler()
     // Compute delay until next wakeup event and adjust timer.
     g_ar.nextWakeup = ar_kernel_get_next_wakeup_time();
     uint32_t delay = 0;
-    if (g_ar.nextWakeup)
+    if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
     {
         delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
         if (delay == 0)
