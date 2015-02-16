@@ -119,11 +119,17 @@ inline void _halt()
 //! @brief
 bool ar_port_set_lock(bool lockIt);
 
+#if DEBUG
 //! @brief Make the PendSV exception pending.
+void ar_port_service_call();
+#else // DEBUG
 inline void ar_port_service_call()
 {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    __DSB();
+    __ISB();
 }
+#endif // DEBUG
 
 //! @brief Returns true if in IRQ state.
 inline bool ar_port_get_irq_state(void)

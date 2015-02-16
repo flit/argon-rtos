@@ -171,8 +171,10 @@ void idle_entry(void * param)
 #endif // AR_ENABLE_SYSTEM_LOAD
 
 #if AR_ENABLE_IDLE_SLEEP
+        __DSB();
         // Hitting this bit puts the processor to sleep until the next interrupt fires.
         __WFI();
+        __ISB();
 #endif // AR_ENABLE_IDLE_SLEEP
     }
 }

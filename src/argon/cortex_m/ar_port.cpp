@@ -30,7 +30,7 @@
 
 #include "argon/src/ar_internal.h"
 #include "ar_port.h"
-
+#include <assert.h>
 #include <string.h>
 
 using namespace Ar;
@@ -235,7 +235,6 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
 int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 {
     __disable_irq();
-    __DSB();
     int32_t originalValue = *value;
     *value += delta;
     __enable_irq();
@@ -245,7 +244,6 @@ int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
 {
     __disable_irq();
-    __DSB();
     int32_t oldValue = *value;
     if (oldValue == expectedValue)
     {
@@ -283,6 +281,16 @@ uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame)
 
     return stack;
 }
+
+#if DEBUG
+void ar_port_service_call()
+{
+    assert(g_ar.lockCount == 0);
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    __DSB();
+    __ISB();
+}
+#endif // DEBUG
 
 //------------------------------------------------------------------------------
 // EOF
