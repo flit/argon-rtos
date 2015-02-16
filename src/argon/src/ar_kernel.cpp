@@ -177,9 +177,9 @@ void idle_entry(void * param)
     }
 }
 
-//! Uses a "swi" instruction to yield to the scheduler when in user mode. If
-//! the CPU is in IRQ mode then we can just call the scheduler() method
-//! directly and any change will take effect when the ISR exits.
+//! Cause the scheduler to be run.
+//!
+//! This function must not be called when the kernel is locked.
 void ar_kernel_enter_scheduler(void)
 {
     // Do nothing if kernel isn't running yet.
@@ -190,18 +190,11 @@ void ar_kernel_enter_scheduler(void)
 
     if (!g_ar.lockCount)
     {
+        // Clear rescheduler.
         g_ar.needsReschedule = false;
 
-//         if (!ar_port_get_irq_state())
-//         {
-        // In user mode we must SWI into the scheduler.
+        // Call port-specific function to invoke the scheduler.
         ar_port_service_call();
-//         }
-//         else
-//         {
-//             // We're in IRQ mode so just call the scheduler directly
-//             ar_kernel_scheduler();
-//         }
     }
     else
     {
