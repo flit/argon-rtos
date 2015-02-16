@@ -124,17 +124,17 @@
     #define AR_MAIN_THREAD_PRIORITY (128)
 #endif // AR_MAIN_THREAD_PRIORITY
 
+//@}
+
 #if !defined(AR_ENABLE_TICKLESS_IDLE)
-    //! @brief
-    #define AR_ENABLE_TICKLESS_IDLE (0)
+    //! @brief Set to 1 to enable tickless idle.
+    #define AR_ENABLE_TICKLESS_IDLE (1)
 #endif
 
 #if !defined(AR_DEFERRED_ACTION_QUEUE_SIZE)
-    //! @brief
+    //! @brief Maximum number of actions deferred from IRQ context.
     #define AR_DEFERRED_ACTION_QUEUE_SIZE (8)
 #endif
-
-//@}
 
 //! @}
 
