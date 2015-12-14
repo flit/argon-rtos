@@ -12,7 +12,7 @@
       <name>General</name>
       <archiveVersion>3</archiveVersion>
       <data>
-        <version>22</version>
+        <version>24</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -26,11 +26,6 @@
         <option>
           <name>ListPath</name>
           <state>output\K60\debug\list</state>
-        </option>
-        <option>
-          <name>Variant</name>
-          <version>21</version>
-          <state>39</state>
         </option>
         <option>
           <name>GEndianMode</name>
@@ -59,11 +54,6 @@
           <state>0</state>
         </option>
         <option>
-          <name>FPU</name>
-          <version>2</version>
-          <state>0</state>
-        </option>
-        <option>
           <name>OGCoreOrChip</name>
           <state>1</state>
         </option>
@@ -87,7 +77,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>7.30.1.7765</state>
+          <state>7.50.1.10270</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -136,13 +126,8 @@
           <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Normal.h</state>
         </option>
         <option>
-          <name>GFPUCoreSlave</name>
-          <version>21</version>
-          <state>39</state>
-        </option>
-        <option>
           <name>GBECoreSlave</name>
-          <version>21</version>
+          <version>22</version>
           <state>39</state>
         </option>
         <option>
@@ -156,6 +141,34 @@
         <option>
           <name>GRuntimeLibThreads</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>CoreVariant</name>
+          <version>22</version>
+          <state>39</state>
+        </option>
+        <option>
+          <name>GFPUDeviceSlave</name>
+          <state>MK60DN512Zxxx10	Freescale MK60DN512Zxxx10</state>
+        </option>
+        <option>
+          <name>FPU2</name>
+          <version>0</version>
+          <state>0</state>
+        </option>
+        <option>
+          <name>NrRegs</name>
+          <version>0</version>
+          <state>0</state>
+        </option>
+        <option>
+          <name>NEON</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>GFPUCoreSlave2</name>
+          <version>22</version>
+          <state>39</state>
         </option>
       </data>
     </settings>
@@ -593,7 +606,7 @@
         <debug>1</debug>
         <option>
           <name>OOCOutputFormat</name>
-          <version>2</version>
+          <version>3</version>
           <state>0</state>
         </option>
         <option>
@@ -620,6 +633,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -967,7 +981,7 @@
       <name>General</name>
       <archiveVersion>3</archiveVersion>
       <data>
-        <version>22</version>
+        <version>24</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -981,11 +995,6 @@
         <option>
           <name>ListPath</name>
           <state>output\K60\release\list</state>
-        </option>
-        <option>
-          <name>Variant</name>
-          <version>21</version>
-          <state>39</state>
         </option>
         <option>
           <name>GEndianMode</name>
@@ -1014,11 +1023,6 @@
           <state>0</state>
         </option>
         <option>
-          <name>FPU</name>
-          <version>2</version>
-          <state>0</state>
-        </option>
-        <option>
           <name>OGCoreOrChip</name>
           <state>1</state>
         </option>
@@ -1042,7 +1046,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>6.70.1.5793</state>
+          <state>7.50.1.10270</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -1091,13 +1095,8 @@
           <state>$TOOLKIT_DIR$\INC\c\DLib_Config_Full.h</state>
         </option>
         <option>
-          <name>GFPUCoreSlave</name>
-          <version>21</version>
-          <state>39</state>
-        </option>
-        <option>
           <name>GBECoreSlave</name>
-          <version>21</version>
+          <version>22</version>
           <state>39</state>
         </option>
         <option>
@@ -1111,6 +1110,34 @@
         <option>
           <name>GRuntimeLibThreads</name>
           <state>0</state>
+        </option>
+        <option>
+          <name>CoreVariant</name>
+          <version>22</version>
+          <state>39</state>
+        </option>
+        <option>
+          <name>GFPUDeviceSlave</name>
+          <state>MK60DN512Zxxx10	Freescale MK60DN512Zxxx10</state>
+        </option>
+        <option>
+          <name>FPU2</name>
+          <version>0</version>
+          <state>0</state>
+        </option>
+        <option>
+          <name>NrRegs</name>
+          <version>0</version>
+          <state>0</state>
+        </option>
+        <option>
+          <name>NEON</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>GFPUCoreSlave2</name>
+          <version>22</version>
+          <state>39</state>
         </option>
       </data>
     </settings>
@@ -1548,7 +1575,7 @@
         <debug>0</debug>
         <option>
           <name>OOCOutputFormat</name>
-          <version>2</version>
+          <version>3</version>
           <state>0</state>
         </option>
         <option>
@@ -1575,6 +1602,7 @@
       <data>
         <extensions></extensions>
         <cmdline></cmdline>
+        <hasPrio>0</hasPrio>
       </data>
     </settings>
     <settings>
@@ -1915,6 +1943,48 @@
   <group>
     <name>src</name>
     <group>
+      <name>argon</name>
+      <group>
+        <name>cortex_m</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
+        </file>
+      </group>
+      <group>
+        <name>src</name>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
+        </file>
+      </group>
+      <file>
+        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
+      </file>
+    </group>
+    <group>
       <name>drivers</name>
       <group>
         <name>MMA8451Q</name>
@@ -2132,48 +2202,6 @@
           <name>$PROJ_DIR$\..\src\mbed\targets\TARGET_K60DZ10\us_ticker.c</name>
         </file>
       </group>
-    </group>
-    <group>
-      <name>argon</name>
-      <group>
-        <name>cortex_m</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_handlers_cm4.s</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\cortex_m\ar_port.h</name>
-        </file>
-      </group>
-      <group>
-        <name>src</name>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_internal.h</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_kernel.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_mutex.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_queue.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_sem.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_thread.cpp</name>
-        </file>
-        <file>
-          <name>$PROJ_DIR$\..\src\argon\src\ar_timer.cpp</name>
-        </file>
-      </group>
-      <file>
-        <name>$PROJ_DIR$\..\src\argon\ar_kernel.h</name>
-      </file>
     </group>
     <group>
       <name>startup</name>
