@@ -205,7 +205,7 @@ public:
                 Ar::_halt();
             }
             --g_ar.lockCount;
-            ar_port_set_lock(m_savedMask);
+            ar_port_set_lock(!E);
             if (g_ar.lockCount == 0 && g_ar.needsReschedule)
             {
                 ar_kernel_enter_scheduler();
@@ -214,15 +214,9 @@ public:
         else
         {
             ++g_ar.lockCount;
-            ar_port_set_lock(m_savedMask);
+            ar_port_set_lock(!E);
         }
     }
-
-    //! @brief Disable interrupts.
-//     void disable() { /*ar_port_timer_enable_irq(false);*/ }
-//
-//     //! @brief Enable interrupts.
-//     void enable() { /*ar_port_timer_enable_irq(true);*/ }
 
 private:
     bool m_savedMask;    //!< The lock state saved by the constructor.

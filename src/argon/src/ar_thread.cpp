@@ -135,7 +135,7 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
-//     {
+    {
         KernelLock guard;
 
         if (thread->m_state == kArThreadReady)
@@ -148,14 +148,13 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
             thread->m_state = kArThreadReady;
             g_ar.readyList.add(thread);
         }
-//     }
 
-    // yield to scheduler if there is not a running thread or if this thread
-    // has a higher priority that the running one
-    if (thread->m_priority > g_ar.currentThread->m_priority)
-    {
-        g_ar.needsReschedule = true;
-//         ar_kernel_enter_scheduler();
+        // yield to scheduler if there is not a running thread or if this thread
+        // has a higher priority that the running one
+        if (thread->m_priority > g_ar.currentThread->m_priority)
+        {
+            g_ar.needsReschedule = true;
+        }
     }
 
     return kArSuccess;
@@ -169,7 +168,7 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
-//     {
+    {
         KernelLock guard;
 
         if (thread->m_state == kArThreadSuspended)
@@ -183,13 +182,12 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
             thread->m_state = kArThreadSuspended;
             g_ar.suspendedList.add(thread);
         }
-//     }
 
-    // are we suspending the current thread?
-    if (thread == g_ar.currentThread)
-    {
-        g_ar.needsReschedule = true;
-//         ar_kernel_enter_scheduler();
+        // are we suspending the current thread?
+        if (thread == g_ar.currentThread)
+        {
+            g_ar.needsReschedule = true;
+        }
     }
 
     return kArSuccess;
@@ -210,29 +208,23 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
 
     if (priority != thread->m_priority)
     {
-//         {
-            KernelLock guard;
+        KernelLock guard;
 
-            // Set new priority.
-            thread->m_priority = priority;
+        // Set new priority.
+        thread->m_priority = priority;
 
-            // Resort ready list.
-            if (thread->m_state == kArThreadReady || thread->m_state == kArThreadRunning)
-            {
-                g_ar.readyList.remove(thread);
-                g_ar.readyList.add(thread);
-            }
-            else if (thread->m_state == kArThreadBlocked)
-            {
-                //! @todo Resort blocked list and handle priority inheritence.
-            }
-//         }
+        // Resort ready list.
+        if (thread->m_state == kArThreadReady || thread->m_state == kArThreadRunning)
+        {
+            g_ar.readyList.remove(thread);
+            g_ar.readyList.add(thread);
+        }
+        else if (thread->m_state == kArThreadBlocked)
+        {
+            //! @todo Resort blocked list and handle priority inheritence.
+        }
 
-//         if (g_ar.isRunning)
-//         {
-            g_ar.needsReschedule = true;
-//             ar_kernel_enter_scheduler();
-//         }
+        g_ar.needsReschedule = true;
     }
 
     return kArSuccess;
@@ -247,7 +239,7 @@ void ar_thread_sleep(uint32_t milliseconds)
         return;
     }
 
-//     {
+    {
         KernelLock guard;
 
         // put the current thread on the sleeping list
@@ -256,11 +248,10 @@ void ar_thread_sleep(uint32_t milliseconds)
         g_ar.readyList.remove(g_ar.currentThread);
         g_ar.currentThread->m_state = kArThreadSleeping;
         g_ar.sleepingList.add(g_ar.currentThread);
-//     }
 
-    // run scheduler and switch to another thread
-//     ar_kernel_enter_scheduler();
-    g_ar.needsReschedule = true;
+        // run scheduler and switch to another thread
+        g_ar.needsReschedule = true;
+    }
 }
 
 //! The thread wrapper calls the thread entry function that was set in
@@ -273,6 +264,9 @@ void ar_thread_sleep(uint32_t milliseconds)
 //!
 //! @param thread Pointer to the thread object which is starting up.
 //! @param param Arbitrary parameter passed to the thread entry point.
+#if !defined(__ICCARM__)
+__attribute__((noreturn))
+#endif
 void ar_thread_wrapper(ar_thread_t * thread, void * param)
 {
     assert(thread);
@@ -297,6 +291,9 @@ void ar_thread_wrapper(ar_thread_t * thread, void * param)
 
     // Switch to the scheduler to let another thread take over
     ar_kernel_enter_scheduler();
+
+    // The compiler will see this and know we're not returning.
+    for (;;) {}
 }
 
 //! @retval true The @a a thread has a higher priority than @a b.

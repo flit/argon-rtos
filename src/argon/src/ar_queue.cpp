@@ -117,64 +117,47 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
         return ar_post_deferred_action2(kArDeferredQueueSend, queue, const_cast<void *>(element));
     }
 
-    KernelLock guard;
-
-    // Check for full queue
-    if (queue->m_count >= queue->m_capacity)
     {
-        // If the queue is full and a zero timeout was given, return immediately.
-        if (timeout == kArNoTimeout)
+        KernelLock guard;
+
+        // Check for full queue
+        if (queue->m_count >= queue->m_capacity)
         {
-            return kArQueueFullError;
+            // If the queue is full and a zero timeout was given, return immediately.
+            if (timeout == kArNoTimeout)
+            {
+                return kArQueueFullError;
+            }
+
+            // Otherwise block until the queue has room.
+            ar_thread_t * thread = g_ar.currentThread;
+            thread->block(queue->m_sendBlockedList, timeout);
+
+            // We're back from the scheduler.
+            // Check for errors and exit early if there was one.
+            if (thread->m_unblockStatus != kArSuccess)
+            {
+                // Failed to gain the semaphore, probably due to a timeout.
+                queue->m_sendBlockedList.remove(&thread->m_blockedNode);
+                return thread->m_unblockStatus;
+            }
         }
 
-        // Otherwise block until the queue has room.
-        ar_thread_t * thread = g_ar.currentThread;
-        thread->block(queue->m_sendBlockedList, timeout);
+        // fill element
+        uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
+        memcpy(elementSlot, element, queue->m_elementSize);
 
-        // Reenable interrupts to allow switching contexts.
-//         guard.enable();
-//
-//         // Yield to the scheduler. While other threads are executing, interrupts
-//         // will be restored to the state on those threads. When we come back to
-//         // this thread, interrupts will still be disabled.
-//         ar_kernel_enter_scheduler();
-//
-//         guard.disable();
+        // Update queue pointers
+        queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
+        queue->m_count++;
 
-        // We're back from the scheduler. Interrupts are still disabled.
-        // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kArSuccess)
+        // Are there any threads waiting to receive?
+        if (queue->m_receiveBlockedList.m_head)
         {
-            // Failed to gain the semaphore, probably due to a timeout.
-            queue->m_sendBlockedList.remove(&thread->m_blockedNode);
-            return thread->m_unblockStatus;
+            // Unblock the head of the blocked list.
+            ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+            thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
         }
-    }
-
-    // fill element
-    uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
-    memcpy(elementSlot, element, queue->m_elementSize);
-
-    // Update queue pointers
-    queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
-    queue->m_count++;
-
-    // Are there any threads waiting to receive?
-    if (queue->m_receiveBlockedList.m_head)
-    {
-        // Unblock the head of the blocked list.
-        ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
-        thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
-
-        // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-//         if (thread->m_priority > g_ar.currentThread->m_priority)
-//         {
-//             // Reenable interrupts to allow switching contexts.
-//             guard.enable();
-//
-//             ar_kernel_enter_scheduler();
-//         }
     }
 
     return kArSuccess;
@@ -188,68 +171,52 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
         return kArInvalidParameterError;
     }
 
-    KernelLock guard;
-
-    // Check for empty queue
-    if (queue->m_count == 0)
     {
-        if (timeout == kArNoTimeout)
+        KernelLock guard;
+
+        // Check for empty queue
+        if (queue->m_count == 0)
         {
-            return kArQueueEmptyError;
+            if (timeout == kArNoTimeout)
+            {
+                return kArQueueEmptyError;
+            }
+
+            // Otherwise block until the queue has room.
+            ar_thread_t * thread = g_ar.currentThread;
+            thread->block(queue->m_receiveBlockedList, timeout);
+
+            // We're back from the scheduler. Interrupts are still disabled.
+            // Check for errors and exit early if there was one.
+            if (thread->m_unblockStatus != kArSuccess)
+            {
+                // Failed to gain the semaphore, probably due to a timeout.
+                queue->m_receiveBlockedList.remove(&thread->m_blockedNode);
+                return thread->m_unblockStatus;
+            }
         }
 
-        // Otherwise block until the queue has room.
-        ar_thread_t * thread = g_ar.currentThread;
-        thread->block(queue->m_receiveBlockedList, timeout);
+        // read out data
+        uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
+        memcpy(element, elementSlot, queue->m_elementSize);
 
-        // Reenable interrupts to allow switching contexts.
-//         guard.enable();
-//
-//         // Yield to the scheduler. While other threads are executing, interrupts
-//         // will be restored to the state on those threads. When we come back to
-//         // this thread, interrupts will still be disabled.
-//         ar_kernel_enter_scheduler();
-//
-//         guard.disable();
+        // update queue
+        queue->m_head = (queue->m_head + 1) % queue->m_capacity;
+        queue->m_count--;
 
-        // We're back from the scheduler. Interrupts are still disabled.
-        // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kArSuccess)
+        // Are there any threads waiting to send?
+        if (queue->m_sendBlockedList.m_head)
         {
-            // Failed to gain the semaphore, probably due to a timeout.
-            queue->m_receiveBlockedList.remove(&thread->m_blockedNode);
-            return thread->m_unblockStatus;
+            // Unblock the head of the blocked list.
+            ar_thread_t * thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
+            thread->unblockWithStatus(queue->m_sendBlockedList, kArSuccess);
         }
-    }
-
-    // read out data
-    uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
-    memcpy(element, elementSlot, queue->m_elementSize);
-
-    // update queue
-    queue->m_head = (queue->m_head + 1) % queue->m_capacity;
-    queue->m_count--;
-
-    // Are there any threads waiting to send?
-    if (queue->m_sendBlockedList.m_head)
-    {
-        // Unblock the head of the blocked list.
-        ar_thread_t * thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
-        thread->unblockWithStatus(queue->m_sendBlockedList, kArSuccess);
-
-        // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-//         if (thread->m_priority > g_ar.currentThread->m_priority)
-//         {
-//             // Reenable interrupts to allow switching contexts.
-//             guard.enable();
-//
-//             ar_kernel_enter_scheduler();
-//         }
     }
 
     return kArSuccess;
 }
 
+// See ar_kernel.h for documentation of this function.
 const char * ar_queue_get_name(ar_queue_t * queue)
 {
     return queue ? queue->m_name : NULL;

@@ -115,15 +115,6 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
     thread->m_channelData = value;
     thread->block(myDirList, timeout);
 
-    // Enable interrupts for this block, so we can enter the scheduler.
-//     {
-//         KernelUnlock guard;
-//
-//         // Yield to the scheduler. We'll return when a call for the other direction, or
-//         // a timeout, wakes this thread.
-//         ar_kernel_enter_scheduler();
-//     }
-
     // We're back from the scheduler. Check for errors and exit early if there was one.
     if (thread->m_unblockStatus != kArSuccess)
     {
@@ -152,52 +143,46 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         }
     }
 
-    KernelLock guard;
-
-    // Are there any blocked threads for the opposite direction of this call?
-    if (otherDirList.isEmpty())
     {
-        return ar_channel_block(channel, myDirList, value, timeout);
-    }
-    else
-    {
-        // Get the first thread blocked on this channel.
-        ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
+        KernelLock guard;
 
-        // Figure out the direction of the data transfer.
-        void * src;
-        void * dest;
-        if (isSending)
+        // Are there any blocked threads for the opposite direction of this call?
+        if (otherDirList.isEmpty())
         {
-            src = value;
-            dest = thread->m_channelData;
+            return ar_channel_block(channel, myDirList, value, timeout);
         }
         else
         {
-            src = thread->m_channelData;
-            dest = value;
-        }
+            // Get the first thread blocked on this channel.
+            ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
 
-        // Do the transfer. Optimize word-sized channels so we don't have to call into memcpy().
-        if (channel->m_width == sizeof(uint32_t))
-        {
-            *(uint32_t *)dest = *(uint32_t *)src;
-        }
-        else
-        {
-            memcpy(dest, src, channel->m_width);
-        }
+            // Figure out the direction of the data transfer.
+            void * src;
+            void * dest;
+            if (isSending)
+            {
+                src = value;
+                dest = thread->m_channelData;
+            }
+            else
+            {
+                src = thread->m_channelData;
+                dest = value;
+            }
 
-        // Unblock the other side.
-        thread->unblockWithStatus(otherDirList, kArSuccess);
+            // Do the transfer. Optimize word-sized channels so we don't have to call into memcpy().
+            if (channel->m_width == sizeof(uint32_t))
+            {
+                *(uint32_t *)dest = *(uint32_t *)src;
+            }
+            else
+            {
+                memcpy(dest, src, channel->m_width);
+            }
 
-        // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-//         if (thread->m_priority > g_ar.currentThread->m_priority)
-//         {
-//             guard.enable();
-//
-//             ar_kernel_enter_scheduler();
-//         }
+            // Unblock the other side.
+            thread->unblockWithStatus(otherDirList, kArSuccess);
+        }
     }
 
     return kArSuccess;

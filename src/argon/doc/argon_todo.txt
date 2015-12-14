@@ -65,7 +65,7 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 - Restore stack size or stack top in thread struct so we can compute stack usage.
 - ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
 - Add comprehensive kernel trace capability.
-
+- Limit channel and queue element size to a single word.
 
 
 Issues

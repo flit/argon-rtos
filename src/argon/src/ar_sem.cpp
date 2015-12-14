@@ -106,41 +106,34 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         }
     }
 
-    KernelLock guard;
-
-    if (sem->m_count == 0)
     {
-        // Count is 0, so we must block. Return immediately if the timeout is 0.
-        if (timeout == kArNoTimeout)
+        KernelLock guard;
+
+        if (sem->m_count == 0)
         {
-            return kArTimeoutError;
+            // Count is 0, so we must block. Return immediately if the timeout is 0.
+            if (timeout == kArNoTimeout)
+            {
+                return kArTimeoutError;
+            }
+
+            // Block this thread on the semaphore.
+            ar_thread_t * thread = g_ar.currentThread;
+            thread->block(sem->m_blockedList, timeout);
+
+            // We're back from the scheduler.
+            // Check for errors and exit early if there was one.
+            if (thread->m_unblockStatus != kArSuccess)
+            {
+                // Failed to gain the semaphore, probably due to a timeout.
+                sem->m_blockedList.remove(&thread->m_blockedNode);
+                return thread->m_unblockStatus;
+            }
         }
 
-        // Block this thread on the semaphore.
-        ar_thread_t * thread = g_ar.currentThread;
-        thread->block(sem->m_blockedList, timeout);
-
-//         guard.enable();
-//
-//         // Yield to the scheduler. We'll return when a call to put()
-//         // wakes this thread. If another thread gains control, interrupts will be
-//         // set to that thread's last state.
-//         ar_kernel_enter_scheduler();
-//
-//         guard.disable();
-
-        // We're back from the scheduler. Interrupts are still disabled.
-        // Check for errors and exit early if there was one.
-        if (thread->m_unblockStatus != kArSuccess)
-        {
-            // Failed to gain the semaphore, probably due to a timeout.
-            sem->m_blockedList.remove(&thread->m_blockedNode);
-            return thread->m_unblockStatus;
-        }
+        // Take ownership of the semaphore.
+        --sem->m_count;
     }
-
-    // Take ownership of the semaphore.
-    --sem->m_count;
 
     return kArSuccess;
 }
@@ -159,25 +152,19 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         return ar_post_deferred_action(kArDeferredSemaphorePut, sem);
     }
 
-    KernelLock guard;
-
-    // Increment count.
-    ++sem->m_count;
-
-    // Are there any threads waiting on this semaphore?
-    if (sem->m_blockedList.m_head)
     {
-        // Unblock the head of the blocked list.
-        ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
-        thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
+        KernelLock guard;
 
-        // Invoke the scheduler if the unblocked thread is higher priority than the current one.
-//         if (thread->m_priority > g_ar.currentThread->m_priority)
-//         {
-//             guard.enable();
-//
-//             ar_kernel_enter_scheduler();
-//         }
+        // Increment count.
+        ++sem->m_count;
+
+        // Are there any threads waiting on this semaphore?
+        if (sem->m_blockedList.m_head)
+        {
+            // Unblock the head of the blocked list.
+            ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
+            thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
+        }
     }
 
     return kArSuccess;

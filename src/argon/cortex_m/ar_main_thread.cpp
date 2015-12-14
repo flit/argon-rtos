@@ -44,6 +44,8 @@ Thread g_mainThread;
 
 #if defined (__ICCARM__)
 
+#include <stdlib.h>
+
 #pragma segment="CSTACK"
 
 extern "C" {
