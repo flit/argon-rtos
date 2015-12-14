@@ -1,0 +1,55 @@
+<!-- This file is maintained by device support author -->
+<metadata>
+  <components>
+    <component name="platform.devices.MKL28T7" requires="devices.MKL28T7" provides="platform.devices.device">
+      <source path="./">
+        <files mask="fsl_clock.c"/>
+        <files mask="fsl_clock.h"/>
+        <files mask="fsl_device_registers.h"/>
+        <files mask="fsl_clock.c"/>
+        <files mask="fsl_clock.h"/>
+        <files mask="fsl_device_registers.h"/>
+        <files mask="MKL28T7_CORE0.h"/>
+        <files mask="MKL28T7_CORE0.svd"/>
+        <files mask="MKL28T7_CORE0_features.h"/>
+        <files mask="MKL28T7_CORE1.h"/>
+        <files mask="MKL28T7_CORE1.svd"/>
+        <files mask="MKL28T7_CORE1_features.h"/>
+        <files mask="system_MKL28T7_CORE0.c"/>
+        <files mask="system_MKL28T7_CORE0.h"/>
+        <files mask="system_MKL28T7_CORE1.c"/>
+        <files mask="system_MKL28T7_CORE1.h"/>
+      </source>
+      <source path="./arm">
+        <files mask="startup_MKL28T7_CORE0.s"/>
+        <files mask="startup_MKL28T7_CORE1.s"/>
+      </source>
+      <source path="./gcc">
+        <files mask="startup_MKL28T7_CORE0.S"/>
+        <files mask="startup_MKL28T7_CORE1.S"/>
+      </source>
+      <source path="./iar">
+        <files mask="startup_MKL28T7_core0.s"/>
+        <files mask="startup_MKL28T7_core1.s"/>
+      </source>
+      <source path="./arm">
+        <files mask="MKL28T512xxx7_CORE0_flash.scf"/>
+        <files mask="MKL28T512xxx7_CORE0_ram.scf"/>
+        <files mask="MKL28T512xxx7_CORE1_flash.scf"/>
+        <files mask="MKL28T512xxx7_CORE1_ram.scf"/>
+      </source>
+      <source path="./gcc">
+        <files mask="MKL28T512xxx7_CORE0_flash.ld"/>
+        <files mask="MKL28T512xxx7_CORE0_ram.ld"/>
+        <files mask="MKL28T512xxx7_CORE1_flash.ld"/>
+        <files mask="MKL28T512xxx7_CORE1_ram.ld"/>
+      </source>
+      <source path="./iar">
+        <files mask="MKL28T512xxx7_CORE0_flash.icf"/>
+        <files mask="MKL28T512xxx7_CORE0_ram.icf"/>
+        <files mask="MKL28T512xxx7_CORE1_flash.icf"/>
+        <files mask="MKL28T512xxx7_CORE1_ram.icf"/>
+      </source>
+    </component>
+  </components>
+</metadata>

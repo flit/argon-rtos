@@ -1,0 +1,38 @@
+<!-- This file is maintained by device support author -->
+<metadata>
+  <components>
+    <component name="platform.devices.MK22F51212" requires="devices.MK22F51212" provides="platform.devices.device">
+      <source path="./">
+        <files mask="fsl_clock.c"/>
+        <files mask="fsl_clock.h"/>
+        <files mask="fsl_device_registers.h"/>
+        <files mask="MK22F51212.h"/>
+        <files mask="MK22F51212.svd"/>
+        <files mask="MK22F51212_features.h"/>
+        <files mask="system_MK22F51212.c"/>
+        <files mask="system_MK22F51212.h"/>
+      </source>
+      <source path="./arm">
+        <files mask="startup_MK22F51212.s"/>
+      </source>
+      <source path="./gcc">
+        <files mask="startup_MK22F51212.S"/>
+      </source>
+      <source path="./iar">
+        <files mask="startup_MK22F51212.s"/>
+      </source>
+      <source path="./arm">
+        <files mask="MK22FN512xxx12_flash.scf"/>
+        <files mask="MK22FN512xxx12_ram.scf"/>
+      </source>
+      <source path="./gcc">
+        <files mask="MK22FN512xxx12_flash.ld"/>
+        <files mask="MK22FN512xxx12_ram.ld"/>
+      </source>
+      <source path="./iar">
+        <files mask="MK22FN512xxx12_flash.icf"/>
+        <files mask="MK22FN512xxx12_ram.icf"/>
+      </source>
+    </component>
+  </components>
+</metadata>
