@@ -53,7 +53,7 @@ void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
     {
         /* Power up Inputs/Outputs/Digital Blocks
            Power up LINEOUT, HP, ADC, DAC. */
-        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFFU);
+        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFBU);
 
         /* Power up desired digital blocks.
         I2S_IN (bit 0), I2S_OUT (bit 1), DAP (bit 4), DAC (bit 5), ADC (bit 6) are powered on */
@@ -84,7 +84,7 @@ void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
     }
     else
     {
-        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFF);
+        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFb);
 
         /* Set the data route */
         SGTL_SetDataRoute(handle, config->route);

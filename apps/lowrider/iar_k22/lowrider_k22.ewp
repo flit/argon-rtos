@@ -186,6 +186,7 @@
           <state>CLOCK_SETUP=1</state>
           <state>ARM_MATH_CM4</state>
           <state>__FPU_PRESENT=1</state>
+          <state>AR_ENABLE_TICKLESS_IDLE=0</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -201,11 +202,11 @@
         </option>
         <option>
           <name>CCListCFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMnemonics</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMessages</name>
@@ -314,13 +315,13 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
+          <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\..\..\src\devices\MK22F51212</state>
           <state>$PROJ_DIR$\..\..\..\src\ksdk</state>
           <state>$PROJ_DIR$\..\..\..\src\CMSIS\Include</state>
           <state>$PROJ_DIR$\..\..\..\src\argon\cortex_m</state>
           <state>$PROJ_DIR$\..\..\..\src\argon</state>
           <state>$PROJ_DIR$\..\..\..\src</state>
-          <state>$PROJ_DIR$\..\src</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -411,7 +412,7 @@
         </option>
         <option>
           <name>IccFloatSemantics</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCOptimizationNoSizeConstraints</name>
@@ -704,6 +705,7 @@
         <option>
           <name>IlinkConfigDefines</name>
           <state>__heap_size__=8192</state>
+          <state>__stack_size__=4096</state>
         </option>
         <option>
           <name>IlinkMapFile</name>
@@ -735,7 +737,7 @@
         </option>
         <option>
           <name>IlinkIcfFile</name>
-          <state>$PROJ_DIR$\..\..\..\src\devices\MK22F51212\linker\iar\MK22FN512xxx12_flash.icf</state>
+          <state>$PROJ_DIR$\..\..\..\src\devices\MK22F51212\iar\MK22FN512xxx12_flash.icf</state>
         </option>
         <option>
           <name>IlinkIcfFileSlave</name>
@@ -2040,12 +2042,6 @@
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_i2c.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_mcg.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_mcg.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_port.h</name>
     </file>
     <file>
@@ -2081,6 +2077,15 @@
   </group>
   <group>
     <name>src</name>
+    <file>
+      <name>$PROJ_DIR$\..\src\ar_config.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output.h</name>
+    </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.cpp</name>
     </file>

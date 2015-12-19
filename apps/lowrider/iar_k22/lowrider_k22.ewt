@@ -2202,12 +2202,6 @@
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_i2c.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_mcg.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_mcg.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_port.h</name>
     </file>
     <file>
@@ -2243,6 +2237,15 @@
   </group>
   <group>
     <name>src</name>
+    <file>
+      <name>$PROJ_DIR$\..\src\ar_config.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output.h</name>
+    </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.cpp</name>
     </file>
