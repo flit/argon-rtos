@@ -26,69 +26,73 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#if !defined(_AUDIO_OUT_H_)
-#define _AUDIO_OUT_H_
+#if !defined(_AUDIO_RAMP_H_)
+#define _AUDIO_RAMP_H_
 
-#include "argon/argon.h"
-#include "fsl_sai_edma.h"
-#include "fsl_sgtl5000.h"
+#include "audio_filter.h"
+#include <stdint.h>
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
 /*!
- * @brief Audio output port.
+ * @brief Audio ramp generator.
  */
-class AudioOutput
+class AudioRamp : public AudioFilter
 {
 public:
-    struct Buffer
+    //! Options for the shape of the ramp.
+    enum CurveType
     {
-        uint8_t * data;
-        size_t dataSize;
+        kLinear,    //!< Simple, straight line.
+        kCubic      //!< Cubic curve.
     };
 
-    class Source
-    {
-    public:
-        virtual void fill_buffer(uint32_t bufferIndex, Buffer & buffer)=0;
-    };
+    AudioRamp(float begin = 0.0, float end = 1.0);
+    virtual ~AudioRamp() {}
 
-    AudioOutput() {}
-    ~AudioOutput() {}
+    virtual void set_length_in_seconds(float seconds);
+    virtual void set_length_in_samples(uint32_t samples);
 
-    void init(const sai_transfer_format_t * format, I2C_Type * i2cBase, i2c_master_handle_t * i2c);
-    void add_buffer(Buffer * newBuffer);
-    void set_source(Source * source) { m_source = source; }
+    float get_length_in_seconds() { return m_lengthInSeconds; }
+    uint32_t get_length_in_samples() { return m_lengthInSamples; }
 
-    void start();
+    virtual void set_begin_value(float beginValue);
+    virtual void set_end_value(float endValue);
 
-    void dump_sgtl5000() { SGTL_Dump(&m_codecHandle); }
+    //! Sets the curve type. You must call this before setting the
+    //! begin or end values, or the length, because it does not recompute
+    //! the slope itself.
+    void set_curve_type(CurveType theType) { m_curveType = theType; }
+
+    uint32_t get_remaining_samples() { return m_lengthInSamples - m_currentSample; }
+
+    virtual void reset();
+    virtual float next();
+
+    //! Returns true if the number of samples returned from next() is
+    //! equal to or greater than the length of the ramp in samples.
+    virtual bool is_finished() { return m_currentSample >= m_lengthInSamples; }
+
+    virtual void process(float * samples, uint32_t count);
 
 protected:
+    float m_lengthInSeconds;
+    uint32_t m_lengthInSamples;
+    float m_beginValue;
+    float m_endValue;
+    uint32_t m_currentSample;
+    float m_slope;
+    CurveType m_curveType;
+    float m_y1;
+    float m_y2;
 
-    enum {
-        kMaxBufferCount = 2
-    };
-
-    sai_transfer_format_t m_format;
-    sai_edma_handle_t m_txHandle;
-    edma_handle_t m_dmaHandle;
-    sgtl_handle_t m_codecHandle;
-    Ar::Semaphore m_transferDone;
-    Ar::ThreadWithStack<512> m_audioThread;
-    Buffer m_buffers[kMaxBufferCount];
-    uint32_t m_bufferCount;
-    Source * m_source;
-
-    void audio_thread();
-
-    static void sai_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t status, void *userData);
+    void recalculate_slope();
 
 };
 
-#endif // _AUDIO_OUT_H_
+#endif // _AUDIO_RAMP_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

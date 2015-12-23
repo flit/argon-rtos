@@ -26,69 +26,75 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#if !defined(_AUDIO_OUT_H_)
-#define _AUDIO_OUT_H_
+#if !defined(_AUDIO_BUFFER_H_)
+#define _AUDIO_BUFFER_H_
 
-#include "argon/argon.h"
-#include "fsl_sai_edma.h"
-#include "fsl_sgtl5000.h"
+#include <stddef.h>
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
 /*!
- * @brief Audio output port.
+ * @brief Represents a single channel audio buffer.
+ *
+ * Objects of this class only wrap the actual audio data buffers, they do not own them. Multiple
+ * instances may reference the same underlying data buffer. If a data buffer is dynamically allocated,
+ * it must be freed using a mechanism outside of this class, and any instances of this class that
+ * reference the freed buffer must be properly updated or disposed.
  */
-class AudioOutput
+class AudioBuffer
 {
 public:
-    struct Buffer
+    AudioBuffer() : m_samples(NULL), m_count(0) {}
+    AudioBuffer(float * samples, size_t count) : m_samples(samples), m_count(count) {}
+    AudioBuffer(const AudioBuffer & other) : m_samples(other.m_samples), m_count(other.m_count) {}
+    AudioBuffer & operator = (const AudioBuffer & other)
     {
-        uint8_t * data;
-        size_t dataSize;
-    };
+        m_samples = other.m_samples;
+        m_count = other.m_count;
+        return *this;
+    }
 
-    class Source
+    ~AudioBuffer() {}
+
+    void set(float * samples, size_t count)
     {
-    public:
-        virtual void fill_buffer(uint32_t bufferIndex, Buffer & buffer)=0;
-    };
+        m_samples = samples;
+        m_count = count;
+    }
 
-    AudioOutput() {}
-    ~AudioOutput() {}
+    float * get_buffer() { return m_samples; }
+    const float * get_buffer() const { return m_samples; }
+    size_t get_count() const { return m_count; }
 
-    void init(const sai_transfer_format_t * format, I2C_Type * i2cBase, i2c_master_handle_t * i2c);
-    void add_buffer(Buffer * newBuffer);
-    void set_source(Source * source) { m_source = source; }
+    void clear() { set_scalar(0.0f); }
+    void set_scalar(float value);
+    void multiply_scalar(float value);
+    void multiply_vector(float * vector);
 
-    void start();
+    operator float * () { return m_samples; }
+    operator const float * () const { return m_samples; }
+    operator bool () { return m_samples != NULL; }
 
-    void dump_sgtl5000() { SGTL_Dump(&m_codecHandle); }
+//     class Cursor
+//     {
+//     public:
+//         Cursor(AudioBuffer & buffer) : m_buffer(buffer) {}
+//         ~Cursor() {}
+//
+//     protected:
+//         AudioBuffer & m_buffer;
+//     };
+//
+//     Cursor get_cursor() { return Cursor(*this); }
 
 protected:
-
-    enum {
-        kMaxBufferCount = 2
-    };
-
-    sai_transfer_format_t m_format;
-    sai_edma_handle_t m_txHandle;
-    edma_handle_t m_dmaHandle;
-    sgtl_handle_t m_codecHandle;
-    Ar::Semaphore m_transferDone;
-    Ar::ThreadWithStack<512> m_audioThread;
-    Buffer m_buffers[kMaxBufferCount];
-    uint32_t m_bufferCount;
-    Source * m_source;
-
-    void audio_thread();
-
-    static void sai_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t status, void *userData);
-
+    float * m_samples;
+    size_t m_count;
 };
 
-#endif // _AUDIO_OUT_H_
+#endif // _AUDIO_BUFFER_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

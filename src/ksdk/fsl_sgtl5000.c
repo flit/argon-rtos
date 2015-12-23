@@ -29,22 +29,12 @@
  */
 
 #include "fsl_sgtl5000.h"
-
-/*******************************************************************************
- * Definitations
- ******************************************************************************/
-
-/*******************************************************************************
- * Prototypes
- ******************************************************************************/
-
-/*******************************************************************************
- * Variables
- ******************************************************************************/
+#include <stdio.h>
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
+
 void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
 {
     handle->xfer.slaveAddress = SGTL5000_I2C_ADDR;
@@ -640,4 +630,50 @@ status_t SGTL_ModifyReg(sgtl_handle_t *handle, uint16_t reg, uint16_t clr_mask, 
     }
 
     return kStatus_Success;
+}
+
+void SGTL_Dump(sgtl_handle_t *handle)
+{
+    const struct {
+        uint16_t addr;
+        const char * name;
+    } kRegsToDump[] = {
+        { CHIP_ID, "CHIP_ID" },
+        { CHIP_DIG_POWER, "CHIP_DIG_POWER" },
+        { CHIP_CLK_CTRL, "CHIP_CLK_CTRL" },
+        { CHIP_I2S_CTRL, "CHIP_I2S_CTRL" },
+        { CHIP_SSS_CTRL, "CHIP_SSS_CTRL" },
+        { CHIP_ADCDAC_CTRL, "CHIP_ADCDAC_CTRL" },
+        { CHIP_DAC_VOL, "CHIP_DAC_VOL" },
+        { CHIP_PAD_STRENGTH, "CHIP_PAD_STRENGTH" },
+        { CHIP_ANA_ADC_CTRL, "CHIP_ANA_ADC_CTRL" },
+        { CHIP_ANA_HP_CTRL, "CHIP_ANA_HP_CTRL" },
+        { CHIP_ANA_CTRL, "CHIP_ANA_CTRL" },
+        { CHIP_LINREG_CTRL, "CHIP_LINREG_CTRL" },
+        { CHIP_REF_CTRL, "CHIP_REF_CTRL" },
+        { CHIP_MIC_CTRL, "CHIP_MIC_CTRL" },
+        { CHIP_LINE_OUT_CTRL, "CHIP_LINE_OUT_CTRL" },
+        { CHIP_LINE_OUT_VOL, "CHIP_LINE_OUT_VOL" },
+        { CHIP_ANA_POWER, "CHIP_ANA_POWER" },
+        { CHIP_PLL_CTRL, "CHIP_PLL_CTRL" },
+        { CHIP_CLK_TOP_CTRL, "CHIP_CLK_TOP_CTRL" },
+        { CHIP_ANA_STATUS, "CHIP_ANA_STATUS" },
+//         { CHIP_ANA_TEST2, "CHIP_ANA_TEST2" },
+//         { CHIP_SHORT_CTRL, "CHIP_SHORT_CTRL" },
+    };
+
+    int i;
+    for (i = 0; i < ARRAY_SIZE(kRegsToDump); ++i)
+    {
+        uint16_t val;
+        status_t status = SGTL_ReadReg(handle, kRegsToDump[i].addr, &val);
+        if (status == kStatus_Success)
+        {
+            printf("%s = 0x%04x\r\n", kRegsToDump[i].name, val);
+        }
+        else
+        {
+            printf("%s = (failed to read!)\r\n", kRegsToDump[i].name);
+        }
+    }
 }

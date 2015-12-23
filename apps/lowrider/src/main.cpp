@@ -29,10 +29,16 @@
 
 #include "argon/argon.h"
 #include "audio_output.h"
+#include "audio_output_converter.h"
+#include "audio_filter.h"
+#include "audio_ramp.h"
+#include "ar_envelope.h"
 #include "fsl_port.h"
 #include "fsl_gpio.h"
+#include "fsl_fxos.h"
 #include "arm_math.h"
 #include <stdio.h>
+#include <math.h>
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -43,10 +49,37 @@
 #define CHANNEL_NUM (2)
 #define BUFFER_NUM (2)
 
+class SineGenerator : public AudioFilter
+{
+public:
+    SineGenerator()
+    :   m_sinFreq(0),
+        m_currRadians(0),
+        m_trigger("trig"),
+        m_env()
+    {
+    }
+
+    void set_freq(float freq) { m_sinFreq = freq; }
+    void init();
+
+    virtual void process(float * samples, uint32_t count);
+
+    void trigger();
+
+protected:
+    float m_sinFreq; // 80 Hz
+    float m_currRadians;
+//     Ar::TypedChannel<int> m_trigger;
+    volatile bool m_trigger;
+    AREnvelope m_env;
+};
+
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
+void accel_thread(void * arg);
 void init_audio_out();
 void init_board();
 
@@ -57,7 +90,7 @@ void init_board();
 uint32_t g_xtal0Freq = 8000000U;
 uint32_t g_xtal32Freq = 32768U;
 
-float g_audioBuf[BUFFER_NUM][BUFFER_SIZE];// * CHANNEL_NUM];
+float g_audioBuf[BUFFER_SIZE];
 int16_t g_outBuf[BUFFER_NUM][BUFFER_SIZE * CHANNEL_NUM];
 
 float g_sampleRate = 32000.0f; // 32kHz
@@ -65,7 +98,12 @@ float g_sinFreq = 80.0f; // 80 Hz
 float g_currRadians = 0.0f;
 
 AudioOutput g_audioOut;
+AudioOutputConverter g_audioOutConverter;
+SineGenerator g_sinGen;
 i2c_master_handle_t g_i2cHandle;
+fxos_handle_t g_fxos;
+
+Ar::ThreadWithStack<512> g_accelThread("accel", accel_thread, 0, 120, kArSuspendThread);
 
 //------------------------------------------------------------------------------
 // Code
@@ -77,40 +115,76 @@ void my_timer_fn(Ar::Timer * t, void * arg)
 
     GPIO_TogglePinsOutput(GPIOA, (1 << 1)|(1 << 2));
     GPIO_TogglePinsOutput(GPIOD, (1 << 5));
+
+    g_sinGen.trigger();
 }
 Ar::Timer g_myTimer("mine", my_timer_fn, 0, kArPeriodicTimer, 1500);
 
-void fill_sine(float * samples, uint32_t count)
+void SineGenerator::init()
 {
-    float delta = 2.0f * PI * (g_sinFreq / g_sampleRate);
+    m_env.set_sample_rate(get_sample_rate());
+    m_env.set_curve_type(AREnvelope::kAttack, AudioRamp::kLinear);
+    m_env.set_curve_type(AREnvelope::kRelease, AudioRamp::kLinear);
+    m_env.set_length_in_seconds(AREnvelope::kAttack, 0.05f);
+    m_env.set_length_in_seconds(AREnvelope::kRelease, 1.5f);
+}
+
+void SineGenerator::process(float * samples, uint32_t count)
+{
+    float delta = 2.0f * PI * (m_sinFreq / m_sampleRate);
+
+    // Check for a trigger.
+//     int trig;
+//     ar_status_t status = m_trigger.receive(trig, kArNoTimeout);
+    bool isTriggered = m_trigger; // status == kArSuccess && trig == 1;
 
     int i;
+    float * sample = samples;
     for (i = 0; i < count; ++i)
     {
-        float f = arm_sin_f32(g_currRadians);
-        *samples++ = f; // L channel
-//         *samples++ = f; // R channel
+//         float f = sinf(m_currRadians);
+        float f = arm_sin_f32(m_currRadians);
+        *sample++ = f * m_env.next();
 
-        g_currRadians += delta;
-        if (g_currRadians >= 2.0f * PI)
+        m_currRadians += delta;
+        if (m_currRadians >= 2.0f * PI)
         {
-            g_currRadians = 0.0f;
+            m_currRadians = 0.0f;
+        }
+        if (isTriggered && m_currRadians == 0.0f)
+        {
+            m_env.reset();
+            m_trigger = false;
         }
     }
 }
 
-void fill_callback(uint32_t bufferIndex, AudioOutput::Buffer * buffer)
+void SineGenerator::trigger()
 {
-    fill_sine(&g_audioBuf[bufferIndex][0], BUFFER_SIZE);
+//     m_trigger.send(1);
+    m_trigger = true;
+}
 
-    int i;
-    int16_t * out = (int16_t *)buffer->data;
-    for (i = 0; i < BUFFER_SIZE; ++i)
+void accel_thread(void * arg)
+{
+    memset(&g_fxos, 0, sizeof(g_fxos));
+    g_fxos.base = I2C0;
+    g_fxos.i2cHandle = &g_i2cHandle;
+    g_fxos.xfer.slaveAddress = 0x1c;
+    FXOS_Init(&g_fxos);
+
+    while (1)
     {
-        float sample = g_audioBuf[bufferIndex][i];
-        int16_t intSample = int16_t(sample * 32767.0);
-        *out++ = intSample;
-        *out++ = intSample;
+        fxos_data_t data;
+        status_t status = FXOS_ReadSensorData(&g_fxos, &data);
+        if (status == kStatus_Success)
+        {
+//             printf("acc[x=%6d y=%6d z=%6d] mag[x=%6d y=%6d z=%6d]\r\n",
+//                    data.accelX, data.accelY, data.accelZ,
+//                    data.magX, data.magY, data.magZ);
+        }
+
+        Ar::Thread::sleep(20);
     }
 }
 
@@ -134,7 +208,6 @@ void init_audio_out()
     I2C_MasterCreateHandle(I2C0, &g_i2cHandle, NULL, NULL);
 
     g_audioOut.init(&format, I2C0, &g_i2cHandle);
-    g_audioOut.set_callback(fill_callback);
 
     AudioOutput::Buffer buf;
     buf.dataSize = BUFFER_SIZE * CHANNEL_NUM * sizeof(int16_t);
@@ -143,7 +216,16 @@ void init_audio_out()
     buf.data = (uint8_t *)&g_outBuf[1][0];
     g_audioOut.add_buffer(&buf);
 
-    g_audioOut.dump_sgtl5000();
+    g_audioOut.set_source(&g_audioOutConverter);
+    AudioBuffer audioBuf(&g_audioBuf[0], BUFFER_SIZE);
+    g_audioOutConverter.set_buffer(audioBuf);
+    g_audioOutConverter.set_source(&g_sinGen);
+
+    g_sinGen.set_sample_rate(32000.0f);
+    g_sinGen.set_freq(50.0f);
+    g_sinGen.init();
+
+//     g_audioOut.dump_sgtl5000();
 }
 
 void init_board()
@@ -193,8 +275,8 @@ int main(void)
     init_audio_out();
 
     g_myTimer.start();
-
     g_audioOut.start();
+    g_accelThread.resume();
 
     Ar::Thread::getCurrent()->suspend();
     while (1)

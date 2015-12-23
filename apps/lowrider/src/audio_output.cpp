@@ -40,7 +40,7 @@ void AudioOutput::init(const sai_transfer_format_t * format, I2C_Type * i2cBase,
     m_format = *format;
     m_bufferCount = 0;
     m_transferDone.init("txdone", 0);
-    m_callback = NULL;
+    m_source = NULL;
 
     // Create EDMA handle
     edma_config_t dmaConfig = {0};
@@ -102,9 +102,9 @@ void AudioOutput::audio_thread()
     {
         buf.data = m_buffers[i].data;
         buf.dataSize = m_buffers[i].dataSize;
-        if (m_callback)
+        if (m_source)
         {
-            m_callback(i, &buf);
+            m_source->fill_buffer(i, buf);
         }
 
         xfer.data = buf.data;
@@ -120,9 +120,9 @@ void AudioOutput::audio_thread()
 
         buf.data = m_buffers[currentBuffer].data;
         buf.dataSize = m_buffers[currentBuffer].dataSize;
-        if (m_callback)
+        if (m_source)
         {
-            m_callback(currentBuffer, &buf);
+            m_source->fill_buffer(currentBuffer, buf);
         }
 
         xfer.data = buf.data;
@@ -130,52 +130,6 @@ void AudioOutput::audio_thread()
         SAI_SendEDMA(I2S0, &m_txHandle, &xfer);
 
         currentBuffer = (currentBuffer + 1) % m_bufferCount;
-    }
-}
-
-void AudioOutput::dump_sgtl5000()
-{
-    const struct {
-        uint16_t addr;
-        const char * name;
-    } kRegsToDump[] = {
-        { CHIP_ID, "CHIP_ID" },
-        { CHIP_DIG_POWER, "CHIP_DIG_POWER" },
-        { CHIP_CLK_CTRL, "CHIP_CLK_CTRL" },
-        { CHIP_I2S_CTRL, "CHIP_I2S_CTRL" },
-        { CHIP_SSS_CTRL, "CHIP_SSS_CTRL" },
-        { CHIP_ADCDAC_CTRL, "CHIP_ADCDAC_CTRL" },
-        { CHIP_DAC_VOL, "CHIP_DAC_VOL" },
-        { CHIP_PAD_STRENGTH, "CHIP_PAD_STRENGTH" },
-        { CHIP_ANA_ADC_CTRL, "CHIP_ANA_ADC_CTRL" },
-        { CHIP_ANA_HP_CTRL, "CHIP_ANA_HP_CTRL" },
-        { CHIP_ANA_CTRL, "CHIP_ANA_CTRL" },
-        { CHIP_LINREG_CTRL, "CHIP_LINREG_CTRL" },
-        { CHIP_REF_CTRL, "CHIP_REF_CTRL" },
-        { CHIP_MIC_CTRL, "CHIP_MIC_CTRL" },
-        { CHIP_LINE_OUT_CTRL, "CHIP_LINE_OUT_CTRL" },
-        { CHIP_LINE_OUT_VOL, "CHIP_LINE_OUT_VOL" },
-        { CHIP_ANA_POWER, "CHIP_ANA_POWER" },
-        { CHIP_PLL_CTRL, "CHIP_PLL_CTRL" },
-        { CHIP_CLK_TOP_CTRL, "CHIP_CLK_TOP_CTRL" },
-        { CHIP_ANA_STATUS, "CHIP_ANA_STATUS" },
-//         { CHIP_ANA_TEST2, "CHIP_ANA_TEST2" },
-//         { CHIP_SHORT_CTRL, "CHIP_SHORT_CTRL" },
-    };
-
-    int i;
-    for (i = 0; i < ARRAY_SIZE(kRegsToDump); ++i)
-    {
-        uint16_t val;
-        status_t status = SGTL_ReadReg(&m_codecHandle, kRegsToDump[i].addr, &val);
-        if (status == kStatus_Success)
-        {
-            printf("%s = 0x%04x\r\n", kRegsToDump[i].name, val);
-        }
-        else
-        {
-            printf("%s = (failed to read!)\r\n", kRegsToDump[i].name);
-        }
     }
 }
 

@@ -949,18 +949,12 @@ typedef struct _fxos_handle
 
 typedef struct _fxos8700cq_data
 {
-    uint8_t accelXMSB;
-    uint8_t accelXLSB;
-    uint8_t accelYMSB;
-    uint8_t accelYLSB;
-    uint8_t accelZMSB;
-    uint8_t accelZLSB;
-    uint8_t magXMSB;
-    uint8_t magXLSB;
-    uint8_t magYMSB;
-    uint8_t magYLSB;
-    uint8_t magZMSB;
-    uint8_t magZLSB;
+    int16_t accelX;
+    int16_t accelY;
+    int16_t accelZ;
+    int16_t magX;
+    int16_t magY;
+    int16_t magZ;
 } fxos_data_t;
 
 /*!
@@ -1013,5 +1007,9 @@ status_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val);
  * @return kStatus_Success if success or kStatus_Fail if error.
  */
 status_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _FSL_FXOS_H_ */

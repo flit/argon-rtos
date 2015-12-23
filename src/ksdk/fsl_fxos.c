@@ -150,27 +150,35 @@ status_t FXOS_ReadSensorData(fxos_handle_t *fxos_handle, fxos_data_t *sensorData
 {
     status_t status = kStatus_Success;
     uint8_t tmp_buff[6] = {0};
-    uint8_t i = 0;
+//     uint8_t i = 0;
 
     if (!FXOS_ReadReg(fxos_handle, OUT_X_MSB_REG, tmp_buff, 6) == kStatus_Success)
     {
         status = kStatus_Fail;
     }
 
-    for (i = 0; i < 6; i++)
-    {
-        ((int8_t *)sensorData)[i] = tmp_buff[i];
-    }
+//     for (i = 0; i < 6; i++)
+//     {
+//         ((int8_t *)sensorData)[i] = tmp_buff[i];
+//     }
+
+    sensorData->accelX = (tmp_buff[0] << 8) | tmp_buff[1];
+    sensorData->accelY = (tmp_buff[2] << 8) | tmp_buff[3];
+    sensorData->accelZ = (tmp_buff[4] << 8) | tmp_buff[5];
 
     if (!FXOS_ReadReg(fxos_handle, M_OUT_X_MSB_REG, tmp_buff, 6) == kStatus_Success)
     {
         status = kStatus_Fail;
     }
 
-    for (i = 0; i < 6; i++)
-    {
-        ((int8_t *)sensorData)[i + 6] = tmp_buff[i];
-    }
+//     for (i = 0; i < 6; i++)
+//     {
+//         ((int8_t *)sensorData)[i + 6] = tmp_buff[i];
+//     }
+
+    sensorData->magX = (tmp_buff[0] << 8) | tmp_buff[1];
+    sensorData->magY = (tmp_buff[2] << 8) | tmp_buff[3];
+    sensorData->magZ = (tmp_buff[4] << 8) | tmp_buff[5];
 
     return status;
 }

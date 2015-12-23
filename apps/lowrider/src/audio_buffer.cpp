@@ -26,69 +26,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#if !defined(_AUDIO_OUT_H_)
-#define _AUDIO_OUT_H_
 
-#include "argon/argon.h"
-#include "fsl_sai_edma.h"
-#include "fsl_sgtl5000.h"
+#include "audio_buffer.h"
+#include "arm_math.h"
 
 //------------------------------------------------------------------------------
-// Definitions
+// Code
 //------------------------------------------------------------------------------
 
-/*!
- * @brief Audio output port.
- */
-class AudioOutput
+void AudioBuffer::set_scalar(float value)
 {
-public:
-    struct Buffer
-    {
-        uint8_t * data;
-        size_t dataSize;
-    };
+    arm_fill_f32(value, m_samples, m_count);
+}
 
-    class Source
-    {
-    public:
-        virtual void fill_buffer(uint32_t bufferIndex, Buffer & buffer)=0;
-    };
+void AudioBuffer::multiply_scalar(float value)
+{
+    arm_scale_f32(m_samples, value, m_samples, m_count);
+}
 
-    AudioOutput() {}
-    ~AudioOutput() {}
+void AudioBuffer::multiply_vector(float * vector)
+{
+    arm_mult_f32(m_samples, vector, m_samples, m_count);
+}
 
-    void init(const sai_transfer_format_t * format, I2C_Type * i2cBase, i2c_master_handle_t * i2c);
-    void add_buffer(Buffer * newBuffer);
-    void set_source(Source * source) { m_source = source; }
-
-    void start();
-
-    void dump_sgtl5000() { SGTL_Dump(&m_codecHandle); }
-
-protected:
-
-    enum {
-        kMaxBufferCount = 2
-    };
-
-    sai_transfer_format_t m_format;
-    sai_edma_handle_t m_txHandle;
-    edma_handle_t m_dmaHandle;
-    sgtl_handle_t m_codecHandle;
-    Ar::Semaphore m_transferDone;
-    Ar::ThreadWithStack<512> m_audioThread;
-    Buffer m_buffers[kMaxBufferCount];
-    uint32_t m_bufferCount;
-    Source * m_source;
-
-    void audio_thread();
-
-    static void sai_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t status, void *userData);
-
-};
-
-#endif // _AUDIO_OUT_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

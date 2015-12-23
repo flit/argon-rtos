@@ -962,6 +962,15 @@ status_t SGTL_ReadReg(sgtl_handle_t *handle, uint16_t reg, uint16_t *val);
  */
 status_t SGTL_ModifyReg(sgtl_handle_t *handle, uint16_t reg, uint16_t clr_mask, uint16_t val);
 
+/*!
+ * @brief Print SGTL5000 register values.
+ *
+ * Prints registers CHIP_ID through CHIP_ANA_STATUS. Does not print the DAP registers.
+ *
+ * @param handle Sgtl5000 handle structure.
+ */
+void SGTL_Dump(sgtl_handle_t *handle);
+
 #if defined(__cplusplus)
 }
 #endif

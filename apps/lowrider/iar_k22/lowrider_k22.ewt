@@ -2163,6 +2163,12 @@
       <name>$PROJ_DIR$\..\..\..\src\CMSIS\DSP_Lib\Source\SupportFunctions\arm_float_to_q15.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\..\src\CMSIS\DSP_Lib\Source\BasicMathFunctions\arm_mult_f32.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\src\CMSIS\DSP_Lib\Source\BasicMathFunctions\arm_scale_f32.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\..\src\CMSIS\DSP_Lib\Source\FastMathFunctions\arm_sin_f32.c</name>
     </file>
     <file>
@@ -2188,6 +2194,12 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_edma.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_fxos.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_fxos.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_gpio.c</name>
@@ -2241,10 +2253,31 @@
       <name>$PROJ_DIR$\..\src\ar_config.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\src\ar_envelope.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\ar_envelope.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_filter.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\src\audio_output.cpp</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\audio_output.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output_converter.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_output_converter.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_ramp.cpp</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\audio_ramp.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.cpp</name>

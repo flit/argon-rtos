@@ -26,69 +26,73 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#if !defined(_AUDIO_OUT_H_)
-#define _AUDIO_OUT_H_
+#if !defined(_AUDIO_FILTER_H_)
+#define _AUDIO_FILTER_H_
 
-#include "argon/argon.h"
-#include "fsl_sai_edma.h"
-#include "fsl_sgtl5000.h"
+#include "audio_buffer.h"
+#include <stdint.h>
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
 /*!
- * @brief Audio output port.
+ * @brief Audio filter.
  */
-class AudioOutput
+class AudioFilter
 {
 public:
-    struct Buffer
+    AudioFilter() : m_sampleRate(0) {}
+    virtual ~AudioFilter() {}
+
+    void set_sample_rate(float rate) { m_sampleRate = rate; }
+    float get_sample_rate() const { return m_sampleRate; }
+
+    void process(AudioBuffer & buffer)
     {
-        uint8_t * data;
-        size_t dataSize;
-    };
+        process(buffer.get_buffer(), buffer.get_count());
+    }
 
-    class Source
-    {
-    public:
-        virtual void fill_buffer(uint32_t bufferIndex, Buffer & buffer)=0;
-    };
+    virtual void process(float * samples, uint32_t count)=0;
 
-    AudioOutput() {}
-    ~AudioOutput() {}
-
-    void init(const sai_transfer_format_t * format, I2C_Type * i2cBase, i2c_master_handle_t * i2c);
-    void add_buffer(Buffer * newBuffer);
-    void set_source(Source * source) { m_source = source; }
-
-    void start();
-
-    void dump_sgtl5000() { SGTL_Dump(&m_codecHandle); }
 
 protected:
-
-    enum {
-        kMaxBufferCount = 2
-    };
-
-    sai_transfer_format_t m_format;
-    sai_edma_handle_t m_txHandle;
-    edma_handle_t m_dmaHandle;
-    sgtl_handle_t m_codecHandle;
-    Ar::Semaphore m_transferDone;
-    Ar::ThreadWithStack<512> m_audioThread;
-    Buffer m_buffers[kMaxBufferCount];
-    uint32_t m_bufferCount;
-    Source * m_source;
-
-    void audio_thread();
-
-    static void sai_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t status, void *userData);
+    float m_sampleRate;
 
 };
 
-#endif // _AUDIO_OUT_H_
+
+
+// SineGenerator singen;
+// Lowpass lpf;
+// Delay dly;
+// OutputConverter cvt;
+//
+// lpf.connect_source(singen);
+// dly.connect_source(lpf);
+// cvt.connect_source(dly);
+// out.set_source(cvt);
+//
+// void process(buf) {
+//     if (has_source) {
+//         source.process(buf);
+//     }
+//     this.internal_process(buf);
+// }
+//
+//
+// AudioGraph graph;
+// graph.add_node(singen);
+// graph.add_node(lpf, singen);
+// graph.add_node(dly, lpf);
+//
+// cvt.set_source(graph);
+// out.set_source(cvt);
+
+
+
+
+#endif // _AUDIO_FILTER_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

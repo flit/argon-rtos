@@ -26,69 +26,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#if !defined(_AUDIO_OUT_H_)
-#define _AUDIO_OUT_H_
+#if !defined(_AR_ENVELOPE_H_)
+#define _AR_ENVELOPE_H_
 
-#include "argon/argon.h"
-#include "fsl_sai_edma.h"
-#include "fsl_sgtl5000.h"
+#include "audio_ramp.h"
+#include <stdint.h>
 
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
 
 /*!
- * @brief Audio output port.
+ * @brief Attack-Release envelope generator.
  */
-class AudioOutput
+class AREnvelope : public AudioFilter
 {
 public:
-    struct Buffer
+    //! Options for the shape of the ramp.
+    enum EnvelopeStage
     {
-        uint8_t * data;
-        size_t dataSize;
+        kAttack,
+        kRelease
     };
 
-    class Source
-    {
-    public:
-        virtual void fill_buffer(uint32_t bufferIndex, Buffer & buffer)=0;
-    };
+    AREnvelope();
+    virtual ~AREnvelope() {}
 
-    AudioOutput() {}
-    ~AudioOutput() {}
+    void set_sample_rate(float rate);
 
-    void init(const sai_transfer_format_t * format, I2C_Type * i2cBase, i2c_master_handle_t * i2c);
-    void add_buffer(Buffer * newBuffer);
-    void set_source(Source * source) { m_source = source; }
+    void set_peak(float peak);
 
-    void start();
+    void set_length_in_seconds(EnvelopeStage stage, float seconds);
+    void set_length_in_samples(EnvelopeStage stage, uint32_t samples);
 
-    void dump_sgtl5000() { SGTL_Dump(&m_codecHandle); }
+    float get_length_in_seconds(EnvelopeStage stage);
+    uint32_t get_length_in_samples(EnvelopeStage stage);
+
+    //! Sets the curve type. You must call this before setting the
+    //! begin or end values, or the length, because it does not recompute
+    //! the slope itself.
+    void set_curve_type(EnvelopeStage stage, AudioRamp::CurveType theType);
+
+    void reset();
+    float next();
+
+    bool is_finished();
+
+    virtual void process(float * samples, uint32_t count);
 
 protected:
-
-    enum {
-        kMaxBufferCount = 2
-    };
-
-    sai_transfer_format_t m_format;
-    sai_edma_handle_t m_txHandle;
-    edma_handle_t m_dmaHandle;
-    sgtl_handle_t m_codecHandle;
-    Ar::Semaphore m_transferDone;
-    Ar::ThreadWithStack<512> m_audioThread;
-    Buffer m_buffers[kMaxBufferCount];
-    uint32_t m_bufferCount;
-    Source * m_source;
-
-    void audio_thread();
-
-    static void sai_callback(I2S_Type *base, sai_edma_handle_t *handle, status_t status, void *userData);
+    AudioRamp m_attack;
+    AudioRamp m_release;
+    float m_peak;
 
 };
 
-#endif // _AUDIO_OUT_H_
+#endif // _AR_ENVELOPE_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
