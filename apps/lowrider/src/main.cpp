@@ -70,8 +70,8 @@ public:
 protected:
     float m_sinFreq; // 80 Hz
     float m_currRadians;
-//     Ar::TypedChannel<int> m_trigger;
-    volatile bool m_trigger;
+    Ar::StaticQueue<int, 2> m_trigger;
+//     volatile bool m_trigger;
     AREnvelope m_env;
 };
 
@@ -134,15 +134,15 @@ void SineGenerator::process(float * samples, uint32_t count)
     float delta = 2.0f * PI * (m_sinFreq / m_sampleRate);
 
     // Check for a trigger.
-//     int trig;
-//     ar_status_t status = m_trigger.receive(trig, kArNoTimeout);
-    bool isTriggered = m_trigger; // status == kArSuccess && trig == 1;
+    int trig;
+    ar_status_t status = m_trigger.receive(&trig, kArNoTimeout);
+    bool isTriggered = status == kArSuccess && trig == 1;
+//     bool isTriggered = m_trigger;
 
     int i;
     float * sample = samples;
     for (i = 0; i < count; ++i)
     {
-//         float f = sinf(m_currRadians);
         float f = arm_sin_f32(m_currRadians);
         *sample++ = f * m_env.next();
 
@@ -154,15 +154,15 @@ void SineGenerator::process(float * samples, uint32_t count)
         if (isTriggered && m_currRadians == 0.0f)
         {
             m_env.reset();
-            m_trigger = false;
+//             m_trigger = false;
         }
     }
 }
 
 void SineGenerator::trigger()
 {
-//     m_trigger.send(1);
-    m_trigger = true;
+    m_trigger.send(1, kArNoTimeout);
+//     m_trigger = true;
 }
 
 void accel_thread(void * arg)
