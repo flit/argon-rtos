@@ -402,7 +402,7 @@ public:
     //!
     //! Any threads on the blocked list will be unblocked immediately. Their return status from the
     //! get() method will be #kArObjectDeletedError.
-    virtual ~Semaphore() { ar_semaphore_delete(this); }
+    ~Semaphore() { ar_semaphore_delete(this); }
 
     //! @brief Get the semaphore's name.
     const char * getName() const { return m_name; }
@@ -517,7 +517,7 @@ public:
     ar_status_t init(const char * name) { return ar_mutex_create(this, name); }
 
     //! @brief Cleanup.
-    virtual ~Mutex() { ar_mutex_delete(this); }
+    ~Mutex() { ar_mutex_delete(this); }
 
     //! @brief Get the mutex's name.
     const char * getName() const { return m_sem.m_name; }
@@ -606,6 +606,9 @@ public:
 
     //! @brief Constructor.
     Channel(const char * name, uint32_t width=0) { init(name); }
+
+    //! @brief Destructor.
+    ~Channel() { ar_channel_delete(this); }
 
     //! @brief Channel initialiser.
     ar_status_t init(const char * name, uint32_t width=0) { return ar_channel_create(this, name, width); }
@@ -716,7 +719,7 @@ public:
     }
 
     //! @brief Queue cleanup.
-    virtual ~Queue() { ar_queue_delete(this); }
+    ~Queue() { ar_queue_delete(this); }
 
     //! @brief Get the queue's name.
     const char * getName() const { return m_name; }
@@ -873,7 +876,7 @@ public:
     }
 
     //! @brief Destructor.
-    virtual ~Timer() { ar_timer_delete(this); }
+    ~Timer() { ar_timer_delete(this); }
 
     //! @brief Initialize the timer.
     ar_status_t init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay);
