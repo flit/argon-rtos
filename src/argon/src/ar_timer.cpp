@@ -100,17 +100,19 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
         return ar_post_deferred_action(kArDeferredTimerStart, timer);
     }
 
-    KernelLock guard;
-
-    // Handle a timer that is already active.
-    if (timer->m_isActive)
     {
-        g_ar.activeTimers.remove(timer);
-    }
+        KernelLock guard;
 
-    timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
-    timer->m_isActive = true;
-    g_ar.activeTimers.add(timer);
+        // Handle a timer that is already active.
+        if (timer->m_isActive)
+        {
+            g_ar.activeTimers.remove(timer);
+        }
+
+        timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
+        timer->m_isActive = true;
+        g_ar.activeTimers.add(timer);
+    }
 
     return kArSuccess;
 }
@@ -133,11 +135,13 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
         return ar_post_deferred_action(kArDeferredTimerStop, timer);
     }
 
-    KernelLock guard;
+    {
+        KernelLock guard;
 
-    g_ar.activeTimers.remove(timer);
-    timer->m_wakeupTime = 0;
-    timer->m_isActive = false;
+        g_ar.activeTimers.remove(timer);
+        timer->m_wakeupTime = 0;
+        timer->m_isActive = false;
+    }
 
     return kArSuccess;
 }
@@ -150,17 +154,19 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         return kArInvalidParameterError;
     }
 
-    KernelLock guard;
-
-    timer->m_delay = ar_milliseconds_to_ticks(delay);
-
-    // If the timer is running, we need to update the wakeup time and resort the list.
-    if (timer->m_isActive)
     {
-        timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
+        KernelLock guard;
 
-        g_ar.activeTimers.remove(timer);
-        g_ar.activeTimers.add(timer);
+        timer->m_delay = ar_milliseconds_to_ticks(delay);
+
+        // If the timer is running, we need to update the wakeup time and resort the list.
+        if (timer->m_isActive)
+        {
+            timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
+
+            g_ar.activeTimers.remove(timer);
+            g_ar.activeTimers.add(timer);
+        }
     }
 
     return kArSuccess;
