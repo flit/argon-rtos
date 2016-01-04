@@ -103,6 +103,7 @@ typedef struct _ar_kernel {
         ar_list_t channels;         //!< All existing channels;
         ar_list_t queues;           //!< All existing queues.
         ar_list_t timers;           //!< All existing timers.
+        ar_list_t runloops;         //!< All existing runloops.
     } allObjects;
 #endif // AR_GLOBAL_OBJECT_LISTS
 } ar_kernel_t;
@@ -131,6 +132,7 @@ void ar_kernel_enter_scheduler(void);
 void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
+bool ar_kernel_run_timers(ar_list_t & timersList);
 //@}
 
 //! @name Deferred actions
@@ -164,8 +166,12 @@ extern "C" uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
 inline bool _ar_list::isEmpty() const { return m_head == NULL; }
 inline void _ar_list::add(ar_thread_t * item) { add(&item->m_threadNode); }
 inline void _ar_list::add(ar_timer_t * item) { add(&item->m_activeNode); }
+inline void _ar_list::add(ar_queue_t * item) { add(&item->m_runLoopNode); }
+inline void _ar_list::add(ar_channel_t * item) { add(&item->m_runLoopNode); }
 inline void _ar_list::remove(ar_thread_t * item) { remove(&item->m_threadNode); }
 inline void _ar_list::remove(ar_timer_t * item) { remove(&item->m_activeNode); }
+inline void _ar_list::remove(ar_queue_t * item) { remove(&item->m_runLoopNode); }
+inline void _ar_list::remove(ar_channel_t * item) { remove(&item->m_runLoopNode); }
 
 /*!
  * @brief Utility class to temporarily lock or unlock the kernel.

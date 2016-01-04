@@ -58,6 +58,49 @@ static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 // Code
 //------------------------------------------------------------------------------
 
+bool ar_kernel_run_timers(ar_list_t & timersList)
+{
+    bool handledTimer = false;
+
+    // Check if we need to handle a timer.
+    if (timersList.m_head)
+    {
+        ar_list_node_t * timerNode = timersList.m_head;
+        while (timerNode)
+        {
+            ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
+            assert(timer);
+
+            if (timer->m_wakeupTime > g_ar.tickCount)
+            {
+                break;
+            }
+
+            // Invoke the timer callback.
+            assert(timer->m_callback);
+            timer->m_callback(timer, timer->m_param);
+
+            switch (timer->m_mode)
+            {
+                case kArOneShotTimer:
+                    // Stop a one shot timer after it has fired.
+                    ar_timer_stop(timer);
+                    break;
+
+                case kArPeriodicTimer:
+                    // Restart a periodic timer.
+                    ar_timer_start(timer);
+                    break;
+            }
+
+            handledTimer = true;
+            timerNode = timerNode->m_next;
+        }
+    }
+
+    return handledTimer;
+}
+
 //! @brief System idle thread entry point.
 //!
 //! This thread just spins forever.
@@ -81,49 +124,12 @@ void idle_entry(void * param)
 
     while (1)
     {
-        // Check if we need to handle a timer.
-        if (g_ar.activeTimers.m_head)
+        // If we handled any timers, we need to set our priority back to the normal idle thread
+        // priority. The tick handler will have raised our priority to the max in order to handle
+        // the expired timers.
+        if (ar_kernel_run_timers(g_ar.activeTimers))
         {
-            ar_list_node_t * timerNode = g_ar.activeTimers.m_head;
-            bool handledTimer = false;
-            while (timerNode)
-            {
-                ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
-                assert(timer);
-
-                if (timer->m_wakeupTime > g_ar.tickCount)
-                {
-                    break;
-                }
-
-                // Invoke the timer callback.
-                assert(timer->m_callback);
-                timer->m_callback(timer, timer->m_param);
-
-                switch (timer->m_mode)
-                {
-                    case kArOneShotTimer:
-                        // Stop a one shot timer after it has fired.
-                        ar_timer_stop(timer);
-                        break;
-
-                    case kArPeriodicTimer:
-                        // Restart a periodic timer.
-                        ar_timer_start(timer);
-                        break;
-                }
-
-                handledTimer = true;
-                timerNode = timerNode->m_next;
-            }
-
-            // If we handled any timers, we need to set our priority back to the normal idle thread
-            // priority. The tick handler will have raised our priority to the max in order to handle
-            // the expired timers.
-            if (handledTimer)
-            {
-                ar_thread_set_priority(&g_ar.idleThread, kArIdleThreadPriority);
-            }
+            ar_thread_set_priority(&g_ar.idleThread, kArIdleThreadPriority);
         }
 
         // Compute system load.

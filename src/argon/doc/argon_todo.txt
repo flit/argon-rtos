@@ -56,7 +56,7 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 - Need to be able to restart a thread once it has completed execution.
 √ Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
 - Move more internal stuff into Ar namespace.
-- Consider possibilities of run-to-completion threads that share a stack.
+x Consider possibilities of run-to-completion threads that share a stack.
 - Add a deferred call mechanism that works from ISRs.
 - Channels only need one blocked list.
 - Some timer code is included even if timers are not used in the application.
@@ -64,8 +64,25 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 - Rename _halt() to ar_port_halt_cpu().
 - Restore stack size or stack top in thread struct so we can compute stack usage.
 - ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
-- Add comprehensive kernel trace capability.
+- Add comprehensive kernel event recording/trace capability.
 - Limit channel and queue element size to a single word.
+- Add run loops.
+- Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
+- Return errors for non-zero timeouts in calls from timers, like for ISRs.
+- Normalize channel and queue class send() and receive() methods' use of ptrs, references, or by value.
+- Add a header to kernel object structs with type and name pointer?
+- Change to a single ar_object_get_name() API?
+- Can we replace the ar_list_node_t object pointer member with a calculation of node struct offset from the header of the containing kernel object struct?
+- Change function pointer types to not be pointers, then make params etc pointers.
+- Remove "m_" from kernel object member names since they are public and accessed directly?
+√ Make kernel object class destructors non-virtual, except for Thread; no virtual methods, and this will save a vptr&table for each class.
+- Remove "2" on ar_post_deferred_action2() and use overloading.
+- Use SVCall for most kernel APIs.
+- KernelLock doesn't need a member to store saved state because g_ar.lockCount can be used.
+- Have scheduler compute thread CPU usage.
+- Remove need for idle thread by staying in scheduler until a thread becomes ready.
+- Add support for blocks.
+- MPU support.
 
 
 Issues
@@ -79,6 +96,7 @@ x Use of timers requires another stack.
 - It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
 - Sometimes deferred actions are not being executed as soon as the kernel is unlocked, or the kernel is not being properly unlocked, causing a situation where the deferred action queue can overflow.
 - Idle thread will WFI sometimes when we don't want it to, like when running timers back to back.
+- Blocking the idle thread will cause the scheduler to assert.
 
 
 Renaming
@@ -109,5 +127,135 @@ Tickless idle
 - Use a two timer model
     - One timer for a µs wall clock
     - Another timer as the wakeup timer
+
+
+Notes
+-----
+
+- need to clear SysTick COUNTFLAG when locking in ar_port_set_lock()?
+
+- kernel locking:
+    - don't disable timer
+    - instead, make timer isr check if kernel is locked and if so simply record that the timer fired
+    - when the kernel is unlocked, check timer fired flag and if set call real timer handler
+
+
+with virtual dtors:
+sizeof(ar_thread_t)=72; sizeof(Thread)=84
+sizeof(ar_channel_t)=36; sizeof(Channel)=36
+sizeof(ar_semaphore_t)=28; sizeof(Semaphore)=32
+sizeof(ar_mutex_t)=40; sizeof(Mutex)=44
+sizeof(ar_queue_t)=56; sizeof(Queue)=60
+sizeof(ar_timer_t)=52; sizeof(Timer)=60
+
+without virtual dtors:
+sizeof(ar_thread_t)=72; sizeof(Thread)=84
+sizeof(ar_channel_t)=36; sizeof(Channel)=36
+sizeof(ar_semaphore_t)=28; sizeof(Semaphore)=28
+sizeof(ar_mutex_t)=40; sizeof(Mutex)=40
+sizeof(ar_queue_t)=56; sizeof(Queue)=56
+sizeof(ar_timer_t)=52; sizeof(Timer)=56
+
+
+
+Run loops
+---------
+
+- Features:
+    - timers
+    - deferred function calls
+    - sources
+        - queue
+        - channel
+        - sem?
+
+
+void my_thread(void * arg)
+{
+    Ar::RunLoop loop;
+    Ar::Timer tmrA("a", do_tmr_a, kArPeriodicTimer, 50);
+    Ar::Timer tmrB("b", d_tmr_b, kArPeriodicTimer, 120);
+    loop.addTimer(tmrA);
+    loop.addTimer(tmrB);
+    loop.addQueue(someQ);
+
+    while (1)
+    {
+        uintptr_t value;
+        switch (loop.run(&value))
+        {
+            case kArRunLoopQueueSource:
+                break;
+            case kArRunLoopStopped:
+                break;
+        }
+    }
+}
+
+void someq_handler(ar_queue_t * queue, uintptr_t receivedData)
+{
+    if (receivedData == 1)
+    {
+        ar_runloop_stop(ar_runloop_get_current());
+    }
+}
+
+void my_thread2(void * arg)
+{
+    ar_runloop_t rl;
+    ar_runloop_create(&rl);
+
+    ar_timer_t tmra;
+    ar_timer_create(&tmra, "a", tmra_cb, 0, kArPeriodicTimer, 50);
+
+    ar_runloop_add_timer(&rl, &tmra);
+    ar_runloop_add_queue(&rl, &myq, NULL); // no handler, causes runloop to exit
+
+    ar_runloop_perform(&rl, my_cb);
+
+    ar_runloop_add_queue(&rl, &someq, someq_handler); // handler provided, handled without exiting runloop
+
+    ar_channel_t chan;
+    ar_channel_create(&chan, "chan", 0);
+    ar_runloop_add_channel(&rl, &chan);
+
+    while (1)
+    {
+        void * obj;
+        uintptr_t value;
+        switch (ar_runloop_run(&rl, 0, &obj, &value))
+        {
+            case kArRunLoopQueueSource:
+                if (obj == &myq)
+                {
+                    printf("received %d on queue myq\n", value);
+                }
+                break;
+            case kArRunLoopChannelReceived:
+                if (obj == &chan)
+                {
+                    printf("received %d on channel chan\n", value);
+                }
+                break;
+            case kArRunLoopStopped:
+                break;
+        }
+    }
+}
+
+void rl_blocks()
+{
+    __block int i = 0;
+    ar_timer_t tmrb;
+    ar_timer_create_block(&tmrb, "b", kArPeriodicTimer, 120, ^(){
+        ++i;
+    });
+    ar_runloop_add_timer(&rl, &tmrb);
+
+    ar_runloop_perform_block(&rl, ^(){
+        // do something
+    });
+}
+
 
 

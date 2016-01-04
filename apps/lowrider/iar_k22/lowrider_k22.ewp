@@ -1982,6 +1982,9 @@
       <name>$PROJ_DIR$\..\..\..\src\argon\src\ar_queue.cpp</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\..\src\argon\src\ar_runloop.cpp</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\..\src\argon\src\ar_sem.cpp</name>
     </file>
     <file>

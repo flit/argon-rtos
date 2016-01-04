@@ -135,6 +135,11 @@
     #define AR_DEFERRED_ACTION_QUEUE_SIZE (8)
 #endif
 
+#if !defined(AR_RUNLOOP_FUNCTION_QUEUE_SIZE)
+    //! @brief Maximum number of functions queued in a run loop.
+    #define AR_RUNLOOP_FUNCTION_QUEUE_SIZE (8)
+#endif
+
 //! @}
 
 #endif // _AR_CONFIG_H_

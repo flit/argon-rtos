@@ -102,7 +102,7 @@ typedef enum _ar_status {
 //! @brief Options for creating a new thread.
 //!
 //! These constants are meant to be used for the @a startImmediately parameter.
-enum {
+enum _ar_thread_start {
     kArStartThread = true,      //!< Automatically run the thread.
     kArSuspendThread = false    //!< Create the thread suspended.
 };
@@ -138,13 +138,24 @@ typedef enum _ar_timer_modes {
     kArPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
 } ar_timer_mode_t;
 
+//! @brief Runloop actions.
+typedef enum _ar_runloop_status {
+    kArRunLoopError,
+    kArRunLoopStopped,
+    kArRunLoopQueueReceived,
+    kArRunLoopChannelReceived
+} ar_runloop_status_t;
+
 //------------------------------------------------------------------------------
 // Types
 //------------------------------------------------------------------------------
 
 // Forward declarations.
 typedef struct _ar_thread ar_thread_t;
+typedef struct _ar_channel ar_channel_t;
+typedef struct _ar_queue ar_queue_t;
 typedef struct _ar_timer ar_timer_t;
+typedef struct _ar_runloop ar_runloop_t;
 typedef struct _ar_list_node ar_list_node_t;
 
 //! @name Function types
@@ -161,6 +172,15 @@ typedef void (*ar_thread_entry_t)(void * param);
 //!
 //! @ingroup ar_timer
 typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
+
+//! @brief
+typedef void (*ar_runloop_function_t)(void * param);
+
+//! @brief
+typedef void (*ar_runloop_queue_handler_t)(ar_queue_t * queue, void * value);
+
+//! @brief
+typedef void (*ar_runloop_channel_handler_t)(ar_channel_t * channel, void * value);
 //@}
 
 //! @name Linked lists
@@ -194,9 +214,13 @@ typedef struct _ar_list {
     void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
     inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.
     inline void add(ar_timer_t * item);         //!< @brief Add a timer to the list.
+    inline void add(ar_queue_t * item);         //!< @brief Add a queue to the list.
+    inline void add(ar_channel_t * item);         //!< @brief Add a channel to the list.
     void remove(ar_list_node_t * item);         //!< @brief Remove an item from the list.
     inline void remove(ar_thread_t * item);     //!< @brief Remove a thread from the list.
     inline void remove(ar_timer_t * item);      //!< @brief Remove a timer from the list.
+    inline void remove(ar_queue_t * item);      //!< @brief Remove a queue from the list.
+    inline void remove(ar_channel_t * item);      //!< @brief Remove a channel from the list.
 #endif // __cplusplus
 } ar_list_t;
 //@}
@@ -222,6 +246,7 @@ typedef struct _ar_thread {
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_channelData;       //!< Receive or send data pointer for blocked channel.
+    ar_runloop_t * m_runLoop;
 
     // Internal utility methods.
 #if defined(__cplusplus)
@@ -266,6 +291,8 @@ typedef struct _ar_channel {
     uint32_t m_width;               //!< Size in bytes of the channel's data.
     ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
     ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
+    ar_runloop_t * m_runLoop;
+    ar_list_node_t m_runLoopNode;
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Node on the created channels list.
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -286,6 +313,8 @@ typedef struct _ar_queue {
     unsigned m_count;       //!< Current number of elements in the queue.
     ar_list_t m_sendBlockedList;    //!< List of threads blocked waiting to send.
     ar_list_t m_receiveBlockedList; //!< List of threads blocked waiting to receive data.
+    ar_runloop_t * m_runLoop;
+    ar_list_node_t m_runLoopNode;
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -308,7 +337,33 @@ typedef struct _ar_timer {
     uint32_t m_delay;           //!< Delay in ticks.
     uint32_t m_wakeupTime;      //!< Expiration time in ticks.
     bool m_isActive;            //!< Whether the timer is running and on the active timers list.
+    ar_runloop_t * m_runLoop;
+    ar_list_node_t m_runLoopNode;
 } ar_timer_t;
+
+/*!
+ * @brief Run loop.
+ *
+ * @ingroup ar_runloop
+ */
+typedef struct _ar_runloop {
+    const char * m_name;
+    ar_thread_t * m_thread;
+    ar_list_t m_timers;
+    ar_list_t m_queues;
+    ar_list_t m_channels;
+    struct {
+        ar_runloop_function_t function;
+        void * param;
+    } m_functions[AR_RUNLOOP_FUNCTION_QUEUE_SIZE];
+    uint16_t m_functionCount;
+    uint16_t m_functionHead;
+    uint16_t m_functionTail;
+    volatile bool m_stop;
+#if AR_GLOBAL_OBJECT_LISTS
+    ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
+} ar_runloop_t;
 
 //------------------------------------------------------------------------------
 // API
@@ -459,6 +514,8 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
  * @return Pointer to the current thread's structure.
  */
 ar_thread_t * ar_thread_get_current(void);
+
+ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread);
 
 /*!
  * @brief Put the current thread to sleep for a certain amount of time.
@@ -885,6 +942,35 @@ uint32_t ar_timer_get_delay(ar_timer_t * timer);
 const char * ar_timer_get_name(ar_timer_t * timer);
 //@}
 
+//! @}
+
+//! @addtogroup ar_runloop
+//! @{
+
+//! @name Runloop
+//@{
+
+ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thread_t * thread);
+
+ar_status_t ar_runloop_delete(ar_runloop_t * runloop);
+
+ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void * object, void * value);
+
+ar_status_t ar_runloop_stop(ar_runloop_t * runloop);
+
+ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t function, void * param);
+
+ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer);
+
+ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback);
+
+ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback);
+
+ar_runloop_t * ar_runloop_get_current(void);
+
+const char * ar_runloop_get_name(ar_runloop_t * runloop);
+
+//@}
 //! @}
 
 //! @addtogroup ar_time
