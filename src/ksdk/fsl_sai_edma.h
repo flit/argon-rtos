@@ -88,7 +88,7 @@ extern "C" {
  * @param userData User parameter passed to the callback function.
  * @param dmaHandle eDMA handle pointer, this handle shall be static allocated by users.
  */
-void SAI_TxCreateHandleEDMA(
+void SAI_TransferTxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
 
 /*!
@@ -104,7 +104,7 @@ void SAI_TxCreateHandleEDMA(
  * @param userData User parameter passed to the callback function.
  * @param dmaHandle eDMA handle pointer, this handle shall be static allocated by users.
  */
-void SAI_RxCreateHandleEDMA(
+void SAI_TransferRxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle);
 
 /*!
@@ -122,7 +122,7 @@ void SAI_RxCreateHandleEDMA(
  * @retval kStatus_Success Audio format set successfully.
  * @retval kStatus_InvalidArgument The input argument is invalid.
 */
-void SAI_TxSetTransferFormatEDMA(I2S_Type *base,
+void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -143,7 +143,7 @@ void SAI_TxSetTransferFormatEDMA(I2S_Type *base,
  * @retval kStatus_Success Audio format set successfully.
  * @retval kStatus_InvalidArgument The input argument is invalid.
 */
-void SAI_RxSetTransferFormatEDMA(I2S_Type *base,
+void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -162,7 +162,7 @@ void SAI_RxSetTransferFormatEDMA(I2S_Type *base,
  * @retval kStatus_InvalidArgument The input argument is invalid.
  * @retval kStatus_TxBusy SAI is busy sending data.
  */
-status_t SAI_SendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer);
+status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer);
 
 /*!
  * @brief Performs a non-blocking SAI receive using eDMA.
@@ -177,7 +177,7 @@ status_t SAI_SendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t 
  * @retval kStatus_InvalidArgument The input argument is invalid.
  * @retval kStatus_RxBusy SAI is busy receiving data.
  */
-status_t SAI_ReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer);
+status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer);
 
 /*!
  * @brief Aborts a SAI transfer using eDMA.
@@ -185,7 +185,7 @@ status_t SAI_ReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer
  * @param base SAI base pointer.
  * @param handle SAI eDMA handle pointer.
  */
-void SAI_AbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle);
+void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle);
 
 /*!
  * @brief Aborts a SAI receive using eDMA.
@@ -193,7 +193,7 @@ void SAI_AbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle);
  * @param base SAI base pointer
  * @param handle SAI eDMA handle pointer.
  */
-void SAI_AbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle);
+void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle);
 
 /*!
  * @brief Gets byte count sent by SAI.
@@ -204,7 +204,7 @@ void SAI_AbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle);
  * @retval kStatus_Success Succeed get the transfer count.
  * @retval kStatus_NoTransferInProgress There is no non-blocking transaction in progress.
  */
-status_t SAI_GetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count);
+status_t SAI_TransferGetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count);
 
 /*!
  * @brief Gets byte count received by SAI.
@@ -215,7 +215,7 @@ status_t SAI_GetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t 
  * @retval kStatus_Success Succeed get the transfer count.
  * @retval kStatus_NoTransferInProgress There is no non-blocking transaction in progress.
  */
-status_t SAI_GetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count);
+status_t SAI_TransferGetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count);
 
 /*! @} */
 

@@ -38,16 +38,18 @@
 void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
 {
     handle->xfer.slaveAddress = SGTL5000_I2C_ADDR;
+    volatile uint32_t i = 0;
+
     /* NULL pointer means default setting. */
     if (config == NULL)
     {
         /* Power up Inputs/Outputs/Digital Blocks
            Power up LINEOUT, HP, ADC, DAC. */
-        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFBU);
+        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFFU);
 
         /* Power up desired digital blocks.
         I2S_IN (bit 0), I2S_OUT (bit 1), DAP (bit 4), DAC (bit 5), ADC (bit 6) are powered on */
-        SGTL_WriteReg(handle, CHIP_DIG_POWER, 0x0073U);
+        SGTL_WriteReg(handle, CHIP_DIG_POWER, 0x0063U);
 
         /* Configure SYS_FS clock to 48kHz, MCLK_FREQ to 256*Fs. */
         SGTL_ModifyReg(handle, CHIP_CLK_CTRL, 0xFFC8U, 0x0008U);
@@ -74,7 +76,7 @@ void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
     }
     else
     {
-        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFb);
+        SGTL_WriteReg(handle, CHIP_ANA_POWER, 0x6AFF);
 
         /* Set the data route */
         SGTL_SetDataRoute(handle, config->route);
@@ -112,6 +114,12 @@ void SGTL_Init(sgtl_handle_t *handle, sgtl_config_t *config)
 
     /* Unmute ADC */
     SGTL_ModifyReg(handle, CHIP_ANA_CTRL, 0xFFFEU, 0x0000U);
+
+    /* Delay for some seconds */
+    for (i = 0; i < 1000000; i ++)
+    {
+        __ASM("nop");
+    }
 }
 
 void SGTL_Deinit(sgtl_handle_t *handle)
@@ -121,7 +129,6 @@ void SGTL_Deinit(sgtl_handle_t *handle)
     SGTL_DisableModule(handle, kSGTL_ModuleDAP);
     SGTL_DisableModule(handle, kSGTL_ModuleI2SIN);
     SGTL_DisableModule(handle, kSGTL_ModuleI2SOUT);
-    SGTL_DisableModule(handle, kSGTL_ModuleHP);
     SGTL_DisableModule(handle, kSGTL_ModuleLineOut);
 }
 
@@ -574,6 +581,16 @@ status_t SGTL_WriteReg(sgtl_handle_t *handle, uint16_t reg, uint16_t val)
     buff[0] = (val & 0xFF00U) >> 8U;
     buff[1] = val & 0xFF;
 
+#if defined(FSL_FEATURE_SOC_LPI2C_COUNT) && (FSL_FEATURE_SOC_LPI2C_COUNT)
+    uint8_t data[4] = {0};
+    data[0] = (reg & 0xFF00U) >> 8U;
+    data[1] = reg & 0xFFU;
+    data[2] = buff[0];
+    data[3] = buff[1];
+    retval = LPI2C_MasterStart(handle->base, SGTL5000_I2C_ADDR, kLPI2C_Write);
+    retval = LPI2C_MasterSend(handle->base, data, 4);
+    retval = LPI2C_MasterStop(handle->base);
+#else
     /* Set I2C xfer structure */
     handle->xfer.direction = kI2C_Write;
     handle->xfer.subaddress = (uint32_t)reg;
@@ -582,6 +599,7 @@ status_t SGTL_WriteReg(sgtl_handle_t *handle, uint16_t reg, uint16_t val)
     handle->xfer.dataSize = 2U;
 
     retval = I2C_MasterTransferBlocking(handle->base, &handle->xfer);
+#endif
 
     return retval;
 }
@@ -591,6 +609,16 @@ status_t SGTL_ReadReg(sgtl_handle_t *handle, uint16_t reg, uint16_t *val)
     uint8_t data[2];
     status_t retval = 0;
 
+#if defined(FSL_FEATURE_SOC_LPI2C_COUNT) && (FSL_FEATURE_SOC_LPI2C_COUNT)
+    uint8_t buff[2] = {0};
+    buff[0] = (reg & 0xFF00U) >> 8U;
+    buff[1] = reg & 0xFFU;   
+    retval = LPI2C_MasterStart(handle->base, SGTL5000_I2C_ADDR, kLPI2C_Write);
+    retval = LPI2C_MasterSend(handle->base, buff, 2);
+    retval = LPI2C_MasterStart(handle->base, SGTL5000_I2C_ADDR, kLPI2C_Read);
+    retval = LPI2C_MasterReceive(handle->base, data, 2);
+    retval = LPI2C_MasterStop(handle->base);
+#else
     /* Configure I2C xfer */
     handle->xfer.direction = kI2C_Read;
     handle->xfer.subaddress = (uint32_t)reg;
@@ -599,6 +627,7 @@ status_t SGTL_ReadReg(sgtl_handle_t *handle, uint16_t reg, uint16_t *val)
     handle->xfer.dataSize = 2U;
 
     retval = I2C_MasterTransferBlocking(handle->base, &handle->xfer);
+#endif
 
     /* Handle the return data */
     *val = (uint16_t)(((uint32_t)data[0] << 8U) | (uint32_t)data[1]);

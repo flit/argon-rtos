@@ -41,7 +41,7 @@
  * Definitions
  ******************************************************************************/
 
-/*! @brief Calculate FLEXIO timer trigger.*/
+/*! @brief Calculate FlexIO timer trigger.*/
 #define FLEXIO_TIMER_TRIGGER_SEL_PININPUT(x) ((uint32_t)(x) << 1U)
 #define FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(x) (((uint32_t)(x) << 2U) | 0x1U)
 #define FLEXIO_TIMER_TRIGGER_SEL_TIMn(x) (((uint32_t)(x) << 2U) | 0x3U)
@@ -215,7 +215,7 @@ typedef enum _flexio_shifter_start_bit
     kFLEXIO_ShifterStartBitHigh = 0x3U,                     /*!< Set shifter start bit to logic high level. */
 } flexio_shifter_start_bit_t;
 
-/*! @brief Define FLEXIO shifter buffer type*/
+/*! @brief Define FlexIO shifter buffer type*/
 typedef enum _flexio_shifter_buffer_type
 {
     kFLEXIO_ShifterBuffer = 0x0U,               /*!< Shifter Buffer N Register. */
@@ -233,23 +233,23 @@ typedef enum _flexio_shifter_buffer_type
 #endif
 } flexio_shifter_buffer_type_t;
 
-/*! @brief Define FLEXIO user configuration structure. */
+/*! @brief Define FlexIO user configuration structure. */
 typedef struct _flexio_config_
 {
-    bool enableFlexio;     /*!< Enable/disable FLEXIO module */
-    bool enableInDoze;     /*!< Enable/disable FLEXIO operation in doze mode */
-    bool enableInDebug;    /*!< Enable/disable FLEXIO operation in debug mode */
-    bool enableFastAccess; /*!< Enable/disable fast access to FLEXIO registers, fast access requires
-                           the FLEXIO clock to be at least twice the frequency of the bus clock. */
+    bool enableFlexio;     /*!< Enable/disable FlexIO module */
+    bool enableInDoze;     /*!< Enable/disable FlexIO operation in doze mode */
+    bool enableInDebug;    /*!< Enable/disable FlexIO operation in debug mode */
+    bool enableFastAccess; /*!< Enable/disable fast access to FlexIO registers, fast access requires
+                           the FlexIO clock to be at least twice the frequency of the bus clock. */
 } flexio_config_t;
 
-/*! @brief Define FLEXIO timer configuration structure. */
+/*! @brief Define FlexIO timer configuration structure. */
 typedef struct _flexio_timer_config
 {
     /* Trigger. */
     uint32_t triggerSelect;                          /*!< The internal trigger selection number using MACROs. */
     flexio_timer_trigger_polarity_t triggerPolarity; /*!< Trigger Polarity. */
-    flexio_timer_trigger_source_t triggerSource;     /*!< Trigger Source, internal(see to 'trgsel') or external. */
+    flexio_timer_trigger_source_t triggerSource;     /*!< Trigger Source, internal (see 'trgsel') or external. */
     /* Pin. */
     flexio_pin_config_t pinConfig;     /*!< Timer Pin Configuration. */
     uint32_t pinSelect;                /*!< Timer Pin number Select. */
@@ -271,7 +271,7 @@ typedef struct _flexio_timer_config
     uint32_t timerCompare;                          /*!< Value for Timer Compare N Register. */
 } flexio_timer_config_t;
 
-/*! @brief Define FLEXIO shifter configuration structure. */
+/*! @brief Define FlexIO shifter configuration structure. */
 typedef struct _flexio_shifter_config
 {
     /* Timer. */
@@ -292,7 +292,7 @@ typedef struct _flexio_shifter_config
     flexio_shifter_start_bit_t shifterStart;   /*!< Shifter START bit. */
 } flexio_shifter_config_t;
 
-/*! @brief typedef for FLEXIO simulated driver interrupt handler.*/
+/*! @brief typedef for FlexIO simulated driver interrupt handler.*/
 typedef void (*flexio_isr_t)(void *base, void *handle);
 /*******************************************************************************
  * API
@@ -303,13 +303,13 @@ extern "C" {
 #endif /*_cplusplus*/
 
 /*!
- * @name FLEXIO Initialization and De-initialization
+ * @name FlexIO Initialization and De-initialization
  * @{
  */
 
 /*!
- * @brief Get the default configuration to configure FLEXIO module. The configuration
- * could be used directly for calling FLEXIO_Configure().
+ * @brief Gets the default configuration to configure FlexIO module. The configuration
+ * can used directly for calling FLEXIO_Configure().
  *
  * Example:
    @code
@@ -322,8 +322,8 @@ extern "C" {
 void FLEXIO_GetDefaultConfig(flexio_config_t *userConfig);
 
 /*!
- * @brief Configure the FLEXIO with flexio configuration. The configuration structure
- * can be filled by user from scratch, or be set with default values by FLEXIO_GetDefaultConfig().
+ * @brief Configures the FlexIO with FlexIO configuration. The configuration structure
+ * can be filled by the user, or be set with default values by FLEXIO_GetDefaultConfig().
  *
  * Example
    @code
@@ -336,38 +336,38 @@ void FLEXIO_GetDefaultConfig(flexio_config_t *userConfig);
    FLEXIO_Configure(base, &config);
    @endcode
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @param userConfig pointer to flexio_config_t structure
 */
 void FLEXIO_Init(FLEXIO_Type *base, const flexio_config_t *userConfig);
 
 /*!
- * @brief Gate the FLEXIO clock, call this API to stop the FLEXIO clock.
+ * @brief Gates the FlexIO clock. Call this API to stop the FlexIO clock.
  *
- * @note After calling this API, user need to call FLEXO_Init to use the FLEXIO module.
+ * @note After calling this API, call the FLEXO_Init to use the FlexIO module.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
 */
 void FLEXIO_Deinit(FLEXIO_Type *base);
 
 /* @} */
 
 /*!
- * @name FLEXIO Basic Operation
+ * @name FlexIO Basic Operation
  * @{
  */
 
 /*!
- * @brief Reset the FLEXIO module.
+ * @brief Resets the FlexIO module.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
 */
 void FLEXIO_Reset(FLEXIO_Type *base);
 
 /*!
- * @brief Enable the FLEXIO module operation.
+ * @brief Enables the FlexIO module operation.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @param enable true to enable, false to disable.
 */
 static inline void FLEXIO_Enable(FLEXIO_Type *base, bool enable)
@@ -384,10 +384,10 @@ static inline void FLEXIO_Enable(FLEXIO_Type *base, bool enable)
 
 #if defined(FSL_FEATURE_FLEXIO_HAS_PIN_STATUS) && FSL_FEATURE_FLEXIO_HAS_PIN_STATUS
 /*!
- * @brief Read the input data on each of the FLEXIO pins.
+ * @brief Reads the input data on each of the FlexIO pins.
  *
- * @param base FLEXIO peripheral base address
- * @return FLEXIO pin input data
+ * @param base FlexIO peripheral base address
+ * @return FlexIO pin input data
 */
 static inline uint32_t FLEXIO_ReadPinInput(FLEXIO_Type *base)
 {
@@ -397,9 +397,9 @@ static inline uint32_t FLEXIO_ReadPinInput(FLEXIO_Type *base)
 
 #if defined(FSL_FEATURE_FLEXIO_HAS_STATE_MODE) && FSL_FEATURE_FLEXIO_HAS_STATE_MODE
 /*!
- * @brief Get current state pointer for state mode use.
+ * @brief Gets the current state pointer for state mode use.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @return current state pointer
 */
 static inline uint8_t FLEXIO_GetShifterState(FLEXIO_Type *base)
@@ -409,10 +409,10 @@ static inline uint8_t FLEXIO_GetShifterState(FLEXIO_Type *base)
 #endif /*FSL_FEATURE_FLEXIO_HAS_STATE_MODE*/
 
 /*!
- * @brief Configure the shifter with shifter configuration. The configuration structure
- * covers both the SHIFTCTL and SHIFTCFG registers, to configure the shifter to the proper
- * mode, select which timer controls the shifter to shift, whether generate start bit/stop
- *  bit and the polarity of start bit and stop bit.
+ * @brief Configures the shifter with shifter configuration. The configuration structure
+ * covers both the SHIFTCTL and SHIFTCFG registers. To configure the shifter to the proper
+ * mode, select which timer controls the shifter to shift, whether to generate start bit/stop
+ *  bit, and the polarity of start bit and stop bit.
  *
  * Example
    @code
@@ -429,15 +429,15 @@ static inline uint8_t FLEXIO_GetShifterState(FLEXIO_Type *base)
    FLEXIO_SetShifterConfig(base, &config);
    @endcode
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @param index shifter index
  * @param shifterConfig pointer to flexio_shifter_config_t structure
 */
 void FLEXIO_SetShifterConfig(FLEXIO_Type *base, uint8_t index, const flexio_shifter_config_t *shifterConfig);
 /*!
- * @brief Configure the timer with timer configuration. The configuration structure
- * covers both the TIMCTL and TIMCFG registers, to configure the timer to the proper
- * mode, select trigger source for timer and the timer pin output, the timing for timer.
+ * @brief Configures the timer with the timer configuration. The configuration structure
+ * covers both the TIMCTL and TIMCFG registers. To configure the timer to the proper
+ * mode, select trigger source for timer and the timer pin output and the timing for timer.
  *
  * Example
    @code
@@ -460,7 +460,7 @@ void FLEXIO_SetShifterConfig(FLEXIO_Type *base, uint8_t index, const flexio_shif
    FLEXIO_SetTimerConfig(base, &config);
    @endcode
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @param index timer index
  * @param timerConfig pointer to flexio_timer_config_t structure
 */
@@ -469,16 +469,16 @@ void FLEXIO_SetTimerConfig(FLEXIO_Type *base, uint8_t index, const flexio_timer_
 /* @} */
 
 /*!
- * @name FLEXIO Interrupt Operation
+ * @name FlexIO Interrupt Operation
  * @{
  */
 
 /*!
- * @brief Enable shifter status interrupt, the interrupt will generate when the corresponding SSF is set.
+ * @brief Enables the shifter status interrupt. The interrupt generates when the corresponding SSF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter status mask which could be caculated by (1 << shifter index)
- * @note for multiple shifter status interrupt enable, for example, two shifter status enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter status mask which could be calculated by (1 << shifter index)
+ * @note for multiple shifter status interrupt enable, for example, two shifter status enable, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_EnableShifterStatusInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -487,11 +487,11 @@ static inline void FLEXIO_EnableShifterStatusInterrupts(FLEXIO_Type *base, uint3
 }
 
 /*!
- * @brief Disable shifter status interrupt, the interrupt won't generate when the corresponding SSF is set.
+ * @brief Disables the shifter status interrupt. The interrupt won't generate when the corresponding SSF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter status mask which could be caculated by (1 << shifter index)
- * @note for multiple shifter status interrupt enable, for example, two shifter status enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter status mask which could be calculated by (1 << shifter index)
+ * @note for multiple shifter status interrupt enable, for example, two shifter status enable, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_DisableShifterStatusInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -500,11 +500,11 @@ static inline void FLEXIO_DisableShifterStatusInterrupts(FLEXIO_Type *base, uint
 }
 
 /*!
- * @brief Enable shifter error interrupt, the interrupt will generate when the corresponding SEF is set.
+ * @brief Enables the shifter error interrupt. The interrupt generates when the corresponding SEF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter error mask which could be caculated by (1 << shifter index)
- * @note for multiple shifter error interrupt enable, for example, two shifter error enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter error mask which could be calculated by (1 << shifter index)
+ * @note for multiple shifter error interrupt enable, for example, two shifter error enable, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_EnableShifterErrorInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -513,11 +513,11 @@ static inline void FLEXIO_EnableShifterErrorInterrupts(FLEXIO_Type *base, uint32
 }
 
 /*!
- * @brief Disable shifter error interrupt, the interrupt won't generate when the corresponding SEF is set.
+ * @brief Disables the shifter error interrupt. The interrupt won't generate when the corresponding SEF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter error mask which could be caculated by (1 << shifter index)
- * @note for multiple shifter error interrupt enable, for example, two shifter error enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter error mask which could be calculated by (1 << shifter index)
+ * @note for multiple shifter error interrupt enable, for example, two shifter error enable, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_DisableShifterErrorInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -526,11 +526,11 @@ static inline void FLEXIO_DisableShifterErrorInterrupts(FLEXIO_Type *base, uint3
 }
 
 /*!
- * @brief Enable timer status interrupt, the interrupt will generate when the corresponding SSF is set.
+ * @brief Enables the timer status interrupt. The interrupt generates when the corresponding SSF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the timer status mask which could be caculated by (1 << timer index)
- * @note for multiple timer status interrupt enable, for example, two timer status enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the timer status mask which could be calculated by (1 << timer index)
+ * @note for multiple timer status interrupt enable, for example, two timer status enable, could calculate
  * the mask by using ((1 << timer index0) | (1 << timer index1))
 */
 static inline void FLEXIO_EnableTimerStatusInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -539,11 +539,11 @@ static inline void FLEXIO_EnableTimerStatusInterrupts(FLEXIO_Type *base, uint32_
 }
 
 /*!
- * @brief Disable timer status interrupt, the interrupt won't generate when the corresponding SSF is set.
+ * @brief Disables the timer status interrupt. The interrupt won't generate when the corresponding SSF is set.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the timer status mask which could be caculated by (1 << timer index)
- * @note for multiple timer status interrupt enable, for example, two timer status enable, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the timer status mask which could be calculated by (1 << timer index)
+ * @note for multiple timer status interrupt enable, for example, two timer status enable, could calculate
  * the mask by using ((1 << timer index0) | (1 << timer index1))
 */
 static inline void FLEXIO_DisableTimerStatusInterrupts(FLEXIO_Type *base, uint32_t mask)
@@ -554,14 +554,14 @@ static inline void FLEXIO_DisableTimerStatusInterrupts(FLEXIO_Type *base, uint32
 /* @} */
 
 /*!
- * @name FLEXIO Status Operation
+ * @name FlexIO Status Operation
  * @{
  */
 
 /*!
- * @brief Get shifter status flags.
+ * @brief Gets the shifter status flags.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @return shifter status flags
 */
 static inline uint32_t FLEXIO_GetShifterStatusFlags(FLEXIO_Type *base)
@@ -570,11 +570,11 @@ static inline uint32_t FLEXIO_GetShifterStatusFlags(FLEXIO_Type *base)
 }
 
 /*!
- * @brief Clear shifter status flags.
+ * @brief Clears the shifter status flags.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter status mask which could be caculated by (1 << shifter index)
- * @note for clearing multiple shifter status flags, for example, two shifter status flags, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter status mask which could be calculated by (1 << shifter index)
+ * @note for clearing multiple shifter status flags, for example, two shifter status flags, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_ClearShifterStatusFlags(FLEXIO_Type *base, uint32_t mask)
@@ -583,9 +583,9 @@ static inline void FLEXIO_ClearShifterStatusFlags(FLEXIO_Type *base, uint32_t ma
 }
 
 /*!
- * @brief Get shifter error flags.
+ * @brief Gets the shifter error flags.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @return shifter error flags
 */
 static inline uint32_t FLEXIO_GetShifterErrorFlags(FLEXIO_Type *base)
@@ -594,11 +594,11 @@ static inline uint32_t FLEXIO_GetShifterErrorFlags(FLEXIO_Type *base)
 }
 
 /*!
- * @brief Clear shifter error flags.
+ * @brief Clears the shifter error flags.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter error mask which could be caculated by (1 << shifter index)
- * @note for clearing multiple shifter error flags, for example, two shifter error flags, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter error mask which could be calculated by (1 << shifter index)
+ * @note for clearing multiple shifter error flags, for example, two shifter error flags, could calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
 */
 static inline void FLEXIO_ClearShifterErrorFlags(FLEXIO_Type *base, uint32_t mask)
@@ -607,9 +607,9 @@ static inline void FLEXIO_ClearShifterErrorFlags(FLEXIO_Type *base, uint32_t mas
 }
 
 /*!
- * @brief Get timer status flags.
+ * @brief Gets the timer status flags.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @return timer status flags
 */
 static inline uint32_t FLEXIO_GetTimerStatusFlags(FLEXIO_Type *base)
@@ -618,11 +618,11 @@ static inline uint32_t FLEXIO_GetTimerStatusFlags(FLEXIO_Type *base)
 }
 
 /*!
- * @brief Clear timer status flags.
+ * @brief Clears the timer status flags.
  *
- * @param base FLEXIO peripheral base address
- * @param mask the timer status mask which could be caculated by (1 << timer index)
- * @note for clearing multiple timer status flags, for example, two timer status flags, could caculate
+ * @param base FlexIO peripheral base address
+ * @param mask the timer status mask which could be calculated by (1 << timer index)
+ * @note for clearing multiple timer status flags, for example, two timer status flags, could calculate
  * the mask by using ((1 << timer index0) | (1 << timer index1))
 */
 static inline void FLEXIO_ClearTimerStatusFlags(FLEXIO_Type *base, uint32_t mask)
@@ -633,18 +633,18 @@ static inline void FLEXIO_ClearTimerStatusFlags(FLEXIO_Type *base, uint32_t mask
 /* @} */
 
 /*!
- * @name FLEXIO DMA Operation
+ * @name FlexIO DMA Operation
  * @{
  */
 
 /*!
- * @brief Enable/Disable shifter status DMA, the DMA request will generate when the corresponding SSF is set.
+ * @brief Enables/disables the shifter status DMA. The DMA request  generates when the corresponding SSF is set.
  *
- * @note for multiple shifter status DMA enable, for example, two shifter status enable, could caculate
+ * @note For multiple shifter status DMA enables, for example, calculate
  * the mask by using ((1 << shifter index0) | (1 << shifter index1))
  *
- * @param base FLEXIO peripheral base address
- * @param mask the shifter status mask which could be caculated by (1 << shifter index)
+ * @param base FlexIO peripheral base address
+ * @param mask the shifter status mask which could be calculated by (1 << shifter index)
  * @param enable True to enable, false to disable.
 */
 static inline void FLEXIO_EnableShifterStatusDMA(FLEXIO_Type *base, uint32_t mask, bool enable)
@@ -660,9 +660,9 @@ static inline void FLEXIO_EnableShifterStatusDMA(FLEXIO_Type *base, uint32_t mas
 }
 
 /*!
- * @brief Get shifter buffer address for DMA transfer usage.
+ * @brief Gets the shifter buffer address for the DMA transfer usage.
  *
- * @param base FLEXIO peripheral base address
+ * @param base FlexIO peripheral base address
  * @param type shifter type of flexio_shifter_buffer_type_t
  * @param index shifter index
  * @return corresponding shifter buffer index
@@ -670,22 +670,22 @@ static inline void FLEXIO_EnableShifterStatusDMA(FLEXIO_Type *base, uint32_t mas
 uint32_t FLEXIO_GetShifterBufferAddress(FLEXIO_Type *base, flexio_shifter_buffer_type_t type, uint8_t index);
 
 /*!
- * @brief Register handle and interrupt handler for FLEXIO simulated periperal .
+ * @brief Registers the handle and the interrupt handler for the FlexIO-simulated peripheral.
  *
- * @param base pointer to FLEXIO simulated periperal type.
- * @param handle pointer to handler for FLEXIO simulated periperal.
- * @param isr FLEXIO simulated periperal interrupt handler.
+ * @param base pointer to FlexIO simulated peripheral type.
+ * @param handle pointer to handler for FlexIO simulated peripheral.
+ * @param isr FlexIO simulated peripheral interrupt handler.
  * @retval kStatus_Success Successfully create the handle.
- * @retval kStatus_OutOfRange The flexio type/handle/isr table out of range.
+ * @retval kStatus_OutOfRange The FlexIO type/handle/ISR table out of range.
 */
 status_t FLEXIO_RegisterHandleIRQ(void *base, void *handle, flexio_isr_t isr);
 
 /*!
- * @brief Unregister handle and interrupt handler for FLEXIO simulated periperal .
+ * @brief Unregisters the handle and the interrupt handler for the FlexIO-simulated peripheral.
  *
- * @param base pointer to FLEXIO simulated periperal type.
+ * @param base pointer to FlexIO simulated peripheral type.
  * @retval kStatus_Success Successfully create the handle.
- * @retval kStatus_OutOfRange The flexio type/handle/isr table out of range.
+ * @retval kStatus_OutOfRange The FlexIO type/handle/ISR table out of range.
 */
 status_t FLEXIO_UnregisterHandleIRQ(void *base);
 /* @} */

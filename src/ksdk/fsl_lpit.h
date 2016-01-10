@@ -69,7 +69,7 @@ typedef enum _lpit_timer_modes
  * @brief Trigger options available.
  *
  * This is used for both internal and external trigger sources. The actual trigger options
- * available is SoC specific, user should refer to the reference manual.
+ * available is SoC-specific, user should refer to the reference manual.
  */
 typedef enum _lpit_trigger_select
 {

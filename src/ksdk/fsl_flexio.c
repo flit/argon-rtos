@@ -235,7 +235,9 @@ status_t FLEXIO_UnregisterHandleIRQ(void *base)
 
 void FLEXIO_CommonIRQHandler(void)
 {
-    for (uint8_t index = 0; index < FLEXIO_HANDLE_COUNT; index++)
+    uint8_t index;
+
+    for (index = 0; index < FLEXIO_HANDLE_COUNT; index++)
     {
         if (s_flexioHandle[index])
         {

@@ -678,7 +678,7 @@ static inline uint32_t SAI_ReadData(I2S_Type *base, uint32_t channel)
  * @param callback pointer to user callback function
  * @param userData user parameter passed to the callback function
  */
-void SAI_TxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData);
+void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData);
 
 /*!
  * @brief Initializes the SAI Rx handle.
@@ -691,7 +691,7 @@ void SAI_TxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callb
  * @param callback pointer to user callback function
  * @param userData user parameter passed to the callback function
  */
-void SAI_RxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData);
+void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData);
 
 /*!
  * @brief Configures the SAI Tx audio format.
@@ -707,7 +707,7 @@ void SAI_RxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callb
  * clock, this value should equal to masterClockHz in format.
  * @return Status of this function. Return value is one of status_t.
 */
-status_t SAI_TxSetTransferFormat(I2S_Type *base,
+status_t SAI_TransferTxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -727,7 +727,7 @@ status_t SAI_TxSetTransferFormat(I2S_Type *base,
  * clock, this value should equals to masterClockHz in format.
  * @return Status of this function. Return value is one of status_t.
 */
-status_t SAI_RxSetTransferFormat(I2S_Type *base,
+status_t SAI_TransferRxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -748,7 +748,7 @@ status_t SAI_RxSetTransferFormat(I2S_Type *base,
  * @retval kStatus_SAI_TxBusy Previous receive still not finished.
  * @retval kStatus_InvalidArgument The input parameter is invalid.
  */
-status_t SAI_SendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer);
+status_t SAI_TransferSendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer);
 
 /*!
  * @brief Performs an interrupt non-blocking receive transfer on SAI.
@@ -765,7 +765,7 @@ status_t SAI_SendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_
  * @retval kStatus_SAI_RxBusy Previous receive still not finished.
  * @retval kStatus_InvalidArgument The input parameter is invalid.
  */
-status_t SAI_ReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer);
+status_t SAI_TransferReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer);
 
 /*!
  * @brief Gets a set byte count.
@@ -776,7 +776,7 @@ status_t SAI_ReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transf
  * @retval kStatus_Success Succeed get the transfer count.
  * @retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
  */
-status_t SAI_GetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count);
+status_t SAI_TransferGetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count);
 
 /*!
  * @brief Gets a received byte count.
@@ -787,7 +787,7 @@ status_t SAI_GetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count);
  * @retval kStatus_Success Succeed get the transfer count.
  * @retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
  */
-status_t SAI_GetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count);
+status_t SAI_TransferGetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count);
 
 /*!
  * @brief Aborts the current send.
@@ -798,7 +798,7 @@ status_t SAI_GetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count
  * @param base SAI base pointer.
  * @param handle pointer to sai_handle_t structure which stores the transfer state.
  */
-void SAI_AbortSend(I2S_Type *base, sai_handle_t *handle);
+void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle);
 
 /*!
  * @brief Aborts the the current IRQ receive.
@@ -809,7 +809,7 @@ void SAI_AbortSend(I2S_Type *base, sai_handle_t *handle);
  * @param base SAI base pointer
  * @param handle pointer to sai_handle_t structure which stores the transfer state.
  */
-void SAI_AbortReceive(I2S_Type *base, sai_handle_t *handle);
+void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle);
 
 /*!
  * @brief Tx interrupt handler.
@@ -817,7 +817,7 @@ void SAI_AbortReceive(I2S_Type *base, sai_handle_t *handle);
  * @param base SAI base pointer.
  * @param handle pointer to sai_handle_t structure.
  */
-void SAI_TxHandleIRQ(I2S_Type *base, sai_handle_t *handle);
+void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle);
 
 /*!
  * @brief Tx interrupt handler.
@@ -825,7 +825,7 @@ void SAI_TxHandleIRQ(I2S_Type *base, sai_handle_t *handle);
  * @param base SAI base pointer.
  * @param handle pointer to sai_handle_t structure.
  */
-void SAI_RxHandleIRQ(I2S_Type *base, sai_handle_t *handle);
+void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle);
 
 /*! @} */
 

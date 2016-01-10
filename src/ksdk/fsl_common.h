@@ -134,6 +134,17 @@ typedef int32_t status_t;
 /*! @brief Computes the number of elements in an array. */
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+/*! @name UINT16_MAX/UINT32_MAX value */
+/* @{ */
+#if !defined(UINT16_MAX)
+#define UINT16_MAX ((uint16_t)-1)
+#endif
+
+#if !defined(UINT32_MAX)
+#define UINT32_MAX ((uint32_t)-1)
+#endif
+/* @} */
+
 /*! @name Timer utilities */
 /* @{ */
 /*! Macro to convert a microsecond period to raw count value */

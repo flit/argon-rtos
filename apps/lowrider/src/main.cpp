@@ -205,7 +205,7 @@ void init_audio_out()
     i2c_master_config_t i2cConfig = {0};
     I2C_MasterGetDefaultConfig(&i2cConfig);
     I2C_MasterInit(I2C0, &i2cConfig, i2cSourceClock);
-    I2C_MasterCreateHandle(I2C0, &g_i2cHandle, NULL, NULL);
+    I2C_MasterTransferCreateHandle(I2C0, &g_i2cHandle, NULL, NULL);
 
     g_audioOut.init(&format, I2C0, &g_i2cHandle);
 

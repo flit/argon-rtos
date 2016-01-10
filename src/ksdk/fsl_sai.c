@@ -654,7 +654,7 @@ void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8
     }
 }
 
-void SAI_TxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
+void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
 {
     assert(handle);
 
@@ -667,7 +667,7 @@ void SAI_TxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callb
     EnableIRQ(s_saiTxIRQ[SAI_GetInstance(base)]);
 }
 
-void SAI_RxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
+void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
 {
     assert(handle);
 
@@ -680,7 +680,7 @@ void SAI_RxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callb
     EnableIRQ(s_saiRxIRQ[SAI_GetInstance(base)]);
 }
 
-status_t SAI_TxSetTransferFormat(I2S_Type *base,
+status_t SAI_TransferTxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -705,7 +705,7 @@ status_t SAI_TxSetTransferFormat(I2S_Type *base,
     return kStatus_Success;
 }
 
-status_t SAI_RxSetTransferFormat(I2S_Type *base,
+status_t SAI_TransferRxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -730,7 +730,7 @@ status_t SAI_RxSetTransferFormat(I2S_Type *base,
     return kStatus_Success;
 }
 
-status_t SAI_SendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
+status_t SAI_TransferSendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle);
 
@@ -763,7 +763,7 @@ status_t SAI_SendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_
     return kStatus_Success;
 }
 
-status_t SAI_ReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
+status_t SAI_TransferReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle);
 
@@ -796,7 +796,7 @@ status_t SAI_ReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transf
     return kStatus_Success;
 }
 
-status_t SAI_GetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
+status_t SAI_TransferGetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -814,7 +814,7 @@ status_t SAI_GetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
     return status;
 }
 
-status_t SAI_GetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
+status_t SAI_TransferGetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -832,7 +832,7 @@ status_t SAI_GetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count
     return status;
 }
 
-void SAI_AbortSend(I2S_Type *base, sai_handle_t *handle)
+void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
@@ -853,7 +853,7 @@ void SAI_AbortSend(I2S_Type *base, sai_handle_t *handle)
     handle->queueUser = 0;
 }
 
-void SAI_AbortReceive(I2S_Type *base, sai_handle_t *handle)
+void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
@@ -874,7 +874,7 @@ void SAI_AbortReceive(I2S_Type *base, sai_handle_t *handle)
     handle->queueUser = 0;
 }
 
-void SAI_TxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
+void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
@@ -900,7 +900,7 @@ void SAI_TxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     {
         /* Judge if the data need to transmit is less than space */
         uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize),
-                           ((FSL_FEATURE_SAI_FIFO_COUNT - handle->watermark) * dataSize));
+                           (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - handle->watermark) * dataSize));
 
         /* Copy the data from sai buffer to FIFO */
         SAI_WriteNonBlocking(base, handle->channel, handle->bitWidth, buffer, size);
@@ -936,11 +936,11 @@ void SAI_TxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     /* If all data finished, just stop the transfer */
     if (handle->saiQueue[handle->queueDriver].data == NULL)
     {
-        SAI_AbortSend(base, handle);
+        SAI_TransferAbortSend(base, handle);
     }
 }
 
-void SAI_RxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
+void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
@@ -1001,7 +1001,7 @@ void SAI_RxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     /* If all data finished, just stop the transfer */
     if (handle->saiQueue[handle->queueDriver].data == NULL)
     {
-        SAI_AbortReceive(base, handle);
+        SAI_TransferAbortReceive(base, handle);
     }
 }
 
@@ -1011,24 +1011,24 @@ void I2S0_DriverIRQHandler(void)
 {
     if ((s_saiHandle[0][1]) && ((I2S0->RCSR & kSAI_FIFOWarningFlag) || (I2S0->RCSR & kSAI_FIFOErrorFlag)))
     {
-        SAI_RxHandleIRQ(I2S0, s_saiHandle[0][1]);
+        SAI_TransferRxHandleIRQ(I2S0, s_saiHandle[0][1]);
     }
     if ((s_saiHandle[0][0]) && ((I2S0->TCSR & kSAI_FIFOWarningFlag) || (I2S0->TCSR & kSAI_FIFOErrorFlag)))
     {
-        SAI_TxHandleIRQ(I2S0, s_saiHandle[0][0]);
+        SAI_TransferTxHandleIRQ(I2S0, s_saiHandle[0][0]);
     }
 }
 #else
 void I2S0_Tx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[0][0]);
-    SAI_TxHandleIRQ(I2S0, s_saiHandle[0][0]);
+    SAI_TransferTxHandleIRQ(I2S0, s_saiHandle[0][0]);
 }
 
 void I2S0_Rx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[0][1]);
-    SAI_RxHandleIRQ(I2S0, s_saiHandle[0][1]);
+    SAI_TransferRxHandleIRQ(I2S0, s_saiHandle[0][1]);
 }
 #endif /* FSL_FEATURE_SAI_INT_SOURCE_NUM */
 #endif /* I2S0*/
@@ -1037,12 +1037,12 @@ void I2S0_Rx_DriverIRQHandler(void)
 void I2S1_Tx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[1][0]);
-    SAI_TxHandleIRQ(I2S1, s_saiHandle[1][0]);
+    SAI_TransferTxHandleIRQ(I2S1, s_saiHandle[1][0]);
 }
 
 void I2S1_Rx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[1][1]);
-    SAI_RxHandleIRQ(I2S1, s_saiHandle[1][1]);
+    SAI_TransferRxHandleIRQ(I2S1, s_saiHandle[1][1]);
 }
 #endif

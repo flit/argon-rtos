@@ -119,13 +119,13 @@ typedef struct DebugConsoleOperationFunctions
     {
         void (*GetChar)(void *base, const uint8_t *buffer, size_t length);
 #if defined(FSL_FEATURE_SOC_UART_COUNT) && (FSL_FEATURE_SOC_UART_COUNT > 0)
-        void (*UART_GetChar)(UART_Type *base, uint8_t *buffer, size_t length);
+        status_t (*UART_GetChar)(UART_Type *base, uint8_t *buffer, size_t length);
 #endif /* FSL_FEATURE_SOC_UART_COUNT */
 #if defined(FSL_FEATURE_SOC_LPSCI_COUNT) && (FSL_FEATURE_SOC_LPSCI_COUNT > 0)
-        void (*LPSCI_GetChar)(UART0_Type *base, uint8_t *buffer, size_t length);
+        status_t (*LPSCI_GetChar)(UART0_Type *base, uint8_t *buffer, size_t length);
 #endif /* FSL_FEATURE_SOC_LPSCI_COUNT */
 #if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 0)
-        void (*LPUART_GetChar)(LPUART_Type *base, uint8_t *buffer, size_t length);
+        status_t (*LPUART_GetChar)(LPUART_Type *base, uint8_t *buffer, size_t length);
 #endif /* FSL_FEATURE_SOC_LPUART_COUNT */
     } rx_union;
 } debug_console_ops_t;
@@ -278,7 +278,7 @@ status_t DbgConsole_Init(uint32_t baseAddr, uint32_t baudRate, uint8_t device, u
 }
 
 /* See fsl_debug_console.h for documentation of this function. */
-status_t DbgConsole_DeInit(void)
+status_t DbgConsole_Deinit(void)
 {
     if (s_debugConsole.type == DEBUG_CONSOLE_DEVICE_TYPE_NONE)
     {
@@ -439,7 +439,7 @@ static void DbgConsole_PrintfPaddingCharacter(
 
     for (i = curlen; i < width; i++)
     {
-        func_ptr((char)c);
+        func_ptr(c);
         (*count)++;
     }
 }
@@ -457,6 +457,7 @@ static void DbgConsole_PrintfPaddingCharacter(
  */
 static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int32_t neg, int32_t radix, bool use_caps)
 {
+#if PRINTF_ADVANCED_ENABLE
     int64_t a;
     int64_t b;
     int64_t c;
@@ -464,6 +465,15 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
     uint64_t ua;
     uint64_t ub;
     uint64_t uc;
+#else
+    int32_t a;
+    int32_t b;
+    int32_t c;
+
+    uint32_t ua;
+    uint32_t ub;
+    uint32_t uc;
+#endif /* PRINTF_ADVANCED_ENABLE */
 
     int32_t nlen;
     char *nstrp;
@@ -474,7 +484,11 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
 
     if (neg)
     {
+#if PRINTF_ADVANCED_ENABLE
         a = *(int64_t *)nump;
+#else
+        a = *(int32_t *)nump;
+#endif /* PRINTF_ADVANCED_ENABLE */
         if (a == 0)
         {
             *nstrp = '0';
@@ -483,6 +497,7 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
         }
         while (a != 0)
         {
+#if PRINTF_ADVANCED_ENABLE
             b = (int64_t)a / (int64_t)radix;
             c = (int64_t)a - ((int64_t)b * (int64_t)radix);
             if (c < 0)
@@ -490,6 +505,15 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
                 uc = (uint64_t)c;
                 c = (int64_t)(~uc) + 1 + '0';
             }
+#else
+            b = a / radix;
+            c = a - (b * radix);
+            if (c < 0)
+            {
+                uc = (uint32_t)c;
+                c = (uint32_t)(~uc) + 1 + '0';
+            }
+#endif /* PRINTF_ADVANCED_ENABLE */
             else
             {
                 c = c + '0';
@@ -501,7 +525,11 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
     }
     else
     {
+#if PRINTF_ADVANCED_ENABLE
         ua = *(uint64_t *)nump;
+#else
+        ua = *(uint32_t *)nump;
+#endif /* PRINTF_ADVANCED_ENABLE */
         if (ua == 0)
         {
             *nstrp = '0';
@@ -510,8 +538,14 @@ static int32_t DbgConsole_ConvertRadixNumToString(char *numstr, void *nump, int3
         }
         while (ua != 0)
         {
+#if PRINTF_ADVANCED_ENABLE
             ub = (uint64_t)ua / (uint64_t)radix;
             uc = (uint64_t)ua - ((uint64_t)ub * (uint64_t)radix);
+#else
+            ub = ua / (uint32_t)radix;
+            uc = ua - (ub * (uint32_t)radix);
+#endif /* PRINTF_ADVANCED_ENABLE */
+
             if (uc < 10)
             {
                 uc = uc + '0';
@@ -666,22 +700,24 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
     int32_t count = 0;
 
     uint32_t field_width;
-
-    int64_t ival;
-    int32_t *ivalp;
+    uint32_t precision_width;
     char *sval;
     int32_t cval;
-    uint64_t uval;
     bool use_caps;
+    uint8_t radix = 0;
 
 #if PRINTF_ADVANCED_ENABLE
     uint32_t flags_used;
     int32_t schar, dschar;
+    int64_t ival;
+    uint64_t uval = 0;
+#else
+    int32_t ival;
+    uint32_t uval = 0;
 #endif /* PRINTF_ADVANCED_ENABLE */
 
 #if PRINTF_FLOAT_ENABLE
     double fval;
-    uint32_t precision_width;
 #endif /* PRINTF_FLOAT_ENABLE */
 
     /* Start parsing apart the format string and display appropriate formats and data. */
@@ -752,7 +788,6 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
                 done = true;
             }
         }
-#if PRINTF_FLOAT_ENABLE
         /* Next check for the width and precision field separator. */
         precision_width = 6;
         if (*++p == '.')
@@ -780,7 +815,6 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
             /* We've gone one char too far. */
             --p;
         }
-#endif /* PRINTF_FLOAT_ENABLE */
 #if PRINTF_ADVANCED_ENABLE
         /*
          * Check for the length modifier.
@@ -818,7 +852,8 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
         /* Now we're ready to examine the format. */
         c = *++p;
         {
-            if ((c == 'd') || (c == 'i') || (c == 'f') || (c == 'F') || (c == 'x') || (c == 'X'))
+            if ((c == 'd') || (c == 'i') || (c == 'f') || (c == 'F') || (c == 'x') || (c == 'X') || (c == 'o') ||
+                (c == 'b') || (c == 'p') || (c == 'u'))
             {
                 if ((c == 'd') || (c == 'i'))
                 {
@@ -893,8 +928,6 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
                         func_ptr(schar);
                         count++;
                     }
-#else
-                    DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
 #endif /* PRINTF_ADVANCED_ENABLE */
                 }
 
@@ -961,8 +994,6 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
                         func_ptr(schar);
                         count++;
                     }
-#else
-                    DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
 #endif /* PRINTF_ADVANCED_ENABLE */
                 }
 #endif /* PRINTF_FLOAT_ENABLE */
@@ -1027,62 +1058,53 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
                         count += 2;
                         vlen += 2;
                     }
-#else
-                    DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
 #endif /* PRINTF_ADVANCED_ENABLE */
                 }
-                while (*vstrp)
-                {
-                    func_ptr(*vstrp--);
-                    count++;
-                }
-#if PRINTF_ADVANCED_ENABLE
-                if (flags_used & kPRINTF_Minus)
-                {
-                    DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
-                }
-#endif /* PRINTF_ADVANCED_ENABLE */
-            }
-            else if ((c == 'o') || (c == 'b') || (c == 'p') || (c == 'u'))
-            {
                 if (c == 'o')
                 {
                     uval = (uint32_t)va_arg(ap, uint32_t);
-                    vlen = DbgConsole_ConvertRadixNumToString(vstr, &uval, false, 8, use_caps);
+                    radix = 8;
                 }
                 if (c == 'b')
                 {
                     uval = (uint32_t)va_arg(ap, uint32_t);
-                    vlen = DbgConsole_ConvertRadixNumToString(vstr, &uval, false, 2, use_caps);
+                    radix = 2;
+                    vstrp = &vstr[vlen];
                 }
                 if (c == 'p')
                 {
-                    uval = (uint32_t)va_arg(ap, uint32_t);
                     uval = (uint32_t)va_arg(ap, void *);
-                    vlen = DbgConsole_ConvertRadixNumToString(vstr, &uval, false, 16, use_caps);
+                    radix = 16;
+                    vstrp = &vstr[vlen];
                 }
                 if (c == 'u')
                 {
                     uval = (uint32_t)va_arg(ap, uint32_t);
-                    vlen = DbgConsole_ConvertRadixNumToString(vstr, &uval, false, 10, use_caps);
+                    radix = 10;
+                    vstrp = &vstr[vlen];
                 }
-                vstrp = &vstr[vlen];
+                if ((c == 'o') || (c == 'b') || (c == 'p') || (c == 'u'))
+                {
+                    vlen = DbgConsole_ConvertRadixNumToString(vstr, &uval, false, radix, use_caps);
+                    vstrp = &vstr[vlen];
 #if PRINTF_ADVANCED_ENABLE
-                if (flags_used & kPRINTF_Zero)
-                {
-                    DbgConsole_PrintfPaddingCharacter('0', vlen, field_width, &count, func_ptr);
-                    vlen = field_width;
-                }
-                else
-                {
-                    if (!(flags_used & kPRINTF_Minus))
+                    if (flags_used & kPRINTF_Zero)
                     {
-                        DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
+                        DbgConsole_PrintfPaddingCharacter('0', vlen, field_width, &count, func_ptr);
+                        vlen = field_width;
                     }
-                }
-#else
-                DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
+                    else
+                    {
+                        if (!(flags_used & kPRINTF_Minus))
+                        {
+                            DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
+                        }
+                    }
 #endif /* PRINTF_ADVANCED_ENABLE */
+                }
+#if !PRINTF_ADVANCED_ENABLE
+                DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
+#endif /* !PRINTF_ADVANCED_ENABLE */
                 while (*vstrp)
                 {
                     func_ptr(*vstrp--);
@@ -1120,16 +1142,11 @@ static int DbgConsole_PrintfFormattedData(PUTCHAR_FUNC func_ptr, char *fmt, va_l
                     }
 #if PRINTF_ADVANCED_ENABLE
                     if (flags_used & kPRINTF_Minus)
-#endif /* PRINTF_ADVANCED_ENABLE */
                     {
                         DbgConsole_PrintfPaddingCharacter(' ', vlen, field_width, &count, func_ptr);
                     }
+#endif /* PRINTF_ADVANCED_ENABLE */
                 }
-            }
-            else if (c == 'n')
-            {
-                ivalp = (int32_t *)va_arg(ap, int32_t *);
-                *ivalp = count;
             }
             else
             {

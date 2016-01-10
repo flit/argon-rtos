@@ -62,7 +62,7 @@ uint32_t LPUART_GetInstance(LPUART_Type *base);
  * @userData handle LPUART handle pointer.
  * @return Length of received data in RX ring buffer.
  */
-static size_t LPUART_GetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *handle);
+static size_t LPUART_TransferGetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *handle);
 
 /*!
  * @brief Check whether the RX ring buffer is full.
@@ -71,7 +71,7 @@ static size_t LPUART_GetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *h
  * @retval true  RX ring buffer is full.
  * @retval false RX ring buffer is not full.
  */
-static bool LPUART_IsRxRingBufferFull(LPUART_Type *base, lpuart_handle_t *handle);
+static bool LPUART_TransferIsRxRingBufferFull(LPUART_Type *base, lpuart_handle_t *handle);
 
 /*!
  * @brief Write to TX register using non-blocking method.
@@ -136,7 +136,7 @@ uint32_t LPUART_GetInstance(LPUART_Type *base)
     return instance;
 }
 
-static size_t LPUART_GetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *handle)
+static size_t LPUART_TransferGetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *handle)
 {
     size_t size;
 
@@ -152,11 +152,11 @@ static size_t LPUART_GetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *h
     return size;
 }
 
-static bool LPUART_IsRxRingBufferFull(LPUART_Type *base, lpuart_handle_t *handle)
+static bool LPUART_TransferIsRxRingBufferFull(LPUART_Type *base, lpuart_handle_t *handle)
 {
     bool full;
 
-    if (LPUART_GetRxRingBufferLength(base, handle) == (handle->rxRingBufferSize - 1U))
+    if (LPUART_TransferGetRxRingBufferLength(base, handle) == (handle->rxRingBufferSize - 1U))
     {
         full = true;
     }
@@ -169,9 +169,11 @@ static bool LPUART_IsRxRingBufferFull(LPUART_Type *base, lpuart_handle_t *handle
 
 static void LPUART_WriteNonBlocking(LPUART_Type *base, const uint8_t *data, size_t length)
 {
+    size_t i;
+
     /* The Non Blocking write data API assume user have ensured there is enough space in
     peripheral to write. */
-    for (size_t i = 0; i < length; i++)
+    for (i = 0; i < length; i++)
     {
         base->DATA = data[i];
     }
@@ -179,9 +181,11 @@ static void LPUART_WriteNonBlocking(LPUART_Type *base, const uint8_t *data, size
 
 static void LPUART_ReadNonBlocking(LPUART_Type *base, uint8_t *data, size_t length)
 {
+    size_t i;
+
     /* The Non Blocking read data API assume user have ensured there is enough space in
     peripheral to write. */
-    for (size_t i = 0; i < length; i++)
+    for (i = 0; i < length; i++)
     {
         data[i] = base->DATA;
     }
@@ -293,6 +297,20 @@ void LPUART_Init(LPUART_Type *base, const lpuart_config_t *config, uint32_t srcC
     base->FIFO |= (LPUART_FIFO_TXFLUSH_MASK | LPUART_FIFO_RXFLUSH_MASK);
 #endif
 
+    /* Clear all status flags */
+    temp = (LPUART_STAT_LBKDIF_MASK | LPUART_STAT_RXEDGIF_MASK | LPUART_STAT_OR_MASK | LPUART_STAT_NF_MASK |
+            LPUART_STAT_FE_MASK | LPUART_STAT_PF_MASK);
+
+#if defined(FSL_FEATURE_LPUART_HAS_LIN_BREAK_DETECT) && FSL_FEATURE_LPUART_HAS_LIN_BREAK_DETECT
+    temp |= LPUART_STAT_IDLE_MASK;
+#endif
+
+#if defined(FSL_FEATURE_LPUART_HAS_ADDRESS_MATCHING) && FSL_FEATURE_LPUART_HAS_ADDRESS_MATCHING
+    temp |= (LPUART_STAT_MA1F_MASK | LPUART_STAT_MA2F_MASK);
+#endif
+
+    base->STAT |= temp;
+
     /* Enable TX/RX base on configure structure. */
     temp = base->CTRL;
     if (config->enableTx)
@@ -309,6 +327,8 @@ void LPUART_Init(LPUART_Type *base, const lpuart_config_t *config, uint32_t srcC
 }
 void LPUART_Deinit(LPUART_Type *base)
 {
+    uint32_t temp;
+
 #if defined(FSL_FEATURE_LPUART_HAS_FIFO) && FSL_FEATURE_LPUART_HAS_FIFO
     /* Wait tx FIFO send out*/
     while (0 != ((base->WATER & LPUART_WATER_TXCOUNT_MASK) >> LPUART_WATER_TXWATER_SHIFT))
@@ -319,6 +339,20 @@ void LPUART_Deinit(LPUART_Type *base)
     while (0 == (base->STAT & LPUART_STAT_TC_MASK))
     {
     }
+
+    /* Clear all status flags */
+    temp = (LPUART_STAT_LBKDIF_MASK | LPUART_STAT_RXEDGIF_MASK | LPUART_STAT_OR_MASK | LPUART_STAT_NF_MASK |
+            LPUART_STAT_FE_MASK | LPUART_STAT_PF_MASK);
+
+#if defined(FSL_FEATURE_LPUART_HAS_LIN_BREAK_DETECT) && FSL_FEATURE_LPUART_HAS_LIN_BREAK_DETECT
+    temp |= LPUART_STAT_IDLE_MASK;
+#endif
+
+#if defined(FSL_FEATURE_LPUART_HAS_ADDRESS_MATCHING) && FSL_FEATURE_LPUART_HAS_ADDRESS_MATCHING
+    temp |= (LPUART_STAT_MA1F_MASK | LPUART_STAT_MA2F_MASK);
+#endif
+
+    base->STAT |= temp;
 
     /* Disable the module. */
     base->CTRL = 0;
@@ -517,8 +551,10 @@ void LPUART_WriteBlocking(LPUART_Type *base, const uint8_t *data, size_t length)
     }
 }
 
-void LPUART_ReadBlocking(LPUART_Type *base, uint8_t *data, size_t length)
+status_t LPUART_ReadBlocking(LPUART_Type *base, uint8_t *data, size_t length)
 {
+    uint32_t statusFlag;
+
     while (length--)
     {
 #if defined(FSL_FEATURE_LPUART_HAS_FIFO) && FSL_FEATURE_LPUART_HAS_FIFO
@@ -527,15 +563,42 @@ void LPUART_ReadBlocking(LPUART_Type *base, uint8_t *data, size_t length)
         while (!(base->STAT & LPUART_STAT_RDRF_MASK))
 #endif
         {
+            statusFlag = LPUART_GetStatusFlags(base);
+
+            if (statusFlag & kLPUART_RxOverrunFlag)
+            {
+                LPUART_ClearStatusFlags(base, kLPUART_RxOverrunFlag);
+                return kStatus_LPUART_RxHardwareOverrun;
+            }
+
+            if (statusFlag & kLPUART_NoiseErrorFlag)
+            {
+                LPUART_ClearStatusFlags(base, kLPUART_NoiseErrorFlag);
+                return kStatus_LPUART_NoiseError;
+            }
+
+            if (statusFlag & kLPUART_FramingErrorFlag)
+            {
+                LPUART_ClearStatusFlags(base, kLPUART_FramingErrorFlag);
+                return kStatus_LPUART_FramingError;
+            }
+
+            if (statusFlag & kLPUART_ParityErrorFlag)
+            {
+                LPUART_ClearStatusFlags(base, kLPUART_ParityErrorFlag);
+                return kStatus_LPUART_ParityError;
+            }
         }
         *(data++) = base->DATA;
     }
+
+    return kStatus_Success;
 }
 
-void LPUART_CreateHandle(LPUART_Type *base,
-                         lpuart_handle_t *handle,
-                         lpuart_transfer_callback_t callback,
-                         void *userData)
+void LPUART_TransferCreateHandle(LPUART_Type *base,
+                                 lpuart_handle_t *handle,
+                                 lpuart_transfer_callback_t callback,
+                                 void *userData)
 {
     assert(handle);
 
@@ -570,13 +633,16 @@ void LPUART_CreateHandle(LPUART_Type *base,
     /* Save the handle in global variables to support the double weak mechanism. */
     s_lpuartHandle[instance] = handle;
 
-    s_lpuartIsr = LPUART_HandleIRQ;
+    s_lpuartIsr = LPUART_TransferHandleIRQ;
 
     /* Enable interrupt in NVIC. */
     EnableIRQ(s_lpuartIRQ[instance]);
 }
 
-void LPUART_StartRingBuffer(LPUART_Type *base, lpuart_handle_t *handle, uint8_t *ringBuffer, size_t ringBufferSize)
+void LPUART_TransferStartRingBuffer(LPUART_Type *base,
+                                    lpuart_handle_t *handle,
+                                    uint8_t *ringBuffer,
+                                    size_t ringBufferSize)
 {
     assert(handle);
 
@@ -593,7 +659,7 @@ void LPUART_StartRingBuffer(LPUART_Type *base, lpuart_handle_t *handle, uint8_t 
     }
 }
 
-void LPUART_StopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle)
+void LPUART_TransferStopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle)
 {
     assert(handle);
 
@@ -608,7 +674,7 @@ void LPUART_StopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle)
     handle->rxRingBufferTail = 0U;
 }
 
-status_t LPUART_SendNonBlocking(LPUART_Type *base, lpuart_handle_t *handle, lpuart_transfer_t *xfer)
+status_t LPUART_TransferSendNonBlocking(LPUART_Type *base, lpuart_handle_t *handle, lpuart_transfer_t *xfer)
 {
     status_t status;
 
@@ -639,7 +705,7 @@ status_t LPUART_SendNonBlocking(LPUART_Type *base, lpuart_handle_t *handle, lpua
     return status;
 }
 
-void LPUART_AbortSend(LPUART_Type *base, lpuart_handle_t *handle)
+void LPUART_TransferAbortSend(LPUART_Type *base, lpuart_handle_t *handle)
 {
     LPUART_DisableInterrupts(base, kLPUART_TxDataRegEmptyInterruptEnable | kLPUART_TransmissionCompleteInterruptEnable);
 
@@ -647,7 +713,7 @@ void LPUART_AbortSend(LPUART_Type *base, lpuart_handle_t *handle)
     handle->txState = kLPUART_TxIdle;
 }
 
-status_t LPUART_GetSendCount(LPUART_Type *base, lpuart_handle_t *handle, uint32_t *count)
+status_t LPUART_TransferGetSendCount(LPUART_Type *base, lpuart_handle_t *handle, uint32_t *count)
 {
     if (kLPUART_TxIdle == handle->txState)
     {
@@ -664,10 +730,10 @@ status_t LPUART_GetSendCount(LPUART_Type *base, lpuart_handle_t *handle, uint32_
     return kStatus_Success;
 }
 
-status_t LPUART_ReceiveNonBlocking(LPUART_Type *base,
-                                   lpuart_handle_t *handle,
-                                   lpuart_transfer_t *xfer,
-                                   size_t *receivedBytes)
+status_t LPUART_TransferReceiveNonBlocking(LPUART_Type *base,
+                                           lpuart_handle_t *handle,
+                                           lpuart_transfer_t *xfer,
+                                           size_t *receivedBytes)
 {
     uint32_t i;
     status_t status;
@@ -711,7 +777,7 @@ status_t LPUART_ReceiveNonBlocking(LPUART_Type *base,
             regPrimask = DisableGlobalIRQ();
 
             /* How many bytes in RX ring buffer currently. */
-            bytesToCopy = LPUART_GetRxRingBufferLength(base, handle);
+            bytesToCopy = LPUART_TransferGetRxRingBufferLength(base, handle);
 
             if (bytesToCopy)
             {
@@ -781,7 +847,7 @@ status_t LPUART_ReceiveNonBlocking(LPUART_Type *base,
     return status;
 }
 
-void LPUART_AbortReceive(LPUART_Type *base, lpuart_handle_t *handle)
+void LPUART_TransferAbortReceive(LPUART_Type *base, lpuart_handle_t *handle)
 {
     /* Only abort the receive to handle->rxData, the RX ring buffer is still working. */
     if (!handle->rxRingBuffer)
@@ -794,7 +860,7 @@ void LPUART_AbortReceive(LPUART_Type *base, lpuart_handle_t *handle)
     handle->rxState = kLPUART_RxIdle;
 }
 
-status_t LPUART_GetReceiveCount(LPUART_Type *base, lpuart_handle_t *handle, uint32_t *count)
+status_t LPUART_TransferGetReceiveCount(LPUART_Type *base, lpuart_handle_t *handle, uint32_t *count)
 {
     if (kLPUART_RxIdle == handle->rxState)
     {
@@ -811,7 +877,7 @@ status_t LPUART_GetReceiveCount(LPUART_Type *base, lpuart_handle_t *handle, uint
     return kStatus_Success;
 }
 
-void LPUART_HandleIRQ(LPUART_Type *base, lpuart_handle_t *handle)
+void LPUART_TransferHandleIRQ(LPUART_Type *base, lpuart_handle_t *handle)
 {
     uint8_t count;
     uint8_t tempCount;
@@ -876,7 +942,7 @@ void LPUART_HandleIRQ(LPUART_Type *base, lpuart_handle_t *handle)
             while (count--)
             {
                 /* If RX ring buffer is full, trigger callback to notify over run. */
-                if (LPUART_IsRxRingBufferFull(base, handle))
+                if (LPUART_TransferIsRxRingBufferFull(base, handle))
                 {
                     if (handle->callback)
                     {
@@ -885,7 +951,7 @@ void LPUART_HandleIRQ(LPUART_Type *base, lpuart_handle_t *handle)
                 }
 
                 /* If ring buffer is still full after callback function, the oldest data is overrided. */
-                if (LPUART_IsRxRingBufferFull(base, handle))
+                if (LPUART_TransferIsRxRingBufferFull(base, handle))
                 {
                     /* Increase handle->rxRingBufferTail to make room for new data. */
                     if (handle->rxRingBufferTail + 1U == handle->rxRingBufferSize)
@@ -965,7 +1031,7 @@ void LPUART_HandleIRQ(LPUART_Type *base, lpuart_handle_t *handle)
     }
 }
 
-void LPUART_HandleErrorIRQ(LPUART_Type *base, lpuart_handle_t *handle)
+void LPUART_TransferHandleErrorIRQ(LPUART_Type *base, lpuart_handle_t *handle)
 {
     /* TODO: To be implemented. */
 }

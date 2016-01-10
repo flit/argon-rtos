@@ -67,27 +67,27 @@ static void DSPI_SetOnePcsPolarity(SPI_Type *base, dspi_which_pcs_t pcs, dspi_pc
  * @brief Master fill up the TX FIFO with data.
  * This is not a public API as it is called from other driver functions.
  */
-static void DSPI_MasterFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle);
+static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief Master finish up a transfer.
  * It would call back if there is callback function and set the state to idle.
  * This is not a public API as it is called from other driver functions.
  */
-static void DSPI_MasterCompleteTransfer(SPI_Type *base, dspi_master_handle_t *handle);
+static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief Slave fill up the TX FIFO with data.
  * This is not a public API as it is called from other driver functions.
  */
-static void DSPI_SlaveFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle);
+static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle);
 
 /*!
  * @brief Slave finish up a transfer.
  * It would call back if there is callback function and set the state to idle.
  * This is not a public API as it is called from other driver functions.
  */
-static void DSPI_SlaveCompleteTransfer(SPI_Type *base, dspi_slave_handle_t *handle);
+static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *handle);
 
 /*!
  * @brief DSPI common interrupt handler.
@@ -102,7 +102,7 @@ static void DSPI_CommonIRQHandler(SPI_Type *base, void *param);
  * Basically it set up dspi_master_handle .
  * This is not a public API as it is called from other driver functions. fsl_dspi_edma.c also call this function.
  */
-static void DSPI_MasterPrepareTransfer(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer);
+static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer);
 
 /*******************************************************************************
  * Variables
@@ -118,16 +118,16 @@ static const uint32_t s_delayScaler[] = {2,   4,    8,    16,   32,   64,    128
                                          512, 1024, 2048, 4096, 8192, 16384, 32768, 65536};
 
 /*! @brief Pointers to dspi bases for each instance. */
-SPI_Type *const s_dspiBases[] = SPI_BASE_PTRS;
+static SPI_Type *const s_dspiBases[] = SPI_BASE_PTRS;
 
 /*! @brief Pointers to dspi IRQ number for each instance. */
-const IRQn_Type s_dspiIRQ[] = SPI_IRQS;
+static IRQn_Type const s_dspiIRQ[] = SPI_IRQS;
 
 /*! @brief Pointers to dspi clocks for each instance. */
-const clock_ip_name_t s_dspiClock[] = DSPI_CLOCKS;
+static clock_ip_name_t const s_dspiClock[] = DSPI_CLOCKS;
 
 /*! @brief Pointers to dspi handles for each instance. */
-void *g_dspiHandle[FSL_FEATURE_SOC_DSPI_COUNT] = {NULL};
+static void *g_dspiHandle[FSL_FEATURE_SOC_DSPI_COUNT];
 
 /*! @brief Pointer to master IRQ handler for each instance. */
 static dspi_master_isr_t s_dspiMasterIsr;
@@ -159,7 +159,6 @@ uint32_t DSPI_GetInstance(SPI_Type *base)
 void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
     uint32_t temp;
-    uint32_t actualBaudRate = 0;
     /* enable DSPI clock */
     CLOCK_EnableClock(s_dspiClock[DSPI_GetInstance(base)]);
 
@@ -178,9 +177,10 @@ void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, u
 
     DSPI_SetOnePcsPolarity(base, masterConfig->whichPcs, masterConfig->pcsActiveHighOrLow);
 
-    actualBaudRate =
-        DSPI_MasterSetBaudRate(base, masterConfig->whichCtar, masterConfig->ctarConfig.baudRate, srcClock_Hz);
-    assert(actualBaudRate > 0);
+    if (0 == DSPI_MasterSetBaudRate(base, masterConfig->whichCtar, masterConfig->ctarConfig.baudRate, srcClock_Hz))
+    {
+        assert(false);
+    }
 
     temp = base->CTAR[masterConfig->whichCtar] &
            ~(SPI_CTAR_FMSZ_MASK | SPI_CTAR_CPOL_MASK | SPI_CTAR_CPHA_MASK | SPI_CTAR_LSBFE_MASK);
@@ -538,6 +538,24 @@ void DSPI_EnableInterrupts(SPI_Type *base, uint32_t mask)
     base->RSER |= mask;
 }
 
+/*Transactional APIs -- Master*/
+
+void DSPI_MasterTransferCreateHandle(SPI_Type *base,
+                                     dspi_master_handle_t *handle,
+                                     dspi_master_transfer_callback_t callback,
+                                     void *userData)
+{
+    assert(handle);
+
+    /* Zero the handle. */
+    memset(handle, 0, sizeof(*handle));
+
+    g_dspiHandle[DSPI_GetInstance(base)] = handle;
+
+    handle->callback = callback;
+    handle->userData = userData;
+}
+
 status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 {
     assert(transfer);
@@ -828,25 +846,8 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
     return kStatus_Success;
 }
-/*Transactional APIs -- Master*/
 
-void DSPI_MasterCreateHandle(SPI_Type *base,
-                             dspi_master_handle_t *handle,
-                             dspi_master_transfer_callback_t callback,
-                             void *userData)
-{
-    assert(handle);
-
-    /* Zero the handle. */
-    memset(handle, 0, sizeof(*handle));
-
-    g_dspiHandle[DSPI_GetInstance(base)] = handle;
-
-    handle->callback = callback;
-    handle->userData = userData;
-}
-
-static void DSPI_MasterPrepareTransfer(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
+static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
 {
     dspi_command_data_config_t commandStruct;
 
@@ -901,26 +902,26 @@ status_t DSPI_MasterTransferNonBlocking(SPI_Type *base, dspi_master_handle_t *ha
 
     handle->state = kDSPI_Busy;
 
-    DSPI_MasterPrepareTransfer(base, handle, transfer);
+    DSPI_MasterTransferPrepare(base, handle, transfer);
     DSPI_StartTransfer(base);
 
     /* Enable the NVIC for DSPI peripheral. */
     EnableIRQ(s_dspiIRQ[DSPI_GetInstance(base)]);
 
-    DSPI_MasterFillUpTxFifo(base, handle);
+    DSPI_MasterTransferFillUpTxFifo(base, handle);
 
     /* RX FIFO Drain request: RFDF_RE to enable RFDF interrupt
     * Since SPI is a synchronous interface, we only need to enable the RX interrupt.
     * The IRQ handler will get the status of RX and TX interrupt flags.
     */
-    s_dspiMasterIsr = DSPI_MasterHandleInterrupt;
+    s_dspiMasterIsr = DSPI_MasterTransferHandleIRQ;
 
     DSPI_EnableInterrupts(base, kDSPI_RxFifoDrainRequestInterruptEnable);
 
     return kStatus_Success;
 }
 
-status_t DSPI_MasterGetTransferCount(SPI_Type *base, dspi_master_handle_t *handle, size_t *count)
+status_t DSPI_MasterTransferGetCount(SPI_Type *base, dspi_master_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -940,7 +941,7 @@ status_t DSPI_MasterGetTransferCount(SPI_Type *base, dspi_master_handle_t *handl
     return kStatus_Success;
 }
 
-static void DSPI_MasterCompleteTransfer(SPI_Type *base, dspi_master_handle_t *handle)
+static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *handle)
 {
     /* Disable interrupt requests*/
     DSPI_DisableInterrupts(base, kDSPI_RxFifoDrainRequestInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable);
@@ -964,7 +965,7 @@ static void DSPI_MasterCompleteTransfer(SPI_Type *base, dspi_master_handle_t *ha
     handle->state = kDSPI_Idle;
 }
 
-static void DSPI_MasterFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle)
+static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle)
 {
     uint16_t wordToSend = 0;
     uint8_t dummyData = DSPI_MASTER_DUMMY_DATA;
@@ -1078,7 +1079,7 @@ static void DSPI_MasterFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle
     }
 }
 
-void DSPI_MasterAbortTransfer(SPI_Type *base, dspi_master_handle_t *handle)
+void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle)
 {
     DSPI_StopTransfer(base);
 
@@ -1088,7 +1089,7 @@ void DSPI_MasterAbortTransfer(SPI_Type *base, dspi_master_handle_t *handle)
     handle->state = kDSPI_Idle;
 }
 
-void DSPI_MasterHandleInterrupt(SPI_Type *base, dspi_master_handle_t *handle)
+void DSPI_MasterTransferHandleIRQ(SPI_Type *base, dspi_master_handle_t *handle)
 {
     /* RECEIVE IRQ handler: Check read buffer only if there are remaining bytes to read. */
     if (handle->remainingReceiveByteCount)
@@ -1181,22 +1182,22 @@ void DSPI_MasterHandleInterrupt(SPI_Type *base, dspi_master_handle_t *handle)
     */
     if (handle->remainingSendByteCount)
     {
-        DSPI_MasterFillUpTxFifo(base, handle);
+        DSPI_MasterTransferFillUpTxFifo(base, handle);
     }
 
     /* Check if we're done with this transfer.*/
     if ((handle->remainingSendByteCount == 0) && (handle->remainingReceiveByteCount == 0))
     {
         /* Complete the transfer and disable the interrupts */
-        DSPI_MasterCompleteTransfer(base, handle);
+        DSPI_MasterTransferComplete(base, handle);
     }
 }
 
 /*Transactional APIs -- Slave*/
-void DSPI_SlaveCreateHandle(SPI_Type *base,
-                            dspi_slave_handle_t *handle,
-                            dspi_slave_transfer_callback_t callback,
-                            void *userData)
+void DSPI_SlaveTransferCreateHandle(SPI_Type *base,
+                                    dspi_slave_handle_t *handle,
+                                    dspi_slave_transfer_callback_t callback,
+                                    void *userData)
 {
     assert(handle);
 
@@ -1256,9 +1257,9 @@ status_t DSPI_SlaveTransferNonBlocking(SPI_Type *base, dspi_slave_handle_t *hand
     DSPI_StartTransfer(base);
 
     /* Prepare data to transmit */
-    DSPI_SlaveFillUpTxFifo(base, handle);
+    DSPI_SlaveTransferFillUpTxFifo(base, handle);
 
-    s_dspiSlaveIsr = DSPI_SlaveHandleInterrupt;
+    s_dspiSlaveIsr = DSPI_SlaveTransferHandleIRQ;
 
     /* Enable RX FIFO drain request, the slave only use this interrupt */
     DSPI_EnableInterrupts(base, kDSPI_RxFifoDrainRequestInterruptEnable);
@@ -1277,7 +1278,7 @@ status_t DSPI_SlaveTransferNonBlocking(SPI_Type *base, dspi_slave_handle_t *hand
     return kStatus_Success;
 }
 
-status_t DSPI_SlaveGetTransferCount(SPI_Type *base, dspi_slave_handle_t *handle, size_t *count)
+status_t DSPI_SlaveTransferGetCount(SPI_Type *base, dspi_slave_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -1297,7 +1298,7 @@ status_t DSPI_SlaveGetTransferCount(SPI_Type *base, dspi_slave_handle_t *handle,
     return kStatus_Success;
 }
 
-static void DSPI_SlaveFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
+static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
 {
     uint16_t transmitData = 0;
     uint8_t dummyPattern = DSPI_SLAVE_DUMMY_DATA;
@@ -1383,7 +1384,7 @@ static void DSPI_SlaveFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
     }
 }
 
-static void DSPI_SlaveCompleteTransfer(SPI_Type *base, dspi_slave_handle_t *handle)
+static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *handle)
 {
     /* Disable interrupt requests */
     DSPI_DisableInterrupts(base, kDSPI_TxFifoUnderflowInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable |
@@ -1413,7 +1414,7 @@ static void DSPI_SlaveCompleteTransfer(SPI_Type *base, dspi_slave_handle_t *hand
     handle->state = kDSPI_Idle;
 }
 
-void DSPI_SlaveAbortTransfer(SPI_Type *base, dspi_slave_handle_t *handle)
+void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 {
     DSPI_StopTransfer(base);
 
@@ -1426,7 +1427,7 @@ void DSPI_SlaveAbortTransfer(SPI_Type *base, dspi_slave_handle_t *handle)
     handle->remainingReceiveByteCount = 0;
 }
 
-void DSPI_SlaveHandleInterrupt(SPI_Type *base, dspi_slave_handle_t *handle)
+void DSPI_SlaveTransferHandleIRQ(SPI_Type *base, dspi_slave_handle_t *handle)
 {
     uint8_t dummyPattern = DSPI_SLAVE_DUMMY_DATA;
     uint32_t dataReceived;
@@ -1565,7 +1566,7 @@ void DSPI_SlaveHandleInterrupt(SPI_Type *base, dspi_slave_handle_t *handle)
     if ((handle->remainingReceiveByteCount == 0) || (handle->state == kDSPI_Error))
     {
         /* Other cases, stop the transfer. */
-        DSPI_SlaveCompleteTransfer(base, handle);
+        DSPI_SlaveTransferComplete(base, handle);
         return;
     }
 
@@ -1597,11 +1598,11 @@ static void DSPI_CommonIRQHandler(SPI_Type *base, void *param)
 {
     if (DSPI_IsMaster(base))
     {
-        s_dspiMasterIsr(base, param);
+        s_dspiMasterIsr(base, (dspi_master_handle_t *)param);
     }
     else
     {
-        s_dspiSlaveIsr(base, param);
+        s_dspiSlaveIsr(base, (dspi_slave_handle_t *)param);
     }
 }
 

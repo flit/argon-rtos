@@ -154,9 +154,9 @@ typedef enum _smc_partial_stop_mode
 /*!
  * @brief SMC configuration status
  */
-enum _status_t
+enum _smc_status
 {
-    kStatus_StopAbort = MAKE_STATUS(kStatusGroup_POWER, 0) /*!< Entering Stop mode is abort*/
+    kStatus_SMC_StopAbort = MAKE_STATUS(kStatusGroup_POWER, 0) /*!< Entering Stop mode is abort*/
 };
 
 #if (defined(FSL_FEATURE_SMC_HAS_VERID) && FSL_FEATURE_SMC_HAS_VERID)

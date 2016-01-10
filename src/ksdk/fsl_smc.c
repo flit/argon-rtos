@@ -106,7 +106,7 @@ status_t SMC_SetPowerModeStop(SMC_Type *base, smc_partial_stop_option_t option)
     /* check whether the power mode enter Stop mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
     {
-        return kStatus_StopAbort;
+        return kStatus_SMC_StopAbort;
     }
     else
     {
@@ -182,7 +182,7 @@ status_t SMC_SetPowerModeVlps(SMC_Type *base)
     /* check whether the power mode enter VLPS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
     {
-        return kStatus_StopAbort;
+        return kStatus_SMC_StopAbort;
     }
     else
     {
@@ -236,7 +236,7 @@ status_t SMC_SetPowerModeLls(SMC_Type *base
     /* check whether the power mode enter LLS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
     {
-        return kStatus_StopAbort;
+        return kStatus_SMC_StopAbort;
     }
     else
     {
@@ -350,7 +350,7 @@ status_t SMC_SetPowerModeVlls(SMC_Type *base, const smc_power_mode_vlls_config_t
     /* check whether the power mode enter LLS mode succeed */
     if (base->PMCTRL & SMC_PMCTRL_STOPA_MASK)
     {
-        return kStatus_StopAbort;
+        return kStatus_SMC_StopAbort;
     }
     else
     {

@@ -217,16 +217,18 @@ enum _lpspi_transfer_config_flag_for_master
 
     kLPSPI_MasterPcsContinuous = 1U << 20, /*!< Is PCS signal continuous */
 
-    kLPSPI_MasterByteSwap =
-        1U << 22 /*!< The LPSPI master transfer byte order is the same as the
-                        * bitPerFrame, which is set to 8 if this flag is used.
-                        * For example, to send data, use  : 1 2 3 4 5 6 7 8 (set
-                        * lpspi_shift_direction_t to MSB).
-                        * If set bitPerFrame = 8 ,  the waveform is 1 2 3 4 5 6 7 8.
-                        * If set bitPerFrame = 64 , the waveform is 4 3 2 1 8 7 6 5 ( do not use
-                        * the kLPSPI_MasterByteSwap flag or the waveform is 1 2 3 4 5 6 7 8
-                        * (use the kLPSPI_MasterByteSwap flag in transfer structure).
-                        */
+    kLPSPI_MasterByteSwap = 1U << 22 /*!< Is master swap the byte.
+                             * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                             * lpspi_shift_direction_t to MSB).
+                             * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_MasterByteSwapyou flag is used
+                             * or not, the waveform is 1 2 3 4 5 6 7 8.
+                             * 2. If you set bitPerFrame = 16 :
+                             * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_MasterByteSwap flag.
+                             * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                             * 3. If you set bitPerFrame = 32 :
+                             * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_MasterByteSwap flag.
+                             * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                             */
 };
 
 #define LPSPI_SLAVE_PCS_SHIFT (4U)   /*!< LPSPI slave PCS shift macro , internal used. */
@@ -240,16 +242,18 @@ enum _lpspi_transfer_config_flag_for_slave
     kLPSPI_SlavePcs2 = 2U << LPSPI_SLAVE_PCS_SHIFT, /*!< LPSPI slave transfer use PCS2 signal */
     kLPSPI_SlavePcs3 = 3U << LPSPI_SLAVE_PCS_SHIFT, /*!< LPSPI slave transfer use PCS3 signal */
 
-    kLPSPI_SlaveByteSwap =
-        1U << 22 /*!< The LPSPI slave transfer byte order is the same as the
-                        * bitPerFrame, which is set to 8 if this flag is used.
-                        * For example, to send data use  : 1 2 3 4 5 6 7 8 (set
-                        * lpspi_shift_direction_t to MSB).
-                        * If set bitPerFrame = 8 ,  the waveform is 1 2 3 4 5 6 7 8.
-                        * If set bitPerFrame = 64 , the waveform is 4 3 2 1 8 7 6 5 (do not use
-                        * the kLPSPI_MasterByteSwap flag) or the waveform is 1 2 3 4 5 6 7 8
-                        * (use the kLPSPI_MasterByteSwap flag in transfer structure).
-                        */
+    kLPSPI_SlaveByteSwap = 1U << 22 /*!< Is slave swap the byte.
+                             * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                             * lpspi_shift_direction_t to MSB).
+                             * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_SlaveByteSwap flag is used
+                             * or not, the waveform is 1 2 3 4 5 6 7 8.
+                             * 2. If you set bitPerFrame = 16 :
+                             * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_SlaveByteSwap flag.
+                             * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                             * 3. If you set bitPerFrame = 32 :
+                             * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_SlaveByteSwap flag.
+                             * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                             */
 };
 
 /*! @brief LPSPI transfer state, which is used for LPSPI transactional API state machine. */
@@ -269,12 +273,13 @@ typedef struct _lpspi_master_config
     lpspi_clock_phase_t cpha;          /*!< Clock phase. */
     lpspi_shift_direction_t direction; /*!< MSB or LSB data shift direction. */
 
-    uint32_t pcsToSckDelayInNanoSec; /*!< PCS to SCK delay time in nanoseconds, setting to 0 sets the minimum delay.
-                                        It sets the boundary value if out of range.*/
+    uint32_t pcsToSckDelayInNanoSec;     /*!< PCS to SCK delay time in nanoseconds, setting to 0 sets the minimum delay.
+                                            It sets the boundary value if out of range.*/
     uint32_t lastSckToPcsDelayInNanoSec; /*!< Last SCK to PCS delay time in nanoseconds, setting to 0 sets the minimum
                                             delay. It sets the boundary value if out of range.*/
-    uint32_t betweenTransferDelayInNanoSec; /*!< After the SCK delay time with nanoseconds, setting to 0 sets the minimum
-                                             delay. It sets the boundary value if out of range.*/
+    uint32_t
+        betweenTransferDelayInNanoSec; /*!< After the SCK delay time with nanoseconds, setting to 0 sets the minimum
+                                        delay. It sets the boundary value if out of range.*/
 
     lpspi_which_pcs_t whichPcs;                     /*!< Desired Peripheral Chip Select (PCS). */
     lpspi_pcs_polarity_config_t pcsActiveHighOrLow; /*!< Desired PCS active high or low */
@@ -348,9 +353,10 @@ typedef struct _lpspi_transfer
     uint8_t *rxData;          /*!< Receive buffer. */
     volatile size_t dataSize; /*!< Transfer bytes. */
 
-    uint32_t configFlags; /*!< Transfer transfer configuration flags. Set from _lpspi_transfer_config_flag_for_master if the
-                             transfer is used for master or _lpspi_transfer_config_flag_for_slave enumeration if the transfer
-                             is used for slave.*/
+    uint32_t
+        configFlags; /*!< Transfer transfer configuration flags. Set from _lpspi_transfer_config_flag_for_master if the
+                        transfer is used for master or _lpspi_transfer_config_flag_for_slave enumeration if the transfer
+                        is used for slave.*/
 } lpspi_transfer_t;
 
 /*! @brief LPSPI master transfer handle structure used for transactional API. */
@@ -465,7 +471,7 @@ void LPSPI_SlaveInit(LPSPI_Type *base, const lpspi_slave_config_t *slaveConfig);
  * @brief Sets the lpspi_slave_config_t structure to default values.
  *
  * This API initializes the configuration structure for LPSPI_SlaveInit().
- * The initialized structure can remain unchanged in LPSPI_SlaveInit() or can be modified 
+ * The initialized structure can remain unchanged in LPSPI_SlaveInit() or can be modified
  * before calling the LPSPI_SlaveInit().
  * Example:
  * @code
@@ -599,7 +605,7 @@ static inline void LPSPI_ClearStatusFlags(LPSPI_Type *base, uint32_t statusFlags
  *
  * This function configures the various interrupt masks of the LPSPI.  The parameters are base and an interrupt mask.
  * Note that, for Tx fill and Rx FIFO drain requests, enabling the interrupt request disables the DMA request.
- * 
+ *
  * @code
  *  LPSPI_EnableInterrupts(base, kLPSPI_TxInterruptEnable | kLPSPI_RxInterruptEnable );
  * @endcode
@@ -787,7 +793,8 @@ static inline void LPSPI_SetAllPcsPolarity(LPSPI_Type *base, uint32_t mask)
  * divisible by 32). The minimum word size is 2-bits. A frame size of 33-bits (or similar) is not supported.
  *
  * Note 1 : The transmit command register should be initialized before enabling the LPSPI in slave mode, although
- * the command register does not update until after the LPSPI is enabled. After it is enabled, the transmit command register
+ * the command register does not update until after the LPSPI is enabled. After it is enabled, the transmit command
+ * register
  * should only be changed if the LPSPI is idle.
  *
  * Note 2 : The transmit and command FIFO is a combined FIFO that includes both transmit data and command words. That
@@ -918,24 +925,6 @@ static inline uint32_t LPSPI_ReadData(LPSPI_Type *base)
 }
 
 /*!
- * @brief LPSPI master transfer data using a polling method.
- *
- * This function transfers data using a  polling method. This is a blocking function, which does not return until all transfers have been
- * completed.
- *
- * Note:
- * The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4.
- * For bytesPerFrame greater than 4:
- * The transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4.
- * Otherwise, the transfer data size can be an integer multiple of bytesPerFrame.
- *
- * @param base LPSPI peripheral address.
- * @param transfer pointer to lpspi_transfer_t structure.
- * @return status of status_t.
- */
-status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transfer);
-
-/*!
  *@}
 */
 
@@ -956,15 +945,35 @@ status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transf
  * @param callback DSPI callback.
  * @param userData callback function parameter.
  */
-void LPSPI_MasterCreateHandle(LPSPI_Type *base,
-                              lpspi_master_handle_t *handle,
-                              lpspi_master_transfer_callback_t callback,
-                              void *userData);
+void LPSPI_MasterTransferCreateHandle(LPSPI_Type *base,
+                                      lpspi_master_handle_t *handle,
+                                      lpspi_master_transfer_callback_t callback,
+                                      void *userData);
+
+/*!
+ * @brief LPSPI master transfer data using a polling method.
+ *
+ * This function transfers data using a  polling method. This is a blocking function, which does not return until all
+ * transfers have been
+ * completed.
+ *
+ * Note:
+ * The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4.
+ * For bytesPerFrame greater than 4:
+ * The transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4.
+ * Otherwise, the transfer data size can be an integer multiple of bytesPerFrame.
+ *
+ * @param base LPSPI peripheral address.
+ * @param transfer pointer to lpspi_transfer_t structure.
+ * @return status of status_t.
+ */
+status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transfer);
 
 /*!
  * @brief LPSPI master transfer data using an interrupt method.
  *
- * This function transfers data using an interrupt method. This is a non-blocking function, which returns right away. When all data
+ * This function transfers data using an interrupt method. This is a non-blocking function, which returns right away.
+ * When all data
  * is transferred, the callback function is called.
  *
  * Note:
@@ -990,7 +999,7 @@ status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t
  * @param count Number of bytes transferred so far by the non-blocking transaction.
  * @return status of status_t.
  */
-status_t LPSPI_MasterGetTransferCount(LPSPI_Type *base, lpspi_master_handle_t *handle, size_t *count);
+status_t LPSPI_MasterTransferGetCount(LPSPI_Type *base, lpspi_master_handle_t *handle, size_t *count);
 
 /*!
  * @brief LPSPI master abort transfer which uses an interrupt method.
@@ -1000,7 +1009,7 @@ status_t LPSPI_MasterGetTransferCount(LPSPI_Type *base, lpspi_master_handle_t *h
  * @param base LPSPI peripheral address.
  * @param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
  */
-void LPSPI_MasterAbortTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle);
+void LPSPI_MasterTransferAbort(LPSPI_Type *base, lpspi_master_handle_t *handle);
 
 /*!
  * @brief LPSPI Master IRQ handler function.
@@ -1010,7 +1019,7 @@ void LPSPI_MasterAbortTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle);
  * @param base LPSPI peripheral address.
  * @param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
  */
-void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle);
+void LPSPI_MasterTransferHandleIRQ(LPSPI_Type *base, lpspi_master_handle_t *handle);
 
 /*!
  * @brief Initializes the LPSPI slave handle.
@@ -1023,15 +1032,16 @@ void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle
  * @param callback DSPI callback.
  * @param userData callback function parameter.
  */
-void LPSPI_SlaveCreateHandle(LPSPI_Type *base,
-                             lpspi_slave_handle_t *handle,
-                             lpspi_slave_transfer_callback_t callback,
-                             void *userData);
+void LPSPI_SlaveTransferCreateHandle(LPSPI_Type *base,
+                                     lpspi_slave_handle_t *handle,
+                                     lpspi_slave_transfer_callback_t callback,
+                                     void *userData);
 
 /*!
  * @brief LPSPI slave transfer data using an interrupt method.
  *
- * This function transfer data using an interrupt method. This is a non-blocking function, which returns right away. When all data
+ * This function transfer data using an interrupt method. This is a non-blocking function, which returns right away.
+ * When all data
  * is transferred, the callback function is called.
  *
  * Note:
@@ -1057,7 +1067,7 @@ status_t LPSPI_SlaveTransferNonBlocking(LPSPI_Type *base, lpspi_slave_handle_t *
  * @param count Number of bytes transferred so far by the non-blocking transaction.
  * @return status of status_t.
  */
-status_t LPSPI_SlaveGetTransferCount(LPSPI_Type *base, lpspi_slave_handle_t *handle, size_t *count);
+status_t LPSPI_SlaveTransferGetCount(LPSPI_Type *base, lpspi_slave_handle_t *handle, size_t *count);
 
 /*!
  * @brief LPSPI slave aborts a transfer which uses an interrupt method.
@@ -1067,7 +1077,7 @@ status_t LPSPI_SlaveGetTransferCount(LPSPI_Type *base, lpspi_slave_handle_t *han
  * @param base LPSPI peripheral address.
  * @param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
  */
-void LPSPI_SlaveAbortTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle);
+void LPSPI_SlaveTransferAbort(LPSPI_Type *base, lpspi_slave_handle_t *handle);
 
 /*!
  * @brief LPSPI Slave IRQ handler function.
@@ -1077,7 +1087,7 @@ void LPSPI_SlaveAbortTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle);
  * @param base LPSPI peripheral address.
  * @param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
  */
-void LPSPI_SlaveHandleInterrupt(LPSPI_Type *base, lpspi_slave_handle_t *handle);
+void LPSPI_SlaveTransferHandleIRQ(LPSPI_Type *base, lpspi_slave_handle_t *handle);
 
 /*!
  *@}

@@ -58,10 +58,10 @@ void AudioOutput::init(const sai_transfer_format_t * format, I2C_Type * i2cBase,
     saiConfig.protocol = kSAI_BusLeftJustified;
     saiConfig.masterSlave = kSAI_Master;
     SAI_TxInit(I2S0, &saiConfig);
-    SAI_TxCreateHandleEDMA(I2S0, &m_txHandle, sai_callback, &m_transferDone, &m_dmaHandle);
+    SAI_TransferTxCreateHandleEDMA(I2S0, &m_txHandle, sai_callback, &m_transferDone, &m_dmaHandle);
 
     uint32_t mclkSourceClockHz = CLOCK_GetFreq(kCLOCK_CoreSysClk);
-    SAI_TxSetTransferFormatEDMA(I2S0, &m_txHandle, &m_format, mclkSourceClockHz, m_format.masterClockHz);
+    SAI_TransferTxSetFormatEDMA(I2S0, &m_txHandle, &m_format, mclkSourceClockHz, m_format.masterClockHz);
 
     // Configure the sgtl5000.
     sgtl_config_t sgtlConfig = {
@@ -109,7 +109,7 @@ void AudioOutput::audio_thread()
 
         xfer.data = buf.data;
         xfer.dataSize = buf.dataSize;
-        SAI_SendEDMA(I2S0, &m_txHandle, &xfer);
+        SAI_TransferSendEDMA(I2S0, &m_txHandle, &xfer);
     }
 
     // Wait for buffers to complete, then refill and enqueue them.
@@ -127,7 +127,7 @@ void AudioOutput::audio_thread()
 
         xfer.data = buf.data;
         xfer.dataSize = buf.dataSize;
-        SAI_SendEDMA(I2S0, &m_txHandle, &xfer);
+        SAI_TransferSendEDMA(I2S0, &m_txHandle, &xfer);
 
         currentBuffer = (currentBuffer + 1) % m_bufferCount;
     }

@@ -58,7 +58,10 @@ enum _uart_status
         MAKE_STATUS(kStatusGroup_UART, 6),                                /*!< UART flag can't be manually cleared. */
     kStatus_UART_Error = MAKE_STATUS(kStatusGroup_UART, 7),               /*!< Error happens on UART. */
     kStatus_UART_RxRingBufferOverrun = MAKE_STATUS(kStatusGroup_UART, 8), /*!< UART RX software ring buffer overrun. */
-    kStatus_UART_RxHardwareOverrun = MAKE_STATUS(kStatusGroup_UART, 9)    /*!< UART RX receiver overrun. */
+    kStatus_UART_RxHardwareOverrun = MAKE_STATUS(kStatusGroup_UART, 9),   /*!< UART RX receiver overrun. */
+    kStatus_UART_NoiseError = MAKE_STATUS(kStatusGroup_UART, 10),         /*!< UART noise error. */
+    kStatus_UART_FramingError = MAKE_STATUS(kStatusGroup_UART, 11),       /*!< UART framing error. */
+    kStatus_UART_ParityError = MAKE_STATUS(kStatusGroup_UART, 12),        /*!< UART parity error. */
 };
 
 /*! @brief UART parity mode. */
@@ -122,12 +125,12 @@ enum _uart_flags
 #if defined(FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT) && FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT
     kUART_LinBreakFlag =
         (UART_S2_LBKDIF_MASK << 8), /*!< LIN break detect interrupt flag, sets when
-                                                      LIN break char detected and LIN circuit enabled */
+                                                           LIN break char detected and LIN circuit enabled */
 #endif
     kUART_RxActiveEdgeFlag = (UART_S2_RXEDGIF_MASK << 8), /*!< RX pin active edge interrupt flag,
-                                                                            sets when active edge detected */
+                                                                                 sets when active edge detected */
     kUART_RxActiveFlag = (UART_S2_RAF_MASK << 8),         /*!< Receiver Active Flag (RAF),
-                                                                            sets at beginning of valid start bit */
+                                                                                 sets at beginning of valid start bit */
 #if defined(FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS) && FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS
     kUART_NoiseErrorInRxDataRegFlag = (UART_ED_NOISY_MASK << 16),    /*!< Noisy bit, sets if noise detected. */
     kUART_ParityErrorInRxDataRegFlag = (UART_ED_PARITYE_MASK << 16), /*!< Paritye bit, sets if parity error detected. */
@@ -304,6 +307,7 @@ uint32_t UART_GetStatusFlags(UART_Type *base);
  *    kUART_TxDataRegEmptyFlag, kUART_TransmissionCompleteFlag, kUART_RxDataRegFullFlag,
  *    kUART_RxActiveFlag, kUART_NoiseErrorInRxDataRegFlag, kUART_ParityErrorInRxDataRegFlag,
  *    kUART_TxFifoEmptyFlag,kUART_RxFifoEmptyFlag
+ * Note: This API should be called when the Tx/Rx is idle, otherwise it takes no effects.
  *
  * @param base UART peripheral base address.
  * @param mask The status flags to be cleared, it is logical OR value of @ref _uart_flags.
@@ -502,6 +506,34 @@ static inline void UART_EnableRx(UART_Type *base, bool enable)
 }
 
 /*!
+ * @brief Writes to the TX register.
+ *
+ * This function writes data to the TX register directly. The upper layer must ensure
+ * that the TX register is empty or TX FIFO has empty room before calling this function.
+ *
+ * @param base UART peripheral base address.
+ * @param data The byte to write.
+ */
+static inline void UART_WriteByte(UART_Type *base, uint8_t data)
+{
+    base->D = data;
+}
+
+/*!
+ * @brief Reads the RX register directly.
+ *
+ * This function reads data from the TX register directly. The upper layer must
+ * ensure that the RX register is full or that the TX FIFO has data before calling this function.
+ *
+ * @param base UART peripheral base address.
+ * @return The byte read from UART data register.
+ */
+static inline uint8_t UART_ReadByte(UART_Type *base)
+{
+    return base->D;
+}
+
+/*!
  * @brief Writes to the TX register using a blocking method.
  *
  * This function polls the TX register, waits for the TX register to be empty or for the TX FIFO
@@ -518,20 +550,6 @@ static inline void UART_EnableRx(UART_Type *base, bool enable)
 void UART_WriteBlocking(UART_Type *base, const uint8_t *data, size_t length);
 
 /*!
- * @brief Writes to the TX register.
- *
- * This function writes data to the TX register directly. The upper layer must ensure
- * that the TX register is empty or TX FIFO has empty room before calling this function.
- *
- * @param base UART peripheral base address.
- * @param data The byte to write.
- */
-static inline void UART_WriteByte(UART_Type *base, uint8_t data)
-{
-    base->D = data;
-}
-
-/*!
  * @brief Read RX data register using a blocking method.
  *
  * This function polls the RX register, waits for the RX register to be full or for RX FIFO to
@@ -540,22 +558,13 @@ static inline void UART_WriteByte(UART_Type *base, uint8_t data)
  * @param base UART peripheral base address.
  * @param data Start address of the buffer to store the received data.
  * @param length Size of the buffer.
+ * @retval kStatus_UART_RxHardwareOverrun Receiver overrun happened while receiving data.
+ * @retval kStatus_UART_NoiseError Noise error happened while receiving data.
+ * @retval kStatus_UART_FramingError Framing error happened while receiving data.
+ * @retval kStatus_UART_ParityError Parity error happened while receiving data.
+ * @retval kStatus_Success Successfully received all data.
  */
-void UART_ReadBlocking(UART_Type *base, uint8_t *data, size_t length);
-
-/*!
- * @brief Reads the RX register directly.
- *
- * This function reads data from the TX register directly. The upper layer must
- * ensure that the RX register is full or that the TX FIFO has data before calling this function.
- *
- * @param base UART peripheral base address.
- * @return The byte read from UART data register.
- */
-static inline uint8_t UART_ReadByte(UART_Type *base)
-{
-    return base->D;
-}
+status_t UART_ReadBlocking(UART_Type *base, uint8_t *data, size_t length);
 
 /* @} */
 
@@ -576,7 +585,10 @@ static inline uint8_t UART_ReadByte(UART_Type *base)
  * @param callback The callback function.
  * @param userData The parameter of the callback function.
  */
-void UART_CreateHandle(UART_Type *base, uart_handle_t *handle, uart_transfer_callback_t callback, void *userData);
+void UART_TransferCreateHandle(UART_Type *base,
+                               uart_handle_t *handle,
+                               uart_transfer_callback_t callback,
+                               void *userData);
 
 /*!
  * @brief Sets up the RX ring buffer.
@@ -584,7 +596,7 @@ void UART_CreateHandle(UART_Type *base, uart_handle_t *handle, uart_transfer_cal
  * This function sets up the RX ring buffer to a specific UART handle.
  *
  * When the RX ring buffer is used, data received are stored into the ring buffer even when the
- * user doesn't call the UART_ReceiveNonBlocking() API. If there is already data received
+ * user doesn't call the UART_TransferReceiveNonBlocking() API. If there is already data received
  * in the ring buffer, the user can get the received data from the ring buffer directly.
  *
  * @note When using the RX ring buffer, one byte is reserved for internal use. In other
@@ -595,7 +607,7 @@ void UART_CreateHandle(UART_Type *base, uart_handle_t *handle, uart_transfer_cal
  * @param ringBuffer Start address of the ring buffer for background receiving. Pass NULL to disable the ring buffer.
  * @param ringBufferSize size of the ring buffer.
  */
-void UART_StartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringBuffer, size_t ringBufferSize);
+void UART_TransferStartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringBuffer, size_t ringBufferSize);
 
 /*!
  * @brief Aborts the background transfer and uninstalls the ring buffer.
@@ -605,7 +617,7 @@ void UART_StartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringB
  * @param base UART peripheral base address.
  * @param handle UART handle pointer.
  */
-void UART_StopRingBuffer(UART_Type *base, uart_handle_t *handle);
+void UART_TransferStopRingBuffer(UART_Type *base, uart_handle_t *handle);
 
 /*!
  * @brief Transmits a buffer of data using the interrupt method.
@@ -626,7 +638,7 @@ void UART_StopRingBuffer(UART_Type *base, uart_handle_t *handle);
  * @retval kStatus_UART_TxBusy Previous transmission still not finished, data not all written to TX register yet.
  * @retval kStatus_InvalidArgument Invalid argument.
  */
-status_t UART_SendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer);
+status_t UART_TransferSendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer);
 
 /*!
  * @brief Aborts the interrupt driven data transmit.
@@ -637,7 +649,7 @@ status_t UART_SendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_trans
  * @param base UART peripheral base address.
  * @param handle UART handle pointer.
  */
-void UART_AbortSend(UART_Type *base, uart_handle_t *handle);
+void UART_TransferAbortSend(UART_Type *base, uart_handle_t *handle);
 
 /*!
  * @brief Get the number of bytes that have been written to UART TX register.
@@ -652,7 +664,7 @@ void UART_AbortSend(UART_Type *base, uart_handle_t *handle);
  * @retval kStatus_InvalidArgument Parameter is invalid.
  * @retval kStatus_Success Get successfully through the parameter \p count;
  */
-status_t UART_GetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *count);
+status_t UART_TransferGetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *count);
 
 /*!
  * @brief Receives a buffer of data using an interrupt method.
@@ -680,7 +692,10 @@ status_t UART_GetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *cou
  * @retval kStatus_UART_RxBusy Previous receive request is not finished.
  * @retval kStatus_InvalidArgument Invalid argument.
  */
-status_t UART_ReceiveNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer, size_t *receivedBytes);
+status_t UART_TransferReceiveNonBlocking(UART_Type *base,
+                                         uart_handle_t *handle,
+                                         uart_transfer_t *xfer,
+                                         size_t *receivedBytes);
 
 /*!
  * @brief Aborts the interrupt-driven data receiving.
@@ -691,7 +706,7 @@ status_t UART_ReceiveNonBlocking(UART_Type *base, uart_handle_t *handle, uart_tr
  * @param base UART peripheral base address.
  * @param handle UART handle pointer.
  */
-void UART_AbortReceive(UART_Type *base, uart_handle_t *handle);
+void UART_TransferAbortReceive(UART_Type *base, uart_handle_t *handle);
 
 /*!
  * @brief Get the number of bytes that have been received.
@@ -705,7 +720,7 @@ void UART_AbortReceive(UART_Type *base, uart_handle_t *handle);
  * @retval kStatus_InvalidArgument Parameter is invalid.
  * @retval kStatus_Success Get successfully through the parameter \p count;
  */
-status_t UART_GetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *count);
+status_t UART_TransferGetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *count);
 
 /*!
  * @brief UART IRQ handle function.
@@ -715,7 +730,7 @@ status_t UART_GetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *
  * @param base UART peripheral base address.
  * @param handle UART handle pointer.
  */
-void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle);
+void UART_TransferHandleIRQ(UART_Type *base, uart_handle_t *handle);
 
 /*!
  * @brief UART Error IRQ handle function.
@@ -725,7 +740,7 @@ void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle);
  * @param base UART peripheral base address.
  * @param handle UART handle pointer.
  */
-void UART_HandleErrorIRQ(UART_Type *base, uart_handle_t *handle);
+void UART_TransferHandleErrorIRQ(UART_Type *base, uart_handle_t *handle);
 
 /* @} */
 

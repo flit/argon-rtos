@@ -92,27 +92,27 @@ static void LPSPI_SeparateReadData(uint8_t *rxData, uint32_t readData, uint32_t 
 * @brief Master fill up the TX FIFO with data.
 * This is not a public API as it is called from other driver functions.
 */
-static void LPSPI_MasterFillUpTxFifo(LPSPI_Type *base, lpspi_master_handle_t *handle);
+static void LPSPI_MasterTransferFillUpTxFifo(LPSPI_Type *base, lpspi_master_handle_t *handle);
 
 /*!
 * @brief Master finish up a transfer.
 * It would call back if there is callback function and set the state to idle.
 * This is not a public API as it is called from other driver functions.
 */
-static void LPSPI_MasterCompleteTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle);
+static void LPSPI_MasterTransferComplete(LPSPI_Type *base, lpspi_master_handle_t *handle);
 
 /*!
 * @brief Slave fill up the TX FIFO with data.
 * This is not a public API as it is called from other driver functions.
 */
-static void LPSPI_SlaveFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle_t *handle);
+static void LPSPI_SlaveTransferFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle_t *handle);
 
 /*!
 * @brief Slave finish up a transfer.
 * It would call back if there is callback function and set the state to idle.
 * This is not a public API as it is called from other driver functions.
 */
-static void LPSPI_SlaveCompleteTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle);
+static void LPSPI_SlaveTransferComplete(LPSPI_Type *base, lpspi_slave_handle_t *handle);
 
 /*!
 * @brief Check the argument for transfer .
@@ -496,6 +496,74 @@ uint32_t LPSPI_MasterSetDelayTimes(LPSPI_Type *base,
     return bestDelay;
 }
 
+/*Transactional APIs -- Master*/
+
+void LPSPI_MasterTransferCreateHandle(LPSPI_Type *base,
+                                      lpspi_master_handle_t *handle,
+                                      lpspi_master_transfer_callback_t callback,
+                                      void *userData)
+{
+    assert(handle);
+
+    /* Zero the handle. */
+    memset(handle, 0, sizeof(*handle));
+
+    s_lpspiHandle[LPSPI_GetInstance(base)] = handle;
+
+    /* Set irq handler. */
+    s_lpspiMasterIsr = LPSPI_MasterTransferHandleIRQ;
+
+    handle->callback = callback;
+    handle->userData = userData;
+}
+
+bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame)
+{
+    /* If the transfer count is zero, then return immediately.*/
+    if (transfer->dataSize == 0)
+    {
+        return false;
+    }
+
+    /* If both send buffer and receive buffer is null */
+    if ((!(transfer->txData)) && (!(transfer->rxData)))
+    {
+        return false;
+    }
+
+    /*The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4 .
+     *For bytesPerFrame greater than 4 situation:
+     *the transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4 ,
+     *otherwise , the transfer data size can be integer multiples of bytesPerFrame.
+     */
+    if (bytesPerFrame <= 4)
+    {
+        if ((transfer->dataSize % bytesPerFrame) != 0)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        if ((bytesPerFrame % 4U) != 0)
+        {
+            if (transfer->dataSize != bytesPerFrame)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if ((transfer->dataSize % bytesPerFrame) != 0)
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transfer)
 {
     assert(transfer);
@@ -643,74 +711,6 @@ status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transf
     return kStatus_Success;
 }
 
-bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame)
-{
-    /* If the transfer count is zero, then return immediately.*/
-    if (transfer->dataSize == 0)
-    {
-        return false;
-    }
-
-    /* If both send buffer and receive buffer is null */
-    if ((!(transfer->txData)) && (!(transfer->rxData)))
-    {
-        return false;
-    }
-
-    /*The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4 .
-     *For bytesPerFrame greater than 4 situation:
-     *the transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4 ,
-     *otherwise , the transfer data size can be integer multiples of bytesPerFrame.
-     */
-    if (bytesPerFrame <= 4)
-    {
-        if ((transfer->dataSize % bytesPerFrame) != 0)
-        {
-            return false;
-        }
-    }
-    else
-    {
-        if ((bytesPerFrame % 4U) != 0)
-        {
-            if (transfer->dataSize != bytesPerFrame)
-            {
-                return false;
-            }
-        }
-        else
-        {
-            if ((transfer->dataSize % bytesPerFrame) != 0)
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-/*Transactional APIs -- Master*/
-
-void LPSPI_MasterCreateHandle(LPSPI_Type *base,
-                              lpspi_master_handle_t *handle,
-                              lpspi_master_transfer_callback_t callback,
-                              void *userData)
-{
-    assert(handle);
-
-    /* Zero the handle. */
-    memset(handle, 0, sizeof(*handle));
-
-    s_lpspiHandle[LPSPI_GetInstance(base)] = handle;
-
-    /* Set irq handler. */
-    s_lpspiMasterIsr = LPSPI_MasterHandleInterrupt;
-
-    handle->callback = callback;
-    handle->userData = userData;
-}
-
 status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t *handle, lpspi_transfer_t *transfer)
 {
     assert(handle && transfer);
@@ -817,7 +817,7 @@ status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t
     {
     }
     /*Fill up the TX data in FIFO */
-    LPSPI_MasterFillUpTxFifo(base, handle);
+    LPSPI_MasterTransferFillUpTxFifo(base, handle);
 
     /* Since SPI is a synchronous interface, we only need to enable the RX interrupt if there is RX data.
      * The IRQ handler will get the status of RX and TX interrupt flags.
@@ -842,7 +842,7 @@ status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t
     return kStatus_Success;
 }
 
-static void LPSPI_MasterFillUpTxFifo(LPSPI_Type *base, lpspi_master_handle_t *handle)
+static void LPSPI_MasterTransferFillUpTxFifo(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     uint32_t wordToSend = 0;
 
@@ -900,7 +900,7 @@ static void LPSPI_MasterFillUpTxFifo(LPSPI_Type *base, lpspi_master_handle_t *ha
     }
 }
 
-static void LPSPI_MasterCompleteTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle)
+static void LPSPI_MasterTransferComplete(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     /* Disable interrupt requests*/
     LPSPI_DisableInterrupts(base, kLPSPI_AllInterruptEnable);
@@ -914,7 +914,7 @@ static void LPSPI_MasterCompleteTransfer(LPSPI_Type *base, lpspi_master_handle_t
     handle->state = kLPSPI_Idle;
 }
 
-status_t LPSPI_MasterGetTransferCount(LPSPI_Type *base, lpspi_master_handle_t *handle, size_t *count)
+status_t LPSPI_MasterTransferGetCount(LPSPI_Type *base, lpspi_master_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -946,7 +946,7 @@ status_t LPSPI_MasterGetTransferCount(LPSPI_Type *base, lpspi_master_handle_t *h
     return kStatus_Success;
 }
 
-void LPSPI_MasterAbortTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle)
+void LPSPI_MasterTransferAbort(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     /* Disable interrupt requests*/
     LPSPI_DisableInterrupts(base, kLPSPI_AllInterruptEnable);
@@ -958,7 +958,7 @@ void LPSPI_MasterAbortTransfer(LPSPI_Type *base, lpspi_master_handle_t *handle)
     handle->rxRemainingByteCount = 0;
 }
 
-void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle)
+void LPSPI_MasterTransferHandleIRQ(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     uint32_t readData;
 
@@ -1015,7 +1015,7 @@ void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle
 
     if (handle->txRemainingByteCount)
     {
-        LPSPI_MasterFillUpTxFifo(base, handle);
+        LPSPI_MasterTransferFillUpTxFifo(base, handle);
     }
     else
     {
@@ -1037,7 +1037,7 @@ void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle
             if (LPSPI_GetStatusFlags(base) & kLPSPI_TransferCompleteFlag)
             {
                 /* Complete the transfer and disable the interrupts */
-                LPSPI_MasterCompleteTransfer(base, handle);
+                LPSPI_MasterTransferComplete(base, handle);
             }
             else
             {
@@ -1048,16 +1048,16 @@ void LPSPI_MasterHandleInterrupt(LPSPI_Type *base, lpspi_master_handle_t *handle
         else
         {
             /* Complete the transfer and disable the interrupts */
-            LPSPI_MasterCompleteTransfer(base, handle);
+            LPSPI_MasterTransferComplete(base, handle);
         }
     }
 }
 
 /*Transactional APIs -- Slave*/
-void LPSPI_SlaveCreateHandle(LPSPI_Type *base,
-                             lpspi_slave_handle_t *handle,
-                             lpspi_slave_transfer_callback_t callback,
-                             void *userData)
+void LPSPI_SlaveTransferCreateHandle(LPSPI_Type *base,
+                                     lpspi_slave_handle_t *handle,
+                                     lpspi_slave_transfer_callback_t callback,
+                                     void *userData)
 {
     assert(handle);
 
@@ -1067,7 +1067,7 @@ void LPSPI_SlaveCreateHandle(LPSPI_Type *base,
     s_lpspiHandle[LPSPI_GetInstance(base)] = handle;
 
     /* Set irq handler. */
-    s_lpspiSlaveIsr = LPSPI_SlaveHandleInterrupt;
+    s_lpspiSlaveIsr = LPSPI_SlaveTransferHandleIRQ;
 
     handle->callback = callback;
     handle->userData = userData;
@@ -1177,7 +1177,7 @@ status_t LPSPI_SlaveTransferNonBlocking(LPSPI_Type *base, lpspi_slave_handle_t *
     /*Fill up the TX data in FIFO */
     if (handle->txData)
     {
-        LPSPI_SlaveFillUpTxFifo(base, handle);
+        LPSPI_SlaveTransferFillUpTxFifo(base, handle);
     }
 
     /* Since SPI is a synchronous interface, we only need to enable the RX interrupt if there is RX data.
@@ -1214,7 +1214,7 @@ status_t LPSPI_SlaveTransferNonBlocking(LPSPI_Type *base, lpspi_slave_handle_t *
     return kStatus_Success;
 }
 
-static void LPSPI_SlaveFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle_t *handle)
+static void LPSPI_SlaveTransferFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     uint32_t wordToSend = 0;
 
@@ -1241,7 +1241,7 @@ static void LPSPI_SlaveFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle_t *hand
     }
 }
 
-static void LPSPI_SlaveCompleteTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle)
+static void LPSPI_SlaveTransferComplete(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     status_t status = 0;
 
@@ -1266,7 +1266,7 @@ static void LPSPI_SlaveCompleteTransfer(LPSPI_Type *base, lpspi_slave_handle_t *
     handle->state = kLPSPI_Idle;
 }
 
-status_t LPSPI_SlaveGetTransferCount(LPSPI_Type *base, lpspi_slave_handle_t *handle, size_t *count)
+status_t LPSPI_SlaveTransferGetCount(LPSPI_Type *base, lpspi_slave_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -1298,7 +1298,7 @@ status_t LPSPI_SlaveGetTransferCount(LPSPI_Type *base, lpspi_slave_handle_t *han
     return kStatus_Success;
 }
 
-void LPSPI_SlaveAbortTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle)
+void LPSPI_SlaveTransferAbort(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     /* Disable interrupt requests*/
     LPSPI_DisableInterrupts(base, kLPSPI_TxInterruptEnable | kLPSPI_RxInterruptEnable);
@@ -1310,7 +1310,7 @@ void LPSPI_SlaveAbortTransfer(LPSPI_Type *base, lpspi_slave_handle_t *handle)
     handle->rxRemainingByteCount = 0;
 }
 
-void LPSPI_SlaveHandleInterrupt(LPSPI_Type *base, lpspi_slave_handle_t *handle)
+void LPSPI_SlaveTransferHandleIRQ(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     uint32_t readData;   /* variable to store word read from RX FIFO */
     uint32_t wordToSend; /* variable to store word to write to TX FIFO */
@@ -1374,7 +1374,7 @@ void LPSPI_SlaveHandleInterrupt(LPSPI_Type *base, lpspi_slave_handle_t *handle)
     }
     else if ((handle->txRemainingByteCount) && (handle->txData != NULL))
     {
-        LPSPI_SlaveFillUpTxFifo(base, handle);
+        LPSPI_SlaveTransferFillUpTxFifo(base, handle);
     }
     else
     {
@@ -1389,7 +1389,7 @@ void LPSPI_SlaveHandleInterrupt(LPSPI_Type *base, lpspi_slave_handle_t *handle)
             if ((LPSPI_GetStatusFlags(base) & kLPSPI_FrameCompleteFlag) && (LPSPI_GetTxFifoCount(base) == 0))
             {
                 /* Complete the transfer and disable the interrupts */
-                LPSPI_SlaveCompleteTransfer(base, handle);
+                LPSPI_SlaveTransferComplete(base, handle);
             }
             else
             {
@@ -1401,7 +1401,7 @@ void LPSPI_SlaveHandleInterrupt(LPSPI_Type *base, lpspi_slave_handle_t *handle)
         else
         {
             /* Complete the transfer and disable the interrupts */
-            LPSPI_SlaveCompleteTransfer(base, handle);
+            LPSPI_SlaveTransferComplete(base, handle);
         }
     }
 
@@ -1593,11 +1593,11 @@ static void LPSPI_CommonIRQHandler(LPSPI_Type *base, void *param)
 {
     if (LPSPI_IsMaster(base))
     {
-        s_lpspiMasterIsr(base, param);
+        s_lpspiMasterIsr(base, (lpspi_master_handle_t *)param);
     }
     else
     {
-        s_lpspiSlaveIsr(base, param);
+        s_lpspiSlaveIsr(base, (lpspi_slave_handle_t *)param);
     }
 }
 

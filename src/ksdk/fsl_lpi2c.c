@@ -642,7 +642,7 @@ status_t LPI2C_MasterSend(LPI2C_Type *base, const void *txBuff, size_t txSize)
     return kStatus_Success;
 }
 
-void LPI2C_MasterCreateHandle(LPI2C_Type *base,
+void LPI2C_MasterTransferCreateHandle(LPI2C_Type *base,
                               lpi2c_master_handle_t *handle,
                               lpi2c_master_transfer_callback_t callback,
                               void *userData)
@@ -665,7 +665,7 @@ void LPI2C_MasterCreateHandle(LPI2C_Type *base,
     s_lpi2cMasterHandle[instance] = handle;
 
     /* Set irq handler. */
-    s_lpi2cMasterIsr = LPI2C_MasterHandleInterrupt;
+    s_lpi2cMasterIsr = LPI2C_MasterTransferHandleIRQ;
 
     /* Clear internal IRQ enables and enable NVIC IRQ. */
     LPI2C_MasterDisableInterrupts(base, kMasterIrqFlags);
@@ -734,7 +734,7 @@ static status_t LPI2C_RunTransferStateMachine(LPI2C_Type *base, lpi2c_master_han
                     {
                         /* Either a send or receive transfer is next. */
                         handle->state          = kTransferDataState;
-                        handle->buf            = xfer->data;
+                        handle->buf = (uint8_t *)xfer->data;
                         handle->remainingBytes = xfer->dataSize;
                     }
                     else
@@ -849,7 +849,7 @@ static void LPI2C_InitTransferStateMachine(lpi2c_master_handle_t *handle)
             handle->state = kTransferDataState;
         }
 
-        handle->buf            = xfer->data;
+        handle->buf = (uint8_t *)xfer->data;
         handle->remainingBytes = xfer->dataSize;
     }
     else
@@ -948,7 +948,7 @@ status_t LPI2C_MasterTransferNonBlocking(LPI2C_Type *base,
     return result;
 }
 
-status_t LPI2C_MasterGetTransferCount(LPI2C_Type *base, lpi2c_master_handle_t *handle, size_t *count)
+status_t LPI2C_MasterTransferGetCount(LPI2C_Type *base, lpi2c_master_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -1000,7 +1000,7 @@ status_t LPI2C_MasterGetTransferCount(LPI2C_Type *base, lpi2c_master_handle_t *h
     return kStatus_Success;
 }
 
-void LPI2C_MasterAbortTransfer(LPI2C_Type *base, lpi2c_master_handle_t *handle)
+void LPI2C_MasterTransferAbort(LPI2C_Type *base, lpi2c_master_handle_t *handle)
 {
     if (handle->state != kIdleState)
     {
@@ -1018,7 +1018,7 @@ void LPI2C_MasterAbortTransfer(LPI2C_Type *base, lpi2c_master_handle_t *handle)
     }
 }
 
-void LPI2C_MasterHandleInterrupt(LPI2C_Type *base, lpi2c_master_handle_t *handle)
+void LPI2C_MasterTransferHandleIRQ(LPI2C_Type *base, lpi2c_master_handle_t *handle)
 {
     bool isDone;
     status_t result;
@@ -1257,7 +1257,7 @@ status_t LPI2C_SlaveReceive(LPI2C_Type *base, void *rxBuff, size_t rxSize, size_
     return kStatus_Success;
 }
 
-void LPI2C_SlaveCreateHandle(LPI2C_Type *base,
+void LPI2C_SlaveTransferCreateHandle(LPI2C_Type *base,
                              lpi2c_slave_handle_t *handle,
                              lpi2c_slave_transfer_callback_t callback,
                              void *userData)
@@ -1280,7 +1280,7 @@ void LPI2C_SlaveCreateHandle(LPI2C_Type *base,
     s_lpi2cSlaveHandle[instance] = handle;
 
     /* Set irq handler. */
-    s_lpi2cSlaveIsr = LPI2C_SlaveHandleInterrupt;
+    s_lpi2cSlaveIsr = LPI2C_SlaveTransferHandleIRQ;
 
     /* Clear internal IRQ enables and enable NVIC IRQ. */
     LPI2C_SlaveDisableInterrupts(base, kMasterIrqFlags);
@@ -1333,7 +1333,7 @@ status_t LPI2C_SlaveTransferNonBlocking(LPI2C_Type *base, lpi2c_slave_handle_t *
     return kStatus_Success;
 }
 
-status_t LPI2C_SlaveGetTransferCount(LPI2C_Type *base, lpi2c_slave_handle_t *handle, size_t *count)
+status_t LPI2C_SlaveTransferGetCount(LPI2C_Type *base, lpi2c_slave_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -1355,7 +1355,7 @@ status_t LPI2C_SlaveGetTransferCount(LPI2C_Type *base, lpi2c_slave_handle_t *han
     return kStatus_Success;
 }
 
-void LPI2C_SlaveAbortTransfer(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
+void LPI2C_SlaveTransferAbort(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
 {
     assert(handle);
 
@@ -1376,7 +1376,7 @@ void LPI2C_SlaveAbortTransfer(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
     }
 }
 
-void LPI2C_SlaveHandleInterrupt(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
+void LPI2C_SlaveTransferHandleIRQ(LPI2C_Type *base, lpi2c_slave_handle_t *handle)
 {
     uint32_t flags;
     lpi2c_slave_transfer_t *xfer;

@@ -53,7 +53,7 @@ enum _lpi2c_status
     kStatus_LPI2C_Busy = MAKE_STATUS(kStatusGroup_LPI2C, 0), /*!< The master is already performing a transfer. */
     kStatus_LPI2C_Idle = MAKE_STATUS(kStatusGroup_LPI2C, 1), /*!< The slave driver is idle. */
     kStatus_LPI2C_Nak = MAKE_STATUS(kStatusGroup_LPI2C, 2),  /*!< The slave device sent a NAK in response to a byte. */
-    kStatus_LPI2C_FifoError = MAKE_STATUS(kStatusGroup_LPI2C, 3),       /*!< Fifo underrun or overrun. */
+    kStatus_LPI2C_FifoError = MAKE_STATUS(kStatusGroup_LPI2C, 3),       /*!< FIFO under run or overrun. */
     kStatus_LPI2C_BitError = MAKE_STATUS(kStatusGroup_LPI2C, 4),        /*!< Transferred bit was not seen on the bus. */
     kStatus_LPI2C_ArbitrationLost = MAKE_STATUS(kStatusGroup_LPI2C, 5), /*!< Arbitration lost error. */
     kStatus_LPI2C_PinLowTimeout =
@@ -144,16 +144,16 @@ typedef enum _lpi2c_host_request_polarity
  *
  * This structure holds configuration settings for the LPI2C peripheral. To initialize this
  * structure to reasonable defaults, call the LPI2C_MasterGetDefaultConfig() function and
- * pass a pointer to your config struct instance.
+ * pass a pointer to your configuration structure instance.
  *
- * The config struct can be made const so it resides in flash.
+ * The configuration structure can be made constant so it resides in flash.
  */
 typedef struct _lpi2c_master_config
 {
     bool enableMaster;                   /*!< Whether to enable master mode. */
     bool enableDoze;                     /*!< Whether master is enabled in doze mode. */
     bool debugEnable;                    /*!< Enable transfers to continue when halted in debug mode. */
-    bool ignoreAck;                      /*!< Whether to ignore ack/nack. */
+    bool ignoreAck;                      /*!< Whether to ignore ACK/NACK. */
     lpi2c_master_pin_config_t pinConfig; /*!< The pin configuration option. */
     uint32_t baudRate_Hz;                /*!< Desired baud rate in Hertz. */
     uint32_t busIdleTimeout_ns;          /*!< Bus idle timeout in nanoseconds. Set to 0 to disable. */
@@ -184,7 +184,7 @@ typedef enum _lpi2c_data_match_config_mode
         0x7U /*!< LPI2C Match Enabled and any data word and MATCH0 equals MATCH0 and MATCH1 */
 } lpi2c_data_match_config_mode_t;
 
-/*! @brief LPI2C master data match config struct. */
+/*! @brief LPI2C master data match configuration structure. */
 typedef struct _lpi2c_match_config
 {
     lpi2c_data_match_config_mode_t matchMode; /*!< Data match configuration setting. */
@@ -201,7 +201,7 @@ typedef struct _lpi2c_master_handle lpi2c_master_handle_t;
  * @brief Master completion callback function pointer type.
  *
  * This callback is used only for the non-blocking master transfer API. Specify the callback you wish to use
- * in the call to LPI2C_MasterCreateHandle().
+ * in the call to LPI2C_MasterTransferCreateHandle().
  *
  * @param base The LPI2C peripheral base address.
  * @param completionStatus Either #kStatus_Success or an error code describing how the transfer completed.
@@ -215,13 +215,13 @@ typedef void (*lpi2c_master_transfer_callback_t)(LPI2C_Type *base,
 /*!
  * @brief Transfer option flags.
  *
- * @note These enums are intended to be OR'd together to form a bit mask of options for
+ * @note These enumerations are intended to be OR'd together to form a bit mask of options for
  * the #_lpi2c_master_transfer::flags field.
  */
 enum _lpi2c_master_transfer_flags
 {
     kLPI2C_TransferDefaultFlag = 0x00U,       /*!< Transfer starts with a start signal, stops with a stop signal. */
-    kLPI2C_TransferNoStartFlag = 0x01U,       /*!< Don't send a start condition, address, and subaddress */
+    kLPI2C_TransferNoStartFlag = 0x01U,       /*!< Don't send a start condition, address, and sub address */
     kLPI2C_TransferRepeatedStartFlag = 0x02U, /*!< Send a repeated start condition */
     kLPI2C_TransferNoStopFlag = 0x04U,        /*!< Don't send a stop condition. */
 };
@@ -233,12 +233,12 @@ enum _lpi2c_master_transfer_flags
  */
 struct _lpi2c_master_transfer
 {
-    uint32_t flags; /*!< Bit mask of options for the transfer. See enum #_lpi2c_master_transfer_flags for available
+    uint32_t flags; /*!< Bit mask of options for the transfer. See enumeration #_lpi2c_master_transfer_flags for available
                        options. Set to 0 or #kLPI2C_TransferDefaultFlag for normal transfers. */
     uint16_t slaveAddress;       /*!< The 7-bit slave address. */
     lpi2c_direction_t direction; /*!< Either #kLPI2C_Read or #kLPI2C_Write. */
-    uint32_t subaddress;         /*!< Subaddress. Transferred MSB first. */
-    size_t subaddressSize;       /*!< Length of subaddress to send in bytes. Maximum size is 4 bytes. */
+    uint32_t subaddress;         /*!< Sub address. Transferred MSB first. */
+    size_t subaddressSize;       /*!< Length of sub address to send in bytes. Maximum size is 4 bytes. */
     void *data;                  /*!< Pointer to data to transfer. */
     size_t dataSize;             /*!< Number of bytes to transfer. */
 };
@@ -277,14 +277,14 @@ struct _lpi2c_master_handle
  * All flags except #kLPI2C_SlaveBusyFlag and #kLPI2C_SlaveBusBusyFlag can be enabled as
  * interrupts.
  *
- * @note These enums are meant to be OR'd together to form a bit mask.
+ * @note These enumerations are meant to be OR'd together to form a bit mask.
  */
 enum _lpi2c_slave_flags
 {
     kLPI2C_SlaveTxReadyFlag = LPI2C_SSR_TDF_MASK,             /*!< Transmit data flag */
     kLPI2C_SlaveRxReadyFlag = LPI2C_SSR_RDF_MASK,             /*!< Receive data flag */
     kLPI2C_SlaveAddressValidFlag = LPI2C_SSR_AVF_MASK,        /*!< Address valid flag */
-    kLPI2C_SlaveTransmitAckFlag = LPI2C_SSR_TAF_MASK,         /*!< Transmit ack flag */
+    kLPI2C_SlaveTransmitAckFlag = LPI2C_SSR_TAF_MASK,         /*!< Transmit ACK flag */
     kLPI2C_SlaveRepeatedStartDetectFlag = LPI2C_SSR_RSF_MASK, /*!< Repeated start detect flag */
     kLPI2C_SlaveStopDetectFlag = LPI2C_SSR_SDF_MASK,          /*!< Stop detect flag */
     kLPI2C_SlaveBitErrFlag = LPI2C_SSR_BEF_MASK,              /*!< Bit error flag */
@@ -309,9 +309,9 @@ typedef enum _lpi2c_slave_address_match
  *
  * This structure holds configuration settings for the LPI2C slave peripheral. To initialize this
  * structure to reasonable defaults, call the LPI2C_SlaveGetDefaultConfig() function and
- * pass a pointer to your config struct instance.
+ * pass a pointer to your configuration structure instance.
  *
- * The config struct can be made const so it resides in flash.
+ * The configuration structure can be made constant so it resides in flash.
  */
 typedef struct _lpi2c_slave_config
 {
@@ -336,7 +336,7 @@ typedef struct _lpi2c_slave_config
                                          a slave-receive transfer. */
         bool enableAddress; /*!< Enables SCL clock stretching when the address valid flag is asserted. */
     } sclStall;
-    bool ignoreAck;                   /*!< Continue transafers after a Nack is detected. */
+    bool ignoreAck;                   /*!< Continue transfers after a NACK is detected. */
     bool enableReceivedAddressRead;   /*!< Enable reading the address received address as the first byte of data. */
     uint32_t sdaGlitchFilterWidth_ns; /*!< Width in nanoseconds of the digital filter on the SDA signal. */
     uint32_t sclGlitchFilterWidth_ns; /*!< Width in nanoseconds of the digital filter on the SCL signal. */
@@ -345,14 +345,14 @@ typedef struct _lpi2c_slave_config
 } lpi2c_slave_config_t;
 
 /*!
- * @brief Set of events sent to the callback for nonblocking slave transfers.
+ * @brief Set of events sent to the callback for non blocking slave transfers.
  *
- * These event enums are used for two related purposes. First, a bit mask created by OR'ing together
+ * These event enumerations are used for two related purposes. First, a bit mask created by OR'ing together
  * events is passed to LPI2C_SlaveTransferNonBlocking() in order to specify which events to enable.
  * Then, when the slave callback is invoked, it is passed the current event through its @a transfer
  * parameter.
  *
- * @note These enums are meant to be OR'd together to form a bit mask of events.
+ * @note These enumerations are meant to be OR'd together to form a bit mask of events.
  */
 typedef enum _lpi2c_slave_transfer_event
 {
@@ -361,7 +361,7 @@ typedef enum _lpi2c_slave_transfer_event
                                                  (slave-transmitter role). */
     kLPI2C_SlaveReceiveEvent = 0x04U,       /*!< Callback is requested to provide a buffer in which to place received
                                                   data (slave-receiver role). */
-    kLPI2C_SlaveTransmitAckEvent = 0x08U,   /*!< Callback needs to either transmit an ack or nack. */
+    kLPI2C_SlaveTransmitAckEvent = 0x08U,   /*!< Callback needs to either transmit an ACK or NACK. */
     kLPI2C_SlaveRepeatedStartEvent = 0x10U, /*!< A repeated start was detected. */
     kLPI2C_SlaveCompletionEvent = 0x20U,    /*!< A stop was detected, completing the transfer. */
 
@@ -433,7 +433,7 @@ extern "C" {
 /*!
  * @brief Provides a default configuration for the LPI2C master peripheral.
  *
- * This function will provide the following default configuration for the LPI2C master peripheral:
+ * This function provides the following default configuration for the LPI2C master peripheral:
  * @code
  *  masterConfig->enableMaster            = true;
  *  masterConfig->debugEnable             = false;
@@ -474,7 +474,7 @@ void LPI2C_MasterInit(LPI2C_Type *base, const lpi2c_master_config_t *masterConfi
 /*!
 * @brief Deinitializes the LPI2C master peripheral.
 *
- * This function will disable the LPI2C master peripheral and gates the clock. It also performs a software
+ * This function disables the LPI2C master peripheral and gates the clock. It also performs a software
  * reset to restore the peripheral to reset conditions.
  *
  * @param base The LPI2C peripheral base address.
@@ -482,7 +482,7 @@ void LPI2C_MasterInit(LPI2C_Type *base, const lpi2c_master_config_t *masterConfi
 void LPI2C_MasterDeinit(LPI2C_Type *base);
 
 /*!
- * @brief Configure LPI2C master data match feature.
+ * @brief Configures LPI2C master data match feature.
  *
  * @param base The LPI2C peripheral base address.
  * @param config Settings for the data match feature.
@@ -490,7 +490,7 @@ void LPI2C_MasterDeinit(LPI2C_Type *base);
 void LPI2C_MasterConfigureDataMatch(LPI2C_Type *base, const lpi2c_data_match_config_t *config);
 
 /*!
- * @brief Perform software reset.
+ * @brief Performs a software reset.
  *
  * Restores the LPI2C master peripheral to reset conditions.
  *
@@ -522,7 +522,7 @@ static inline void LPI2C_MasterEnable(LPI2C_Type *base, bool enable)
  * @brief Gets the LPI2C master status flags.
  *
  * A bit mask with the state of all LPI2C master status flags is returned. For each flag, the corresponding bit
- * in the return value will be set if the flag is asserted.
+ * in the return value is set if the flag is asserted.
  *
  * @param base The LPI2C peripheral base address.
  * @return State of the status flags:
@@ -547,7 +547,7 @@ static inline uint32_t LPI2C_MasterGetStatusFlags(LPI2C_Type *base)
  * - #kLPI2C_MasterPinLowTimeoutFlag
  * - #kLPI2C_MasterDataMatchFlag
  *
- * Attempts to clear other flags will have no effect.
+ * Attempts to clear other flags has no effect.
  *
  * @param base The LPI2C peripheral base address.
  * @param statusMask A bitmask of status flags that are to be cleared. The mask is composed of
@@ -566,7 +566,7 @@ static inline void LPI2C_MasterClearStatusFlags(LPI2C_Type *base, uint32_t statu
 /*@{*/
 
 /*!
- * @brief Enable LPI2C master interrupt requests.
+ * @brief Enables the LPI2C master interrupt requests.
  *
  * All flags except #kLPI2C_MasterBusyFlag and #kLPI2C_MasterBusBusyFlag can be enabled as
  * interrupts.
@@ -581,7 +581,7 @@ static inline void LPI2C_MasterEnableInterrupts(LPI2C_Type *base, uint32_t inter
 }
 
 /*!
- * @brief Disable LPI2C master interrupt requests.
+ * @brief Disables the LPI2C master interrupt requests.
  *
  * All flags except #kLPI2C_MasterBusyFlag and #kLPI2C_MasterBusBusyFlag can be enabled as
  * interrupts.
@@ -652,15 +652,15 @@ static inline uint32_t LPI2C_MasterGetRxFifoAddress(LPI2C_Type *base)
 /*@{*/
 
 /*!
- * @brief Set the watermarks for LPI2C master FIFOs.
+ * @brief Sets the watermarks for LPI2C master FIFOs.
  *
  * @param base The LPI2C peripheral base address.
  * @param txWords Transmit FIFO watermark value in words. The #kLPI2C_MasterTxReadyFlag flag is set whenever
  *      the number of words in the transmit FIFO is equal or less than @a txWords. Writing a value equal or
- *      greater than the FIFO size will be truncated.
+ *      greater than the FIFO size is truncated.
  * @param rxWords Receive FIFO watermark value in words. The #kLPI2C_MasterRxReadyFlag flag is set whenever
  *      the number of words in the receive FIFO is greater than @a rxWords. Writing a value equal or greater
- *      than the FIFO size will be truncated.
+ *      than the FIFO size is truncated.
  */
 static inline void LPI2C_MasterSetWatermarks(LPI2C_Type *base, size_t txWords, size_t rxWords)
 {
@@ -668,12 +668,12 @@ static inline void LPI2C_MasterSetWatermarks(LPI2C_Type *base, size_t txWords, s
 }
 
 /*!
- * @brief Get the current number of words in the LPI2C master FIFOs.
+ * @brief Gets the current number of words in the LPI2C master FIFOs.
  *
  * @param base The LPI2C peripheral base address.
- * @param[out] txCount Pointer through which the current number of words in the transmit FIFO will be returned.
+ * @param[out] txCount Pointer through which the current number of words in the transmit FIFO is returned.
  *      Pass NULL if this value is not required.
- * @param[out] rxCount Pointer through which the current number of words in the receive FIFO will be returned.
+ * @param[out] rxCount Pointer through which the current number of words in the receive FIFO is returned.
  *      Pass NULL if this value is not required.
  */
 static inline void LPI2C_MasterGetFifoCounts(LPI2C_Type *base, size_t *rxCount, size_t *txCount)
@@ -697,7 +697,7 @@ static inline void LPI2C_MasterGetFifoCounts(LPI2C_Type *base, size_t *rxCount, 
  * @brief Sets the I2C bus frequency for master transactions.
  *
  * The LPI2C master is automatically disabled and re-enabled as necessary to configure the baud
- * rate. Do not call this function during a transfer, or the transfer will be aborted.
+ * rate. Do not call this function during a transfer, or the transfer is aborted.
  *
  * @param base The LPI2C peripheral base address.
  * @param sourceClock_Hz LPI2C functional clock frequency in Hertz.
@@ -706,7 +706,7 @@ static inline void LPI2C_MasterGetFifoCounts(LPI2C_Type *base, size_t *rxCount, 
 void LPI2C_MasterSetBaudRate(LPI2C_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Hz);
 
 /*!
- * @brief Return whether the bus is idle.
+ * @brief Returns whether the bus is idle.
  *
  * Requires the master mode to be enabled.
  *
@@ -762,7 +762,7 @@ static inline status_t LPI2C_MasterRepeatedStart(LPI2C_Type *base, uint8_t addre
  *
  * Sends up to @a txSize number of bytes to the previously addressed slave device. The slave may
  * reply with a NAK to any byte in order to terminate the transfer early. If this happens, this
- * function will return #kStatus_LPI2C_Nak.
+ * function returns #kStatus_LPI2C_Nak.
  *
  * @param base  The LPI2C peripheral base address.
  * @param txBuff The pointer to the data to be transferred.
@@ -770,7 +770,7 @@ static inline status_t LPI2C_MasterRepeatedStart(LPI2C_Type *base, uint8_t addre
  * @retval #kStatus_Success Data was sent successfully.
  * @retval #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
  * @retval #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
- * @retval #kStatus_LPI2C_FifoError Fifo underrun or overrun.
+ * @retval #kStatus_LPI2C_FifoError FIFO under run or over run.
  * @retval #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
  * @retval #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
  */
@@ -785,7 +785,7 @@ status_t LPI2C_MasterSend(LPI2C_Type *base, const void *txBuff, size_t txSize);
  * @retval #kStatus_Success Data was received successfully.
  * @retval #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
  * @retval #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
- * @retval #kStatus_LPI2C_FifoError Fifo underrun or overrun.
+ * @retval #kStatus_LPI2C_FifoError FIFO under run or overrun.
  * @retval #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
  * @retval #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
  */
@@ -794,13 +794,13 @@ status_t LPI2C_MasterReceive(LPI2C_Type *base, void *rxBuff, size_t rxSize);
 /*!
  * @brief Sends a STOP signal on the I2C bus.
  *
- * This function does not return until the STOP signal is seen on the bus, or an error occurrs.
+ * This function does not return until the STOP signal is seen on the bus, or an error occurs.
  *
  * @param base The LPI2C peripheral base address.
  * @retval #kStatus_Success The STOP signal was successfully sent on the bus and the transaction terminated.
  * @retval #kStatus_LPI2C_Busy Another master is currently utilizing the bus.
  * @retval #kStatus_LPI2C_Nak The slave device sent a NAK in response to a byte.
- * @retval #kStatus_LPI2C_FifoError Fifo underrun or overrun.
+ * @retval #kStatus_LPI2C_FifoError FIFO under run or overrun.
  * @retval #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
  * @retval #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
  */
@@ -812,18 +812,18 @@ status_t LPI2C_MasterStop(LPI2C_Type *base);
 /*@{*/
 
 /*!
- * @brief Create a new handle for the LPI2C master non-blocking APIs.
+ * @brief Creates a new handle for the LPI2C master non-blocking APIs.
  *
  * The creation of a handle is for use with the non-blocking APIs. Once a handle
  * is created, there is not a corresponding destroy handle. If the user wants to
- * terminate a transfer, the LPI2C_MasterAbortTransfer() API shall be called.
+ * terminate a transfer, the LPI2C_MasterTransferAbort() API shall be called.
  *
  * @param base The LPI2C peripheral base address.
  * @param[out] handle Pointer to the LPI2C master driver handle.
  * @param callback User provided pointer to the asynchronous callback function.
  * @param userData User provided pointer to the application callback data.
  */
-void LPI2C_MasterCreateHandle(LPI2C_Type *base,
+void LPI2C_MasterTransferCreateHandle(LPI2C_Type *base,
                               lpi2c_master_handle_t *handle,
                               lpi2c_master_transfer_callback_t callback,
                               void *userData);
@@ -850,7 +850,7 @@ status_t LPI2C_MasterTransferNonBlocking(LPI2C_Type *base,
  * @retval #kStatus_Success
  * @retval #kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
  */
-status_t LPI2C_MasterGetTransferCount(LPI2C_Type *base, lpi2c_master_handle_t *handle, size_t *count);
+status_t LPI2C_MasterTransferGetCount(LPI2C_Type *base, lpi2c_master_handle_t *handle, size_t *count);
 
 /*!
  * @brief Terminates a non-blocking LPI2C master transmission early.
@@ -863,7 +863,7 @@ status_t LPI2C_MasterGetTransferCount(LPI2C_Type *base, lpi2c_master_handle_t *h
  * @retval #kStatus_Success A transaction was successfully aborted.
  * @retval #kStatus_LPI2C_Idle There is not a non-blocking transaction currently in progress.
  */
-void LPI2C_MasterAbortTransfer(LPI2C_Type *base, lpi2c_master_handle_t *handle);
+void LPI2C_MasterTransferAbort(LPI2C_Type *base, lpi2c_master_handle_t *handle);
 
 /*@}*/
 
@@ -877,7 +877,7 @@ void LPI2C_MasterAbortTransfer(LPI2C_Type *base, lpi2c_master_handle_t *handle);
  * @param base The LPI2C peripheral base address.
  * @param handle Pointer to the LPI2C master driver handle.
  */
-void LPI2C_MasterHandleInterrupt(LPI2C_Type *base, lpi2c_master_handle_t *handle);
+void LPI2C_MasterTransferHandleIRQ(LPI2C_Type *base, lpi2c_master_handle_t *handle);
 
 /*@}*/
 
@@ -894,7 +894,7 @@ void LPI2C_MasterHandleInterrupt(LPI2C_Type *base, lpi2c_master_handle_t *handle
 /*!
  * @brief Provides a default configuration for the LPI2C slave peripheral.
  *
- * This function will provide the following default configuration for the LPI2C slave peripheral:
+ * This function provides the following default configuration for the LPI2C slave peripheral:
  * @code
  *  slaveConfig->enableSlave               = true;
  *  slaveConfig->address0                  = 0U;
@@ -915,11 +915,11 @@ void LPI2C_MasterHandleInterrupt(LPI2C_Type *base, lpi2c_master_handle_t *handle
  *  slaveConfig->clockHoldTime_ns          = 0;
  * @endcode
  *
- * After calling this function, you can override any settings in order to customize the configuration,
+ * After calling this function, override any settings  to customize the configuration,
  * prior to initializing the master driver with LPI2C_SlaveInit(). Be sure to override at least the @a
  * address0 member of the configuration structure with the desired slave address.
  *
- * @param[out] slaveConfig User provided configuration structure that will be set to default values. Refer to
+ * @param[out] slaveConfig User provided configuration structure that is set to default values. Refer to
  *      #lpi2c_slave_config_t.
  */
 void LPI2C_SlaveGetDefaultConfig(lpi2c_slave_config_t *slaveConfig);
@@ -941,7 +941,7 @@ void LPI2C_SlaveInit(LPI2C_Type *base, const lpi2c_slave_config_t *slaveConfig, 
 /*!
 * @brief Deinitializes the LPI2C slave peripheral.
 *
- * This function will disable the LPI2C slave peripheral and gates the clock. It also performs a software
+ * This function disables the LPI2C slave peripheral and gates the clock. It also performs a software
  * reset to restore the peripheral to reset conditions.
  *
  * @param base The LPI2C peripheral base address.
@@ -949,7 +949,7 @@ void LPI2C_SlaveInit(LPI2C_Type *base, const lpi2c_slave_config_t *slaveConfig, 
 void LPI2C_SlaveDeinit(LPI2C_Type *base);
 
 /*!
- * @brief Perform software reset of the LPI2C slave peripheral.
+ * @brief Performs a software reset of the LPI2C slave peripheral.
  *
  * @param base The LPI2C peripheral base address.
  */
@@ -979,7 +979,7 @@ static inline void LPI2C_SlaveEnable(LPI2C_Type *base, bool enable)
  * @brief Gets the LPI2C slave status flags.
  *
  * A bit mask with the state of all LPI2C slave status flags is returned. For each flag, the corresponding bit
- * in the return value will be set if the flag is asserted.
+ * in the return value is set if the flag is asserted.
  *
  * @param base The LPI2C peripheral base address.
  * @return State of the status flags:
@@ -1001,7 +1001,7 @@ static inline uint32_t LPI2C_SlaveGetStatusFlags(LPI2C_Type *base)
  * - #kLPI2C_SlaveBitErrFlag
  * - #kLPI2C_SlaveFifoErrFlag
  *
- * Attempts to clear other flags will have no effect.
+ * Attempts to clear other flags has no effect.
  *
  * @param base The LPI2C peripheral base address.
  * @param statusMask A bitmask of status flags that are to be cleared. The mask is composed of
@@ -1020,7 +1020,7 @@ static inline void LPI2C_SlaveClearStatusFlags(LPI2C_Type *base, uint32_t status
 /*@{*/
 
 /*!
- * @brief Enable LPI2C slave interrupt requests.
+ * @brief Enables the LPI2C slave interrupt requests.
  *
  * All flags except #kLPI2C_SlaveBusyFlag and #kLPI2C_SlaveBusBusyFlag can be enabled as
  * interrupts.
@@ -1035,7 +1035,7 @@ static inline void LPI2C_SlaveEnableInterrupts(LPI2C_Type *base, uint32_t interr
 }
 
 /*!
- * @brief Disable LPI2C slave interrupt requests.
+ * @brief Disables the LPI2C slave interrupt requests.
  *
  * All flags except #kLPI2C_SlaveBusyFlag and #kLPI2C_SlaveBusBusyFlag can be enabled as
  * interrupts.
@@ -1066,7 +1066,7 @@ static inline uint32_t LPI2C_SlaveGetEnabledInterrupts(LPI2C_Type *base)
 /*@{*/
 
 /*!
- * @brief Enable or disable LPI2C slave peripheral DMA requests.
+ * @brief Enables or disables the LPI2C slave peripheral DMA requests.
  *
  * @param base The LPI2C peripheral base address.
  * @param enableAddressValid Enable flag for the address valid DMA request. Pass true for enable, false for disable.
@@ -1086,7 +1086,7 @@ static inline void LPI2C_SlaveEnableDMA(LPI2C_Type *base, bool enableAddressVali
 /*@{*/
 
 /*!
- * @brief Return whether the bus is idle.
+ * @brief Returns whether the bus is idle.
  *
  * Requires the slave mode to be enabled.
  *
@@ -1100,14 +1100,14 @@ static inline bool LPI2C_SlaveGetBusIdleState(LPI2C_Type *base)
 }
 
 /*!
- * @brief Transmit either an Ack or Nak on the I2C bus in response to a byte from the master.
+ * @brief Transmits either an ACK or NAK on the I2C bus in response to a byte from the master.
  *
- * Use this function to send an Ack or Nak when the #kLPI2C_SlaveTransmitAckFlag is asserted. This will
- * only happen if you enable the sclStall.enableAck field of the ::lpi2c_slave_config_t configuration
+ * Use this function to send an ACK or NAK when the #kLPI2C_SlaveTransmitAckFlag is asserted. This 
+ * only happens if you enable the sclStall.enableAck field of the ::lpi2c_slave_config_t configuration
  * structure used to initialize the slave peripheral.
  *
  * @param base The LPI2C peripheral base address.
- * @param ackOrNack Pass true for an Ack or false for a Nak.
+ * @param ackOrNack Pass true for an ACK or false for a NAK.
  */
 static inline void LPI2C_SlaveTransmitAck(LPI2C_Type *base, bool ackOrNack)
 {
@@ -1156,28 +1156,28 @@ status_t LPI2C_SlaveReceive(LPI2C_Type *base, void *rxBuff, size_t rxSize, size_
 /*@{*/
 
 /*!
- * @brief Create a new handle for the LPI2C slave non-blocking APIs.
+ * @brief Creates a new handle for the LPI2C slave non-blocking APIs.
  *
  * The creation of a handle is for use with the non-blocking APIs. Once a handle
  * is created, there is not a corresponding destroy handle. If the user wants to
- * terminate a transfer, the LPI2C_SlaveAbortTransfer() API shall be called.
+ * terminate a transfer, the LPI2C_SlaveTransferAbort() API shall be called.
  *
  * @param base The LPI2C peripheral base address.
  * @param[out] handle Pointer to the LPI2C slave driver handle.
  * @param callback User provided pointer to the asynchronous callback function.
  * @param userData User provided pointer to the application callback data.
  */
-void LPI2C_SlaveCreateHandle(LPI2C_Type *base,
+void LPI2C_SlaveTransferCreateHandle(LPI2C_Type *base,
                              lpi2c_slave_handle_t *handle,
                              lpi2c_slave_transfer_callback_t callback,
                              void *userData);
 
 /*!
- * @brief Start accepting slave transfers.
+ * @brief Starts accepting slave transfers.
  *
- * Call this API after calling I2C_SlaveInit() and LPI2C_SlaveCreateHandle() to start processing
- * transactions driven by an I2C master. The slave will monitor the I2C bus and pass events to the
- * callback that was passed into the call to LPI2C_SlaveCreateHandle(). The callback is always invoked
+ * Call this API after calling I2C_SlaveInit() and LPI2C_SlaveTransferCreateHandle() to start processing
+ * transactions driven by an I2C master. The slave monitors the I2C bus and pass events to the
+ * callback that was passed into the call to LPI2C_SlaveTransferCreateHandle(). The callback is always invoked
  * from the interrupt context.
  *
  * The set of events received by the callback is customizable. To do so, set the @a eventMask parameter to
@@ -1199,7 +1199,7 @@ void LPI2C_SlaveCreateHandle(LPI2C_Type *base,
 status_t LPI2C_SlaveTransferNonBlocking(LPI2C_Type *base, lpi2c_slave_handle_t *handle, uint32_t eventMask);
 
 /*!
- * @brief Get slave transfer status during a non-blocking transfer.
+ * @brief Gets the slave transfer status during a non-blocking transfer.
  * @param base The LPI2C peripheral base address.
  * @param handle Pointer to i2c_slave_handle_t structure.
  * @param[out] count Pointer to a value to hold the number of bytes transferred. May be NULL if the count is not
@@ -1207,17 +1207,17 @@ status_t LPI2C_SlaveTransferNonBlocking(LPI2C_Type *base, lpi2c_slave_handle_t *
  * @retval #kStatus_Success
  * @retval #kStatus_NoTransferInProgress
  */
-status_t LPI2C_SlaveGetTransferCount(LPI2C_Type *base, lpi2c_slave_handle_t *handle, size_t *count);
+status_t LPI2C_SlaveTransferGetCount(LPI2C_Type *base, lpi2c_slave_handle_t *handle, size_t *count);
 
 /*!
- * @brief Abort slave non-blocking transfers.
+ * @brief Aborts the slave non-blocking transfers.
  * @note This API could be called at any time to stop slave for handling the bus events.
  * @param base The LPI2C peripheral base address.
  * @param handle Pointer to #lpi2c_slave_handle_t structure which stores the transfer state.
  * @retval #kStatus_Success
  * @retval #kStatus_LPI2C_Idle
  */
-void LPI2C_SlaveAbortTransfer(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
+void LPI2C_SlaveTransferAbort(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
 
 /*@}*/
 
@@ -1227,11 +1227,11 @@ void LPI2C_SlaveAbortTransfer(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
 /*!
  * @brief Reusable routine to handle slave interrupts.
  * @note This function does not need to be called unless you are reimplementing the
- *  nonblocking API's interrupt handler routines to add special functionality.
+ *  non blocking API's interrupt handler routines to add special functionality.
  * @param base The LPI2C peripheral base address.
  * @param handle Pointer to #lpi2c_slave_handle_t structure which stores the transfer state.
  */
-void LPI2C_SlaveHandleInterrupt(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
+void LPI2C_SlaveTransferHandleIRQ(LPI2C_Type *base, lpi2c_slave_handle_t *handle);
 
 /*@}*/
 

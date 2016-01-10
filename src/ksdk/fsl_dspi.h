@@ -237,7 +237,7 @@ typedef struct _dspi_command_data_config
     bool isPcsContinuous;            /*!< Option to enable the continuous assertion of chip select between transfers.*/
     dspi_ctar_selection_t whichCtar; /*!< The desired Clock and Transfer Attributes
                                           Register (CTAR) to use for CTAS.*/
-    dspi_which_pcs_t whichPcs;       /*!< The desired Pcs signal to use for the data transfer.*/
+    dspi_which_pcs_t whichPcs;       /*!< The desired PCS signal to use for the data transfer.*/
     bool isEndOfQueue;               /*!< Signals that the current transfer is the last in the queue.*/
     bool clearTransferCount;         /*!< Clears SPI Transfer Counter (SPI_TCNT) before transmission starts.*/
 } dspi_command_data_config_t;
@@ -245,19 +245,19 @@ typedef struct _dspi_command_data_config
 /*! @brief DSPI master ctar config structure.*/
 typedef struct _dspi_master_ctar_config
 {
-    uint32_t baudRate;                /*!< Baud Rate for dspi. */
+    uint32_t baudRate;                /*!< Baud Rate for DSPI. */
     uint32_t bitsPerFrame;            /*!< Bits per frame, minimum 4, maximum 16.*/
     dspi_clock_polarity_t cpol;       /*!< Clock polarity. */
     dspi_clock_phase_t cpha;          /*!< Clock phase. */
     dspi_shift_direction_t direction; /*!< MSB or LSB data shift direction. */
 
-    uint32_t pcsToSckDelayInNanoSec;        /*!< PCS to SCK delay time with nanosecond , set to 0 will set the minimum
-                                               delay.It woulde set the boundary value if out of range that can be set.*/
-    uint32_t lastSckToPcsDelayInNanoSec;    /*!< Last SCK to PCS delay time with nanosecond , set to 0 will set the
-                                               minimum delay.It woulde set the boundary value if out of range that can be
+    uint32_t pcsToSckDelayInNanoSec;        /*!< PCS to SCK delay time with nanosecond , set to 0 sets the minimum
+                                               delay. It sets the boundary value if out of range that can be set.*/
+    uint32_t lastSckToPcsDelayInNanoSec;    /*!< Last SCK to PCS delay time with nanosecond , set to 0 sets the
+                                               minimum delay.It sets the boundary value if out of range that can be
                                                set.*/
-    uint32_t betweenTransferDelayInNanoSec; /*!< After SCK delay time with nanosecond , set to 0 will set the minimum
-                                             delay.It woulde set the boundary value if out of range that can be set.*/
+    uint32_t betweenTransferDelayInNanoSec; /*!< After SCK delay time with nanosecond , set to 0 sets the minimum
+                                             delay.It sets the boundary value if out of range that can be set.*/
 } dspi_master_ctar_config_t;
 
 /*! @brief DSPI master config structure.*/
@@ -269,7 +269,7 @@ typedef struct _dspi_master_config
     dspi_which_pcs_t whichPcs;                     /*!< Desired Peripheral Chip Select (pcs). */
     dspi_pcs_polarity_config_t pcsActiveHighOrLow; /*!< Desired PCS active high or low. */
 
-    bool enableContinuousSCK;   /*!< CONT_SCKE, ctinuous SCK enable . Note that continuous SCK is only
+    bool enableContinuousSCK;   /*!< CONT_SCKE, continuous SCK enable . Note that continuous SCK is only
                                      supported for CPHA = 1.*/
     bool enableRxFifoOverWrite; /*!< ROOE, Receive FIFO overflow overwrite enable. ROOE = 0, the incoming
                                      data is ignored, the data from the transfer that generated the overflow
@@ -349,9 +349,10 @@ typedef struct _dspi_transfer
     uint8_t *rxData;          /*!< Receive buffer. */
     volatile size_t dataSize; /*!< Transfer bytes. */
 
-    uint32_t configFlags; /*!< Transfer transfer configuration flags , set from _dspi_transfer_config_flag_for_master if the
-                             transfer is used for master or _dspi_transfer_config_flag_for_slave enumeration if the transfer
-                             is used for slave.*/
+    uint32_t
+        configFlags; /*!< Transfer transfer configuration flags , set from _dspi_transfer_config_flag_for_master if the
+                        transfer is used for master or _dspi_transfer_config_flag_for_slave enumeration if the transfer
+                        is used for slave.*/
 } dspi_transfer_t;
 
 /*! @brief DSPI master transfer handle structure used for transactional API. */
@@ -923,7 +924,7 @@ void DSPI_MasterWriteDataBlocking(SPI_Type *base, dspi_command_data_config_t *co
  * desired data to send and use the function DSPI_HAL_WriteCommandDataMastermode or
  * DSPI_HAL_WriteCommandDataMastermodeBlocking to write the entire 32-bit command data word to the PUSHR. This helps
  * improve performance in cases where the command structure is constant. For example, the user calls this function
- * before starting a transfer to generate the command word. When they are ready to transmit the data, they would OR
+ * before starting a transfer to generate the command word. When they are ready to transmit the data, they OR
  * this formatted command word with the desired data to transmit. This process increases transmit performance when
  * compared to calling send functions such as DSPI_HAL_WriteDataMastermode which format the command word each time a
  * data word is to be sent.
@@ -945,7 +946,8 @@ static inline uint32_t DSPI_MasterGetFormattedCommand(dspi_command_data_config_t
  *
  * In this function, the user must append the 16-bit data to the 16-bit command info then provide the total 32-bit word
  * as the data to send.
- * The command portion provides characteristics of the data such as the optional continuous chip select operation between
+ * The command portion provides characteristics of the data such as the optional continuous chip select operation
+* between
  * transfers, the desired Clock and Transfer Attributes register to use for the associated SPI frame, the desired PCS
  * signal to use for the data transfer, whether the current transfer is the last in the queue, and whether to clear the
  * transfer count (normally needed when sending the first frame of a data packet). The user is responsible for
@@ -1016,18 +1018,6 @@ static inline uint32_t DSPI_ReadData(SPI_Type *base)
 }
 
 /*!
- * @brief DSPI master transfer data using polling.
- *
- * This function transfers data with polling. This is a blocking function, which does not return until all transfers have been
- * completed.
- *
- * @param base DSPI peripheral base address.
- * @param transfer pointer to dspi_transfer_t structure.
- * @return status of status_t.
- */
-status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer);
-
-/*!
  *@}
 */
 
@@ -1048,15 +1038,29 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer);
  * @param callback dspi callback.
  * @param userData callback function parameter.
  */
-void DSPI_MasterCreateHandle(SPI_Type *base,
-                             dspi_master_handle_t *handle,
-                             dspi_master_transfer_callback_t callback,
-                             void *userData);
+void DSPI_MasterTransferCreateHandle(SPI_Type *base,
+                                     dspi_master_handle_t *handle,
+                                     dspi_master_transfer_callback_t callback,
+                                     void *userData);
+
+/*!
+ * @brief DSPI master transfer data using polling.
+ *
+ * This function transfers data with polling. This is a blocking function, which does not return until all transfers
+ * have been
+ * completed.
+ *
+ * @param base DSPI peripheral base address.
+ * @param transfer pointer to dspi_transfer_t structure.
+ * @return status of status_t.
+ */
+status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer);
 
 /*!
  * @brief DSPI master transfer data using interrupts.
  *
- * This function transfers data using interrupts. This is a non-blocking function, which returns right away. When all data
+ * This function transfers data using interrupts. This is a non-blocking function, which returns right away. When all
+ data
  * have been transferred, the callback function is called.
 
  * @param base DSPI peripheral base address.
@@ -1076,7 +1080,7 @@ status_t DSPI_MasterTransferNonBlocking(SPI_Type *base, dspi_master_handle_t *ha
  * @param count Number of bytes transferred so far by the non-blocking transaction.
  * @return status of status_t.
  */
-status_t DSPI_MasterGetTransferCount(SPI_Type *base, dspi_master_handle_t *handle, size_t *count);
+status_t DSPI_MasterTransferGetCount(SPI_Type *base, dspi_master_handle_t *handle, size_t *count);
 
 /*!
  * @brief DSPI master aborts transfer using an interrupt.
@@ -1086,7 +1090,7 @@ status_t DSPI_MasterGetTransferCount(SPI_Type *base, dspi_master_handle_t *handl
  * @param base DSPI peripheral base address.
  * @param handle pointer to dspi_master_handle_t structure which stores the transfer state.
  */
-void DSPI_MasterAbortTransfer(SPI_Type *base, dspi_master_handle_t *handle);
+void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief DSPI Master IRQ handler function.
@@ -1096,7 +1100,7 @@ void DSPI_MasterAbortTransfer(SPI_Type *base, dspi_master_handle_t *handle);
  * @param base DSPI peripheral base address.
  * @param handle pointer to dspi_master_handle_t structure which stores the transfer state.
  */
-void DSPI_MasterHandleInterrupt(SPI_Type *base, dspi_master_handle_t *handle);
+void DSPI_MasterTransferHandleIRQ(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief Initializes the DSPI slave handle.
@@ -1109,15 +1113,16 @@ void DSPI_MasterHandleInterrupt(SPI_Type *base, dspi_master_handle_t *handle);
  * @param callback DSPI callback.
  * @param userData callback function parameter.
  */
-void DSPI_SlaveCreateHandle(SPI_Type *base,
-                            dspi_slave_handle_t *handle,
-                            dspi_slave_transfer_callback_t callback,
-                            void *userData);
+void DSPI_SlaveTransferCreateHandle(SPI_Type *base,
+                                    dspi_slave_handle_t *handle,
+                                    dspi_slave_transfer_callback_t callback,
+                                    void *userData);
 
 /*!
  * @brief DSPI slave transfers data using an interrupt.
  *
- * This function transfers data using an interrupt. This is a non-blocking function, which returns right away. When all data
+ * This function transfers data using an interrupt. This is a non-blocking function, which returns right away. When all
+ * data
  * have been transferred, the callback function is called.
  *
  * @param base DSPI peripheral base address.
@@ -1137,7 +1142,7 @@ status_t DSPI_SlaveTransferNonBlocking(SPI_Type *base, dspi_slave_handle_t *hand
  * @param count Number of bytes transferred so far by the non-blocking transaction.
  * @return status of status_t.
  */
-status_t DSPI_SlaveGetTransferCount(SPI_Type *base, dspi_slave_handle_t *handle, size_t *count);
+status_t DSPI_SlaveTransferGetCount(SPI_Type *base, dspi_slave_handle_t *handle, size_t *count);
 
 /*!
  * @brief DSPI slave aborts a transfer using an interrupt.
@@ -1147,7 +1152,7 @@ status_t DSPI_SlaveGetTransferCount(SPI_Type *base, dspi_slave_handle_t *handle,
  * @param base DSPI peripheral base address.
  * @param handle pointer to dspi_slave_handle_t structure which stores the transfer state.
  */
-void DSPI_SlaveAbortTransfer(SPI_Type *base, dspi_slave_handle_t *handle);
+void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle);
 
 /*!
  * @brief DSPI Master IRQ handler function.
@@ -1157,7 +1162,7 @@ void DSPI_SlaveAbortTransfer(SPI_Type *base, dspi_slave_handle_t *handle);
  * @param base DSPI peripheral base address.
  * @param handle pointer to dspi_slave_handle_t structure which stores the transfer state.
  */
-void DSPI_SlaveHandleInterrupt(SPI_Type *base, dspi_slave_handle_t *handle);
+void DSPI_SlaveTransferHandleIRQ(SPI_Type *base, dspi_slave_handle_t *handle);
 
 /*!
  *@}

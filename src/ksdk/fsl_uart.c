@@ -64,7 +64,7 @@ uint32_t UART_GetInstance(UART_Type *base);
  * @param handle UART handle pointer.
  * @return Length of received data in RX ring buffer.
  */
-static size_t UART_GetRxRingBufferLength(uart_handle_t *handle);
+static size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle);
 
 /*!
  * @brief Check whether the RX ring buffer is full.
@@ -73,7 +73,7 @@ static size_t UART_GetRxRingBufferLength(uart_handle_t *handle);
  * @retval true  RX ring buffer is full.
  * @retval false RX ring buffer is not full.
  */
-static bool UART_IsRxRingBufferFull(uart_handle_t *handle);
+static bool UART_TransferIsRxRingBufferFull(uart_handle_t *handle);
 
 /*!
  * @brief Read RX register using non-blocking method.
@@ -167,7 +167,7 @@ uint32_t UART_GetInstance(UART_Type *base)
     return instance;
 }
 
-static size_t UART_GetRxRingBufferLength(uart_handle_t *handle)
+static size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle)
 {
     size_t size;
 
@@ -183,11 +183,11 @@ static size_t UART_GetRxRingBufferLength(uart_handle_t *handle)
     return size;
 }
 
-static bool UART_IsRxRingBufferFull(uart_handle_t *handle)
+static bool UART_TransferIsRxRingBufferFull(uart_handle_t *handle)
 {
     bool full;
 
-    if (UART_GetRxRingBufferLength(handle) == (handle->rxRingBufferSize - 1U))
+    if (UART_TransferGetRxRingBufferLength(handle) == (handle->rxRingBufferSize - 1U))
     {
         full = true;
     }
@@ -457,16 +457,20 @@ void UART_WriteBlocking(UART_Type *base, const uint8_t *data, size_t length)
 
 static void UART_WriteNonBlocking(UART_Type *base, const uint8_t *data, size_t length)
 {
+    size_t i;
+
     /* The Non Blocking write data API assume user have ensured there is enough space in
     peripheral to write. */
-    for (size_t i = 0; i < length; i++)
+    for (i = 0; i < length; i++)
     {
         base->D = data[i];
     }
 }
 
-void UART_ReadBlocking(UART_Type *base, uint8_t *data, size_t length)
+status_t UART_ReadBlocking(UART_Type *base, uint8_t *data, size_t length)
 {
+    uint32_t statusFlag;
+
     while (length--)
     {
 #if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
@@ -475,22 +479,50 @@ void UART_ReadBlocking(UART_Type *base, uint8_t *data, size_t length)
         while (!(base->S1 & UART_S1_RDRF_MASK))
 #endif
         {
+            statusFlag = UART_GetStatusFlags(base);
+
+            if (statusFlag & kUART_RxOverrunFlag)
+            {
+                return kStatus_UART_RxHardwareOverrun;
+            }
+
+            if (statusFlag & kUART_NoiseErrorFlag)
+            {
+                return kStatus_UART_NoiseError;
+            }
+
+            if (statusFlag & kUART_FramingErrorFlag)
+            {
+                return kStatus_UART_FramingError;
+            }
+
+            if (statusFlag & kUART_ParityErrorFlag)
+            {
+                return kStatus_UART_ParityError;
+            }
         }
         *(data++) = base->D;
     }
+
+    return kStatus_Success;
 }
 
 static void UART_ReadNonBlocking(UART_Type *base, uint8_t *data, size_t length)
 {
+    size_t i;
+
     /* The Non Blocking read data API assume user have ensured there is enough space in
     peripheral to write. */
-    for (size_t i = 0; i < length; i++)
+    for (i = 0; i < length; i++)
     {
         data[i] = base->D;
     }
 }
 
-void UART_CreateHandle(UART_Type *base, uart_handle_t *handle, uart_transfer_callback_t callback, void *userData)
+void UART_TransferCreateHandle(UART_Type *base,
+                               uart_handle_t *handle,
+                               uart_transfer_callback_t callback,
+                               void *userData)
 {
     assert(handle);
 
@@ -525,13 +557,13 @@ void UART_CreateHandle(UART_Type *base, uart_handle_t *handle, uart_transfer_cal
     /* Save the handle in global variables to support the double weak mechanism. */
     s_uartHandle[instance] = handle;
 
-    s_uartIsr = UART_HandleIRQ;
+    s_uartIsr = UART_TransferHandleIRQ;
 
     /* Enable interrupt in NVIC. */
     EnableIRQ(s_uartIRQ[instance]);
 }
 
-void UART_StartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringBuffer, size_t ringBufferSize)
+void UART_TransferStartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringBuffer, size_t ringBufferSize)
 {
     assert(handle);
 
@@ -548,7 +580,7 @@ void UART_StartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_t *ringB
     }
 }
 
-void UART_StopRingBuffer(UART_Type *base, uart_handle_t *handle)
+void UART_TransferStopRingBuffer(UART_Type *base, uart_handle_t *handle)
 {
     assert(handle);
 
@@ -563,7 +595,7 @@ void UART_StopRingBuffer(UART_Type *base, uart_handle_t *handle)
     handle->rxRingBufferTail = 0U;
 }
 
-status_t UART_SendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer)
+status_t UART_TransferSendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer)
 {
     status_t status;
 
@@ -594,7 +626,7 @@ status_t UART_SendNonBlocking(UART_Type *base, uart_handle_t *handle, uart_trans
     return status;
 }
 
-void UART_AbortSend(UART_Type *base, uart_handle_t *handle)
+void UART_TransferAbortSend(UART_Type *base, uart_handle_t *handle)
 {
     UART_DisableInterrupts(base, kUART_TxDataRegEmptyInterruptEnable | kUART_TransmissionCompleteInterruptEnable);
 
@@ -602,7 +634,7 @@ void UART_AbortSend(UART_Type *base, uart_handle_t *handle)
     handle->txState = kUART_TxIdle;
 }
 
-status_t UART_GetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *count)
+status_t UART_TransferGetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *count)
 {
     if (kUART_TxIdle == handle->txState)
     {
@@ -619,7 +651,10 @@ status_t UART_GetSendCount(UART_Type *base, uart_handle_t *handle, uint32_t *cou
     return kStatus_Success;
 }
 
-status_t UART_ReceiveNonBlocking(UART_Type *base, uart_handle_t *handle, uart_transfer_t *xfer, size_t *receivedBytes)
+status_t UART_TransferReceiveNonBlocking(UART_Type *base,
+                                         uart_handle_t *handle,
+                                         uart_transfer_t *xfer,
+                                         size_t *receivedBytes)
 {
     uint32_t i;
     status_t status;
@@ -663,7 +698,7 @@ status_t UART_ReceiveNonBlocking(UART_Type *base, uart_handle_t *handle, uart_tr
             regPrimask = DisableGlobalIRQ();
 
             /* How many bytes in RX ring buffer currently. */
-            bytesToCopy = UART_GetRxRingBufferLength(handle);
+            bytesToCopy = UART_TransferGetRxRingBufferLength(handle);
 
             if (bytesToCopy)
             {
@@ -734,7 +769,7 @@ status_t UART_ReceiveNonBlocking(UART_Type *base, uart_handle_t *handle, uart_tr
     return status;
 }
 
-void UART_AbortReceive(UART_Type *base, uart_handle_t *handle)
+void UART_TransferAbortReceive(UART_Type *base, uart_handle_t *handle)
 {
     /* Only abort the receive to handle->rxData, the RX ring buffer is still working. */
     if (!handle->rxRingBuffer)
@@ -747,7 +782,7 @@ void UART_AbortReceive(UART_Type *base, uart_handle_t *handle)
     handle->rxState = kUART_RxIdle;
 }
 
-status_t UART_GetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *count)
+status_t UART_TransferGetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *count)
 {
     if (kUART_RxIdle == handle->rxState)
     {
@@ -764,7 +799,7 @@ status_t UART_GetReceiveCount(UART_Type *base, uart_handle_t *handle, uint32_t *
     return kStatus_Success;
 }
 
-void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle)
+void UART_TransferHandleIRQ(UART_Type *base, uart_handle_t *handle)
 {
     uint8_t count;
     uint8_t tempCount;
@@ -827,7 +862,7 @@ void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle)
             while (count--)
             {
                 /* If RX ring buffer is full, trigger callback to notify over run. */
-                if (UART_IsRxRingBufferFull(handle))
+                if (UART_TransferIsRxRingBufferFull(handle))
                 {
                     if (handle->callback)
                     {
@@ -836,7 +871,7 @@ void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle)
                 }
 
                 /* If ring buffer is still full after callback function, the oldest data is overrided. */
-                if (UART_IsRxRingBufferFull(handle))
+                if (UART_TransferIsRxRingBufferFull(handle))
                 {
                     /* Increase handle->rxRingBufferTail to make room for new data. */
                     if (handle->rxRingBufferTail + 1U == handle->rxRingBufferSize)
@@ -915,7 +950,7 @@ void UART_HandleIRQ(UART_Type *base, uart_handle_t *handle)
     }
 }
 
-void UART_HandleErrorIRQ(UART_Type *base, uart_handle_t *handle)
+void UART_TransferHandleErrorIRQ(UART_Type *base, uart_handle_t *handle)
 {
     /* TODO: To be implemented. */
 }

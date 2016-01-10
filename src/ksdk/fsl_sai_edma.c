@@ -101,7 +101,7 @@ static void SAI_TxEDMACallback(edma_handle_t *handle, void *userData, bool done,
     /* If all data finished, just stop the transfer */
     if (saiHandle->saiQueue[saiHandle->queueDriver].data == NULL)
     {
-        SAI_AbortSendEDMA(privHandle->base, saiHandle);
+        SAI_TransferAbortSendEDMA(privHandle->base, saiHandle);
     }
 }
 
@@ -121,11 +121,11 @@ static void SAI_RxEDMACallback(edma_handle_t *handle, void *userData, bool done,
     /* If all data finished, just stop the transfer */
     if (saiHandle->saiQueue[saiHandle->queueDriver].data == NULL)
     {
-        SAI_AbortReceiveEDMA(privHandle->base, saiHandle);
+        SAI_TransferAbortReceiveEDMA(privHandle->base, saiHandle);
     }
 }
 
-void SAI_TxCreateHandleEDMA(
+void SAI_TransferTxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle)
 {
     assert(handle && dmaHandle);
@@ -150,7 +150,7 @@ void SAI_TxCreateHandleEDMA(
     EDMA_SetCallback(dmaHandle, SAI_TxEDMACallback, &s_edmaPrivateHandle[instance][0]);
 }
 
-void SAI_RxCreateHandleEDMA(
+void SAI_TransferRxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle)
 {
     assert(handle && dmaHandle);
@@ -175,7 +175,7 @@ void SAI_RxCreateHandleEDMA(
     EDMA_SetCallback(dmaHandle, SAI_RxEDMACallback, &s_edmaPrivateHandle[instance][1]);
 }
 
-void SAI_TxSetTransferFormatEDMA(I2S_Type *base,
+void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -198,7 +198,7 @@ void SAI_TxSetTransferFormatEDMA(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 }
 
-void SAI_RxSetTransferFormatEDMA(I2S_Type *base,
+void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
@@ -222,7 +222,7 @@ void SAI_RxSetTransferFormatEDMA(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 }
 
-status_t SAI_SendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
+status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle && xfer);
 
@@ -267,7 +267,7 @@ status_t SAI_SendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t 
     return kStatus_Success;
 }
 
-status_t SAI_ReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
+status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle && xfer);
 
@@ -312,7 +312,7 @@ status_t SAI_ReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer
     return kStatus_Success;
 }
 
-void SAI_AbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
+void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
 
@@ -326,7 +326,7 @@ void SAI_AbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->state = kSAI_Idle;
 }
 
-void SAI_AbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
+void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
 
@@ -340,7 +340,7 @@ void SAI_AbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->state = kSAI_Idle;
 }
 
-status_t SAI_GetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
+status_t SAI_TransferGetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
 {
     assert(handle);
 
@@ -359,7 +359,7 @@ status_t SAI_GetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t 
     return status;
 }
 
-status_t SAI_GetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
+status_t SAI_TransferGetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
 {
     assert(handle);
 

@@ -207,7 +207,7 @@ typedef struct _adc16_config
     adc16_clock_divider_t clockDivider;                      /*!< Select the divider of input clock source. */
     adc16_resolution_t resolution;                           /*!< Select the sample resolution mode. */
     adc16_long_sample_mode_t longSampleMode;                 /*!< Select the long sample mode. */
-    bool enableHighSpeed;                                    /*!< Enable the high speed mode. */
+    bool enableHighSpeed;                                    /*!< Enable the high-speed mode. */
     bool enableLowPower;                                     /*!< Enable low power. */
     bool enableContinuousConversion;                         /*!< Enable continuous conversion mode. */
 } adc16_config_t;
@@ -218,7 +218,7 @@ typedef struct _adc16_config
 typedef struct _adc16_hardware_compare_config
 {
     adc16_hardware_compare_mode_t hardwareCompareMode; /*!< Select the hardware compare mode.
-                                                            See to "adc16_hardware_compare_mode_t". */
+                                                            See "adc16_hardware_compare_mode_t". */
     int16_t value1;                                    /*!< Setting value1 for hardware compare mode. */
     int16_t value2;                                    /*!< Setting value2 for hardware compare mode. */
 } adc16_hardware_compare_config_t;
@@ -278,7 +278,7 @@ extern "C" {
  * @brief Initializes the ADC16 module.
  *
  * @param base   ADC16 peripheral base address.
- * @param config Pointer to configuration structure. See to "adc16_config_t".
+ * @param config Pointer to configuration structure. See "adc16_config_t".
  */
 void ADC16_Init(ADC_Type *base, const adc16_config_t *config);
 
@@ -310,7 +310,7 @@ void ADC16_GetDefaultConfig(adc16_config_t *config);
 
 #if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && FSL_FEATURE_ADC16_HAS_CALIBRATION
 /*!
- * @brief  Automate the hardware calibration.
+ * @brief  Automates the hardware calibration.
  *
  * This auto calibration helps to adjust the plus/minus side gain automatically on the converter's working situation.
  * Execute the calibration before using the converter. Note that the hardware trigger should be used
@@ -394,7 +394,7 @@ static inline void ADC16_EnableHardwareTrigger(ADC_Type *base, bool enable)
  * indicated channel.
  *
  * @param base ADC16 peripheral base address.
- * @param mode Setting channel mux mode. See to "adc16_channel_mux_mode_t".
+ * @param mode Setting channel mux mode. See "adc16_channel_mux_mode_t".
  */
 void ADC16_SetChannelMuxMode(ADC_Type *base, adc16_channel_mux_mode_t mode);
 #endif /* FSL_FEATURE_ADC16_HAS_MUX_SELECT */
@@ -402,7 +402,8 @@ void ADC16_SetChannelMuxMode(ADC_Type *base, adc16_channel_mux_mode_t mode);
 /*!
  * @brief Configures the hardware compare mode.
  *
- * The hardware compare mode provides a way to process the conversion result automatically by hardware. Only the result in
+ * The hardware compare mode provides a way to process the conversion result automatically by hardware. Only the result
+ * in
  * compare range is available. To compare the range, see "adc16_hardware_compare_mode_t", or the reference
  * manual document for more detailed information.
  *
@@ -419,7 +420,7 @@ void ADC16_SetHardwareCompareConfig(ADC_Type *base, const adc16_hardware_compare
  * conversion results are accumulated and averaged internally. This aids  reading results.
  *
  * @param base  ADC16 peripheral base address.
- * @param mode  Setting hardware average mode. See to "adc16_hardware_average_mode_t".
+ * @param mode  Setting hardware average mode. See "adc16_hardware_average_mode_t".
  */
 void ADC16_SetHardwareAverage(ADC_Type *base, adc16_hardware_average_mode_t mode);
 #endif /* FSL_FEATURE_ADC16_HAS_HW_AVERAGE */
@@ -439,7 +440,7 @@ void ADC16_SetPGAConfig(ADC_Type *base, const adc16_pga_config_t *config);
  *
  * @param  base ADC16 peripheral base address.
  *
- * @return      Flags' mask if indicated flags are asserted. See to "_adc16_status_flags".
+ * @return      Flags' mask if indicated flags are asserted. See "_adc16_status_flags".
  */
 uint32_t ADC16_GetStatusFlags(ADC_Type *base);
 
@@ -447,7 +448,7 @@ uint32_t ADC16_GetStatusFlags(ADC_Type *base);
  * @brief  Clears the status flags of the converter.
  *
  * @param  base ADC16 peripheral base address.
- * @param  mask Mask value for the cleared flags. See to "_adc16_status_flags".
+ * @param  mask Mask value for the cleared flags. See "_adc16_status_flags".
  */
 void ADC16_ClearStatusFlags(ADC_Type *base, uint32_t mask);
 
@@ -485,7 +486,7 @@ void ADC16_ClearStatusFlags(ADC_Type *base, uint32_t mask);
 void ADC16_SetChannelConfig(ADC_Type *base, uint32_t channelGroup, const adc16_channel_config_t *config);
 
 /*!
- * @brief  Get the conversion value.
+ * @brief  Gets the conversion value.
  *
  * @param  base         ADC16 peripheral base address.
  * @param  channelGroup Channel group index.
@@ -500,12 +501,12 @@ static inline uint32_t ADC16_GetChannelConversionValue(ADC_Type *base, uint32_t 
 }
 
 /*!
- * @brief  Get the status flags of channel.
+ * @brief  Gets the status flags of channel.
  *
  * @param  base         ADC16 peripheral base address.
  * @param  channelGroup Channel group index.
  *
- * @return              Flags' mask if indicated flags are asserted. See to "_adc16_channel_status_flags".
+ * @return              Flags' mask if indicated flags are asserted. See "_adc16_channel_status_flags".
  */
 uint32_t ADC16_GetChannelStatusFlags(ADC_Type *base, uint32_t channelGroup);
 

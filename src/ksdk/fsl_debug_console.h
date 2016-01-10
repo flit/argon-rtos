@@ -134,7 +134,7 @@ status_t DbgConsole_Init(uint32_t baseAddr, uint32_t baudRate, uint8_t device, u
  *
  * @return Whether de-initialization was successful or not.
  */
-status_t DbgConsole_DeInit(void);
+status_t DbgConsole_Deinit(void);
 
 #if SDK_DEBUGCONSOLE
 /*!
