@@ -28,8 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if !defined(_KERNEL_TESTS_H_)
-#define _KERNEL_TESTS_H_
+#if !defined(_KERNEL_TESTS_QUEUE_H_)
+#define _KERNEL_TESTS_QUEUE_H_
 
 #include "argon/argon.h"
 #include "argon/test/kernel_test.h"
@@ -37,77 +37,6 @@
 //------------------------------------------------------------------------------
 // Definitions
 //------------------------------------------------------------------------------
-
-/*!
- * @brief Thread sleep test.
- */
-class TestSleep1 : public KernelTest
-{
-public:
-    TestSleep1() : KernelTest() {}
-
-    virtual void run();
-
-protected:
-
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
-
-    void a_thread();
-    void b_thread();
-
-    static void _a_thread(void *);
-    static void _b_thread(void *);
-
-};
-
-/*!
- * @brief Semaphore test.
- */
-class TestSem1 : public KernelTest
-{
-public:
-    TestSem1() {}
-
-    virtual void run();
-
-protected:
-
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
-
-    Ar::Semaphore m_sem;
-
-    void a_thread();
-    void b_thread();
-
-};
-
-/*!
- * @brief Mutex test.
- */
-class TestMutex1 : public KernelTest
-{
-public:
-    TestMutex1() {}
-
-    virtual void run();
-
-protected:
-
-    Ar::ThreadWithStack<512> m_aThread;
-    Ar::ThreadWithStack<512> m_bThread;
-    Ar::ThreadWithStack<512> m_cThread;
-    Ar::ThreadWithStack<512> m_dThread;
-
-    Ar::Mutex m_mutex;
-
-    void a_thread();
-    void b_thread();
-    void c_thread();
-    void d_thread();
-
-};
 
 /*!
  * @brief Queue test.
@@ -141,7 +70,7 @@ protected:
 // Prototypes
 //------------------------------------------------------------------------------
 
-#endif // _KERNEL_TESTS_H_
+#endif // _KERNEL_TESTS_QUEUE_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------

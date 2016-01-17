@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014 Immo Software
+ * Copyright (c) 2013 Immo Software
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -27,67 +28,47 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(_KERNEL_TEST_MUTEX_H_)
+#define _KERNEL_TEST_MUTEX_H_
+
 #include "argon/argon.h"
 #include "argon/test/kernel_test.h"
-#include <stdio.h>
-#include <cstdarg>
 
 //------------------------------------------------------------------------------
-// Code
+// Definitions
 //------------------------------------------------------------------------------
 
-const char * KernelTest::threadIdString() const
+/*!
+ * @brief Mutex test.
+ */
+class TestMutex1 : public KernelTest
 {
-    static char idString[32];
-    snprintf(idString, sizeof(idString), "[%d:%s]", ar_get_tick_count(), self()->getName());
-    return idString;
-}
+public:
+    TestMutex1() {}
 
-void KernelTest::printHello()
-{
-    printf("%s running (prio=%d)\r\n", threadIdString(), self()->getPriority());
-}
+    virtual void run();
 
-void KernelTest::printTicks()
-{
-    uint32_t ticks = ar_get_tick_count();
-    printf("%s ticks=%u!\r\n", threadIdString(), ticks);
-}
+protected:
 
-void KernelTest::log(const char * format...)
-{
-    va_list args;
-    va_start(args, format);
-    static char msg[128];
-    vsnprintf(msg, sizeof(msg), format, args);
-    printf("%s %s\n", threadIdString(), msg);
-    va_end(args);
-}
+    Ar::ThreadWithStack<512> m_aThread;
+    Ar::ThreadWithStack<512> m_bThread;
+    Ar::ThreadWithStack<512> m_cThread;
+    Ar::ThreadWithStack<512> m_dThread;
 
-void KernelTest::assert_true(bool predicate, const char * msg, const char * desc, const char * file, int line)
-{
-    if (!predicate)
-    {
-        log("Assertion failed: %s (%s was not true) [%s:%d]\n", msg, desc, file, line);
-    }
-    else
-    {
-        log("Asserted passed: %s (%s) [%s:%d]\n", msg, desc, file, line);
-    }
-}
+    Ar::Mutex m_mutex;
 
-void KernelTest::assert_false(bool predicate, const char * msg, const char * desc, const char * file, int line)
-{
-    if (predicate)
-    {
-        log("Assertion failed: %s (%s was not false) [%s:%d]\n", msg, desc, file, line);
-    }
-    else
-    {
-        log("Asserted passed: %s !(%s) [%s:%d]\n", msg, desc, file, line);
-    }
-}
+    void a_thread();
+    void b_thread();
+    void c_thread();
+    void d_thread();
 
+};
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+#endif // _KERNEL_TEST_MUTEX_H_
 //------------------------------------------------------------------------------
 // EOF
 //------------------------------------------------------------------------------
