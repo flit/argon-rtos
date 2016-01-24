@@ -2181,6 +2181,12 @@
   <group>
     <name>ksdk</name>
     <file>
+      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_adc16.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_adc16.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\..\src\ksdk\fsl_common.c</name>
     </file>
     <file>

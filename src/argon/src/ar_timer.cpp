@@ -111,7 +111,15 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
 
         timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
         timer->m_isActive = true;
-        g_ar.activeTimers.add(timer);
+
+        if (timer->m_runLoop)
+        {
+            timer->m_runLoop->m_timers.add(timer);
+        }
+        else
+        {
+            g_ar.activeTimers.add(timer);
+        }
     }
 
     return kArSuccess;
@@ -138,7 +146,14 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     {
         KernelLock guard;
 
-        g_ar.activeTimers.remove(timer);
+        if (timer->m_runLoop)
+        {
+            timer->m_runLoop->m_timers.remove(timer);
+        }
+        else
+        {
+            g_ar.activeTimers.remove(timer);
+        }
         timer->m_wakeupTime = 0;
         timer->m_isActive = false;
     }
@@ -164,8 +179,16 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         {
             timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
 
-            g_ar.activeTimers.remove(timer);
-            g_ar.activeTimers.add(timer);
+            if (timer->m_runLoop)
+            {
+                timer->m_runLoop->m_timers.remove(timer);
+                timer->m_runLoop->m_timers.add(timer);
+            }
+            else
+            {
+                g_ar.activeTimers.remove(timer);
+                g_ar.activeTimers.add(timer);
+            }
 
             // TODO update scheduler next wakeup time
         }

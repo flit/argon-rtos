@@ -93,15 +93,94 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
     runloop->m_stop = false;
 
     // Prepare timeout.
-    uint32_t timeoutTicks = ar_milliseconds_to_ticks(timeout);
     uint32_t startTime = g_ar.tickCount;
+    uint32_t timeoutTicks = timeout;
+    if (timeout != kArInfiniteTimeout)
+    {
+        timeoutTicks = ar_milliseconds_to_ticks(timeout);
+    }
 
     // Run it.
     do {
+        // Invoke timers.
         ar_kernel_run_timers(runloop->m_timers);
-    } while (!runloop->m_stop && (g_ar.tickCount - startTime) < timeoutTicks);
+
+        // Invoke queued functions.
+        // TODO: one function per loop or all at once?
+        uint32_t count = runloop->m_functionCount;
+        while (count--)
+        {
+            ar_runloop_function_t fn;
+            void * param;
+
+            {
+                KernelLock lock;
+
+                fn = runloop->m_functions[runloop->m_functionHead].function;
+                param = runloop->m_functions[runloop->m_functionHead].param;
+
+                runloop->m_functionHead = (runloop->m_functionHead + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
+                --runloop->m_functionCount;
+            }
+
+            // Call function.
+            assert(fn);
+            fn(param);
+        }
+
+        // Check timeout. Adjust the timeout based on how long we've run so far.
+        uint32_t blockTimeoutTicks = timeoutTicks;
+        if (blockTimeoutTicks != kArInfiniteTimeout)
+        {
+            int32_t deltaTicks = g_ar.tickCount - startTime;
+            if (deltaTicks >= timeoutTicks)
+            {
+                break;
+            }
+            blockTimeoutTicks -= deltaTicks;
+        }
+
+        // Make sure we don't sleep past the next scheduled timer.
+        if (runloop->m_timers.m_head)
+        {
+            ar_timer_t * timer = runloop->m_timers.m_head->getObject<ar_timer_t>();
+            uint32_t wakeupDeltaTicks = timer->m_wakeupTime - g_ar.tickCount;
+            // kArInfiniteTimeout is the max 32-bit value, so wakeupDeltaTicks will always be <=
+            if (wakeupDeltaTicks < blockTimeoutTicks)
+            {
+                blockTimeoutTicks = wakeupDeltaTicks;
+            }
+        }
+
+        // Block the runloop's thread for the adjusted timeout.
+        uint32_t blockTimeout = (blockTimeoutTicks == kArInfiniteTimeout)
+                                    ? kArInfiniteTimeout
+                                    : ar_ticks_to_milliseconds(blockTimeoutTicks);
+        {
+            KernelLock lock;
+            runloop->m_thread->block(runloop->m_blockedThread, blockTimeout);
+        }
+    } while (!runloop->m_stop);
+
+    // Clear associated thread.
+    g_ar.currentThread->m_runLoop = NULL;
+    runloop->m_thread = NULL;
 
     return kArRunLoopStopped;
+}
+
+void ar_runloop_wake(ar_runloop_t * runloop)
+{
+    if (runloop->m_thread)
+    {
+        KernelLock lock;
+
+//         ar_thread_t * thread = runloop->m_blockedThread.m_head->getObject<ar_thread_t>();
+        if (runloop->m_thread->m_state == kArThreadBlocked)
+        {
+            runloop->m_thread->unblockWithStatus(runloop->m_blockedThread, kArSuccess);
+        }
+    }
 }
 
 ar_status_t ar_runloop_stop(ar_runloop_t * runloop)
@@ -111,14 +190,18 @@ ar_status_t ar_runloop_stop(ar_runloop_t * runloop)
         return kArInvalidParameterError;
     }
 
+    // Set the stop flag.
     runloop->m_stop = true;
+
+    // Wake the runloop in case it is blocked.
+    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }
 
 ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t function, void * param)
 {
-    if (!runloop)
+    if (!runloop || !function)
     {
         return kArInvalidParameterError;
     }
@@ -128,10 +211,16 @@ ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t fun
         return kArQueueFullError;
     }
 
-    runloop->m_functions[runloop->m_functionTail].function = function;
-    runloop->m_functions[runloop->m_functionTail].param = param;
-    runloop->m_functionTail = (runloop->m_functionTail + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
-    ++runloop->m_functionCount;
+    {
+        KernelLock lock;
+        runloop->m_functions[runloop->m_functionTail].function = function;
+        runloop->m_functions[runloop->m_functionTail].param = param;
+        runloop->m_functionTail = (runloop->m_functionTail + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
+        ++runloop->m_functionCount;
+    }
+
+    // Wake the runloop in case it is blocked.
+    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }
@@ -143,7 +232,11 @@ ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer)
         return kArInvalidParameterError;
     }
 
-    runloop->m_timers.add(timer);
+//     runloop->m_timers.add(timer);
+    timer->m_runLoop = runloop;
+
+    // Wake the runloop in case it is blocked.
+    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }
@@ -157,6 +250,9 @@ ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_
 
     runloop->m_queues.add(queue);
 
+    // Wake the runloop in case it is blocked.
+    ar_runloop_wake(runloop);
+
     return kArSuccess;
 }
 
@@ -168,6 +264,9 @@ ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channe
     }
 
     runloop->m_channels.add(channel);
+
+    // Wake the runloop in case it is blocked.
+    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }

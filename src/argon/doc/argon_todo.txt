@@ -73,7 +73,7 @@ x Consider possibilities of run-to-completion threads that share a stack.
 - Add a header to kernel object structs with type and name pointer?
 - Change to a single ar_object_get_name() API?
 - Can we replace the ar_list_node_t object pointer member with a calculation of node struct offset from the header of the containing kernel object struct?
-- Change function pointer types to not be pointers, then make params etc pointers.
+x Change function pointer types to not be pointers, then make params etc pointers.
 - Remove "m_" from kernel object member names since they are public and accessed directly?
 √ Make kernel object class destructors non-virtual, except for Thread; no virtual methods, and this will save a vptr&table for each class.
 - Remove "2" on ar_post_deferred_action2() and use overloading.
@@ -83,6 +83,7 @@ x Consider possibilities of run-to-completion threads that share a stack.
 - Remove need for idle thread by staying in scheduler until a thread becomes ready.
 - Add support for blocks.
 - MPU support.
+- 64-bit tick counter.
 
 
 Issues

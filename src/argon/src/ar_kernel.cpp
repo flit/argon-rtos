@@ -89,6 +89,7 @@ bool ar_kernel_run_timers(ar_list_t & timersList)
 
                 case kArPeriodicTimer:
                     // Restart a periodic timer.
+                    ar_timer_stop(timer);
                     ar_timer_start(timer);
                     break;
             }

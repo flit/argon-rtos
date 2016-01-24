@@ -36,6 +36,7 @@
 #include "fsl_port.h"
 #include "fsl_gpio.h"
 #include "fsl_fxos.h"
+#include "fsl_adc16.h"
 #include "arm_math.h"
 #include <stdio.h>
 #include <math.h>
@@ -80,6 +81,7 @@ protected:
 //------------------------------------------------------------------------------
 
 void accel_thread(void * arg);
+void light_thread(void * arg);
 void init_audio_out();
 void init_board();
 
@@ -104,6 +106,7 @@ i2c_master_handle_t g_i2cHandle;
 fxos_handle_t g_fxos;
 
 Ar::ThreadWithStack<512> g_accelThread("accel", accel_thread, 0, 120, kArSuspendThread);
+Ar::ThreadWithStack<512> g_lightThread("light", light_thread, 0, 120, kArSuspendThread);
 
 //------------------------------------------------------------------------------
 // Code
@@ -188,6 +191,75 @@ void accel_thread(void * arg)
     }
 }
 
+Ar::TypedChannel<uint32_t> g_light;
+extern "C" void ADC0_IRQHandler()
+{
+    uint32_t result = ADC16_GetChannelConversionValue(ADC0, 0);
+    g_light.send(result, kArNoTimeout);
+}
+
+// ADC0 SE3
+void light_thread(void * arg)
+{
+    adc16_config_t config;
+//     config.enableContinuousConversion = true;
+    ADC16_GetDefaultConfig(&config);
+    ADC16_Init(ADC0, &config);
+    ADC16_DoAutoCalibration(ADC0);
+
+    EnableIRQ(ADC0_IRQn);
+
+    adc16_channel_config_t channelConfig;
+    channelConfig.channelNumber = 3;
+    channelConfig.enableInterruptOnConversionCompleted = true;
+    channelConfig.enableDifferentialConversion = false;
+
+    while (1)
+    {
+        ADC16_SetChannelConfig(ADC0, 0, &channelConfig);
+
+        uint32_t result = g_light.receive();
+        printf("Got result: %d\r\n", result);
+
+        Ar::Thread::sleep(250);
+    }
+}
+
+void rl_thread(void * arg)
+{
+    ar_runloop_t rl;
+    ar_runloop_create(&rl, "rl", ar_thread_get_current());
+
+// ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t function, void * param);
+
+    ar_runloop_add_timer(&rl, &g_myTimer);
+    g_myTimer.start();
+
+    while (true)
+    {
+        ar_runloop_status_t result;
+        void * obj;
+        void * value;
+        result = ar_runloop_run(&rl, kArInfiniteTimeout, &obj, &value);
+        printf("ar_runloop_run returned %d, obj=%x, value=%x\r\n", result, obj, value);
+
+        switch (result)
+        {
+            case kArRunLoopError:
+                break;
+            case kArRunLoopStopped:
+                break;
+            case kArRunLoopQueueReceived:
+                break;
+            case kArRunLoopChannelReceived:
+                break;
+            default:
+                break;
+        }
+    }
+}
+Ar::ThreadWithStack<512> g_rlThread("rl", rl_thread, 0, 100, kArSuspendThread);
+
 void init_audio_out()
 {
     // Configure the audio format
@@ -271,12 +343,24 @@ int main(void)
 {
     printf("Hello...\r\n");
 
+#if 0
+    printf("sizeof(ar_thread_t)=%d; sizeof(Thread)=%d\r\n", sizeof(ar_thread_t), sizeof(Ar::Thread));
+    printf("sizeof(ar_channel_t)=%d; sizeof(Channel)=%d\r\n", sizeof(ar_channel_t), sizeof(Ar::Channel));
+    printf("sizeof(ar_semaphore_t)=%d; sizeof(Semaphore)=%d\r\n", sizeof(ar_semaphore_t), sizeof(Ar::Semaphore));
+    printf("sizeof(ar_mutex_t)=%d; sizeof(Mutex)=%d\r\n", sizeof(ar_mutex_t), sizeof(Ar::Mutex));
+    printf("sizeof(ar_queue_t)=%d; sizeof(Queue)=%d\r\n", sizeof(ar_queue_t), sizeof(Ar::Queue));
+    printf("sizeof(ar_timer_t)=%d; sizeof(Timer)=%d\r\n", sizeof(ar_timer_t), sizeof(Ar::Timer));
+    printf("sizeof(ar_runloop_t)=%d; sizeof(RunLoop)=%d\r\n", sizeof(ar_runloop_t), 0 /*sizeof(Ar::RunLoop)*/);
+#endif
+
     init_board();
     init_audio_out();
 
-    g_myTimer.start();
+//     g_myTimer.start();
     g_audioOut.start();
     g_accelThread.resume();
+//     g_lightThread.resume();
+    g_rlThread.resume();
 
     Ar::Thread::getCurrent()->suspend();
     while (1)

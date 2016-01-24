@@ -51,7 +51,7 @@ enum _ar_timeouts
     kArNoTimeout = 0,
 
     //! Pass this value to wait forever to acquire a resource.
-    kArInfiniteTimeout = 0xffffffffL
+    kArInfiniteTimeout = 0xffffffffUL
 };
 
 //! @brief Argon status and error codes.
@@ -352,7 +352,8 @@ typedef struct _ar_runloop {
     ar_list_t m_timers;
     ar_list_t m_queues;
     ar_list_t m_channels;
-    struct {
+    ar_list_t m_blockedThread;
+    struct _ar_runloop_function_info {
         ar_runloop_function_t function;
         void * param;
     } m_functions[AR_RUNLOOP_FUNCTION_QUEUE_SIZE];
