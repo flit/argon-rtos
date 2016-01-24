@@ -91,12 +91,6 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
         return kArInvalidParameterError;
     }
 
-    // Do nothing for timers that are already active.
-    if (timer->m_isActive)
-    {
-        return kArSuccess;
-    }
-
     // The callback should have been verified by the create function.
     assert(timer->m_callback);
 
@@ -108,6 +102,12 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
 
     {
         KernelLock guard;
+
+        // Handle a timer that is already active.
+        if (timer->m_isActive)
+        {
+            g_ar.activeTimers.remove(timer);
+        }
 
         timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
         timer->m_isActive = true;
