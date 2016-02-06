@@ -572,9 +572,9 @@ uint32_t ar_kernel_get_next_wakeup_time()
     node = g_ar.readyList.m_head;
     assert(node);
     uint8_t pri1 = node->getObject<ar_thread_t>()->m_priority;
-    node = node->m_next;
-    if (node)
+    if (node->m_next != node)
     {
+        node = node->m_next;
         uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
 
         // Check
@@ -766,7 +766,7 @@ ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * obj
 
 ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg)
 {
-    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE)
+    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE - 1)
     {
         assert(false);
         return kArQueueFullError;
