@@ -748,7 +748,7 @@ ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * obj
         return kArQueueFullError;
     }
 
-    int index = ar_atomic_increment(&g_ar.deferredActions.m_count);
+    int index = ar_atomic_inc(&g_ar.deferredActions.m_count);
 
     g_ar.deferredActions.m_actions[index] = action;
     g_ar.deferredActions.m_objects[index] = object;

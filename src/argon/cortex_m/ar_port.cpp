@@ -233,24 +233,26 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
 #if (__CORTEX_M < 3)
 int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
 {
-    __disable_irq();
+    __DSB();
+    uint32_t primask = __get_PRIMASK();
     int32_t originalValue = *value;
     *value += delta;
-    __enable_irq();
+    __set_PRIMASK(primask);
     return originalValue;
 }
 
-bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
+bool ar_atomic_cas(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
 {
-    __disable_irq();
+    __DSB();
+    uint32_t primask = __get_PRIMASK();
     int32_t oldValue = *value;
     if (oldValue == expectedValue)
     {
         *value = newValue;
-        __enable_irq();
+        __set_PRIMASK(primask);
         return true;
     }
-    __enable_irq();
+    __set_PRIMASK(primask);
     return false;
 }
 #endif // (__CORTEX_M < 3)

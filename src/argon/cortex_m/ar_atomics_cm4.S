@@ -33,13 +33,13 @@
         _CODE_SECTION(.text)
         _THUMB
 
-        _EXPORT(ar_atomic_compare_and_swap)
+        _EXPORT(ar_atomic_cas)
         _EXPORT(ar_atomic_add)
 
-        // bool ar_atomic_compare_and_swap(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
-        _FN_BEGIN(ar_atomic_compare_and_swap)
-        _FN_DECL(ar_atomic_compare_and_swap)
-_FN_LABEL(ar_atomic_compare_and_swap)
+        // bool ar_atomic_cas(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
+        _FN_BEGIN(ar_atomic_cas)
+        _FN_DECL(ar_atomic_cas)
+_FN_LABEL(ar_atomic_cas)
         _FN_BEGIN_POST
         _FN_CANT_UNWIND
 
@@ -53,8 +53,8 @@ _FN_LABEL(ar_atomic_compare_and_swap)
         mov         r0, r12             // return the result of strex
         bx          lr                  // return to caller
 
-        _FN_END(ar_atomic_compare_and_swap)
-        _FN_SIZE(ar_atomic_compare_and_swap)
+        _FN_END(ar_atomic_cas)
+        _FN_SIZE(ar_atomic_cas)
 
         // int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
         _FN_BEGIN(ar_atomic_add)
