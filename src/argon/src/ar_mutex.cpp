@@ -134,7 +134,11 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
                 }
             }
 
-            ar_status_t result = ar_semaphore_get(&mutex->m_sem, timeout);
+            ar_status_t result;
+            {
+                KernelUnlock unlock;
+                result = ar_semaphore_get(&mutex->m_sem, timeout);
+            }
             if (result == kArSuccess)
             {
                 // Set the owner now that we own the lock.
@@ -192,7 +196,10 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
             // switch threads.
             mutex->m_owner = NULL;
 
-            result = ar_semaphore_put(&mutex->m_sem);
+            {
+                KernelUnlock unlock;
+                result = ar_semaphore_put(&mutex->m_sem);
+            }
 
             // Restore this thread's priority if it had been raised.
             uint8_t original = mutex->m_originalPriority;
