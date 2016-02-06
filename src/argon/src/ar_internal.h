@@ -91,6 +91,7 @@ typedef struct _ar_kernel {
     bool needsReschedule;           //!< True if we need to reschedule once the kernel is unlocked.
     int32_t lockCount;             //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
+    int32_t missedTickCount;       //!< Number of ticks that occurred while the kernel was locked.
     uint32_t nextWakeup;            //!< Time of the next wakeup event.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
     ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
@@ -185,7 +186,7 @@ public:
     //! @brief Saves lock state then modifies it.
     KernelGuard()
     {
-        m_savedMask = ar_port_set_lock(E);
+//         m_savedMask = ar_port_set_lock(E);
         if (E)
         {
             ar_atomic_inc(&g_ar.lockCount);
@@ -210,7 +211,7 @@ public:
                 Ar::_halt();
             }
             ar_atomic_dec(&g_ar.lockCount);
-            ar_port_set_lock(!E);
+//             ar_port_set_lock(!E);
             if (g_ar.lockCount == 0 && g_ar.needsReschedule)
             {
                 ar_kernel_enter_scheduler();
@@ -219,12 +220,12 @@ public:
         else
         {
             ar_atomic_inc(&g_ar.lockCount);
-            ar_port_set_lock(!E);
+//             ar_port_set_lock(!E);
         }
     }
 
 private:
-    bool m_savedMask;    //!< The lock state saved by the constructor.
+//     bool m_savedMask;    //!< The lock state saved by the constructor.
 };
 
 typedef KernelGuard<true> KernelLock;  //!< Lock kernel.
