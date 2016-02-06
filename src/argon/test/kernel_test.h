@@ -31,6 +31,7 @@
 #define _KERNEL_TEST_H_
 
 #include "argon/argon.h"
+#include <stdio.h>
 
 #define _STRINGIFY_B(x) #x
 #define _STRINGIFY(x) _STRINGIFY_B(x)

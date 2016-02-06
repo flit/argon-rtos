@@ -29,8 +29,7 @@
  */
 
 #include "argon/argon.h"
-#include "debug_uart.h"
-#include "kernel_tests.h"
+#include "test_queue.h"
 
 //------------------------------------------------------------------------------
 // Code

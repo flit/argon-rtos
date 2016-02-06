@@ -30,7 +30,7 @@
 #include "argon/argon.h"
 #include "argon/test/kernel_test.h"
 #include <stdio.h>
-#include <cstdarg>
+#include <stdarg.h>
 
 //------------------------------------------------------------------------------
 // Code
