@@ -186,7 +186,6 @@
           <state>CLOCK_SETUP=1</state>
           <state>ARM_MATH_CM4</state>
           <state>__FPU_PRESENT=1</state>
-          <state>AR_ENABLE_TICKLESS_IDLE=0</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
