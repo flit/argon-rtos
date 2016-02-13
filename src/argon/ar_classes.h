@@ -913,6 +913,41 @@ private:
     Timer& operator=(const Timer & other);
 };
 
+/*!
+ * @brief Run loop.
+ */
+class RunLoop : public _ar_runloop
+{
+public:
+    RunLoop() {}
+
+    RunLoop(const char * name, ar_thread_t * thread)
+    {
+        init(name, thread);
+    }
+
+    ~RunLoop() { ar_runloop_delete(this); }
+
+    ar_status_t init(const char * name, ar_thread_t * thread) { return ar_runloop_create(this, name, thread); }
+
+    //! @brief Get the run loop's name.
+    const char * getName() const { return m_name; }
+
+    ar_runloop_status_t run(uint32_t timeout=kArInfiniteTimeout, void * object=0, void * value=0) { return ar_runloop_run(this, timeout, object, value); }
+
+    ar_status_t stop() { return ar_runloop_stop(this); }
+
+    ar_status_t perform(ar_runloop_function_t function, void * param=0) { return ar_runloop_perform(this, function, param); }
+
+    ar_status_t addTimer(ar_timer_t * timer) { return ar_runloop_add_timer(this, timer); }
+
+    ar_status_t addQueue(ar_queue_t * queue, ar_runloop_queue_handler_t callback=NULL) { return ar_runloop_add_queue(this, queue, callback); }
+
+    ar_status_t addChannel(ar_channel_t * channel, ar_runloop_channel_handler_t callback=NULL) { return ar_runloop_add_channel(this, channel, callback); }
+
+    static ar_runloop_t * getCurrent(void) { return ar_runloop_get_current(); }
+};
+
 } // namespace Ar
 
 #endif // defined(__cplusplus)
