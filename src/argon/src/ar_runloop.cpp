@@ -116,8 +116,9 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
             {
                 KernelLock lock;
 
-                fn = runloop->m_functions[runloop->m_functionHead].function;
-                param = runloop->m_functions[runloop->m_functionHead].param;
+                ar_runloop_t::_ar_runloop_function_info * fnPtr = &runloop->m_functions[runloop->m_functionHead];
+                fn = fnPtr->function;
+                param = fnPtr->param;
 
                 runloop->m_functionHead = (runloop->m_functionHead + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
                 --runloop->m_functionCount;
@@ -152,13 +153,19 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
             }
         }
 
-        // Block the runloop's thread for the adjusted timeout.
+        // Don't sleep if there are queued functions.
+        if (runloop->m_functionCount)
+        {
+            blockTimeoutTicks = 0;
+        }
+
+        // Sleep the runloop's thread for the adjusted timeout.
         uint32_t blockTimeout = (blockTimeoutTicks == kArInfiniteTimeout)
                                     ? kArInfiniteTimeout
                                     : ar_ticks_to_milliseconds(blockTimeoutTicks);
+        if (blockTimeout)
         {
-            KernelLock lock;
-            runloop->m_thread->block(runloop->m_blockedThread, blockTimeout);
+            ar_thread_sleep(blockTimeout);
         }
     } while (!runloop->m_stop);
 
@@ -171,14 +178,19 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
 
 void ar_runloop_wake(ar_runloop_t * runloop)
 {
-    if (runloop->m_thread)
+    ar_thread_t * thread = runloop->m_thread;
+    if (thread)
     {
         KernelLock lock;
 
-//         ar_thread_t * thread = runloop->m_blockedThread.m_head->getObject<ar_thread_t>();
-        if (runloop->m_thread->m_state == kArThreadBlocked)
+        if (thread->m_state == kArThreadSleeping)
         {
-            runloop->m_thread->unblockWithStatus(runloop->m_blockedThread, kArSuccess);
+            // Remove thread from the sleeping list.
+            g_ar.sleepingList.remove(thread);
+
+            // Put the thread back onto the ready list.
+            thread->m_state = kArThreadReady;
+            g_ar.readyList.add(thread);
         }
     }
 }
@@ -213,8 +225,11 @@ ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t fun
 
     {
         KernelLock lock;
-        runloop->m_functions[runloop->m_functionTail].function = function;
-        runloop->m_functions[runloop->m_functionTail].param = param;
+
+        ar_runloop_t::_ar_runloop_function_info * fnPtr = &runloop->m_functions[runloop->m_functionTail];
+        fnPtr->function = function;
+        fnPtr->param = param;
+
         runloop->m_functionTail = (runloop->m_functionTail + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
         ++runloop->m_functionCount;
     }

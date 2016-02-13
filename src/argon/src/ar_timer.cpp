@@ -106,7 +106,14 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
         // Handle a timer that is already active.
         if (timer->m_isActive)
         {
-            g_ar.activeTimers.remove(timer);
+            if (timer->m_runLoop)
+            {
+                timer->m_runLoop->m_timers.remove(timer);
+            }
+            else
+            {
+                g_ar.activeTimers.remove(timer);
+            }
         }
 
         timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;

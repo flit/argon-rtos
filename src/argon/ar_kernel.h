@@ -352,7 +352,6 @@ typedef struct _ar_runloop {
     ar_list_t m_timers;
     ar_list_t m_queues;
     ar_list_t m_channels;
-    ar_list_t m_blockedThread;
     struct _ar_runloop_function_info {
         ar_runloop_function_t function;
         void * param;

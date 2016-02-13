@@ -417,6 +417,11 @@ uint8_t ar_thread_get_priority(ar_thread_t * thread)
     return thread ? thread->m_priority : 0;
 }
 
+ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread)
+{
+    return thread ? thread->m_runLoop : 0;
+}
+
 // See ar_classes.h for documentation of this function.
 Thread::~Thread()
 {
