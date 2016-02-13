@@ -59,19 +59,15 @@ void main_thread(void * arg);
 void x_thread(void * arg);
 void y_thread(void * arg);
 void rf_thread(void * arg);
+void my_timer_fn(Ar::Timer * t, void * arg);
+void creator_thread(void * arg);
+void rl_thread(void * arg);
+void rl2_thread(void * arg);
 
 class Foo
 {
 public:
-
-    void my_entry() //void * param)
-    {
-        while (1)
-        {
-            printf("hi from Foo!\n");
-            Ar::Thread::sleep(1000);
-        }
-    }
+    void my_entry();
 };
 
 //------------------------------------------------------------------------------
@@ -80,8 +76,8 @@ public:
 
 // TEST_CASE_CLASS g_testCase;
 
-Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130);
-Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120);
+// Ar::ThreadWithStack<512> g_xThread("x", x_thread, 0, 130, kArSuspendThread);
+// Ar::ThreadWithStack<512> g_yThread("y", y_thread, 0, 120, kArSuspendThread);
 
 Ar::Thread * g_fpThread1;
 Ar::Thread * g_fpThread2;
@@ -101,6 +97,18 @@ Ar::Mutex g_adcMutex("adc");
 
 Ar::Mutex g_someMutex("foobar");
 
+Ar::TypedChannel<uint32_t> g_adcResult("adcresult");
+
+Ar::TypedChannel<float> g_tempchan("temp");
+
+Ar::Timer g_myTimer("mine", my_timer_fn, 0, kArPeriodicTimer, 1500);
+Ar::Thread * g_timerFeederThread;
+
+// Ar::Thread g_creatorThread("creator", creator_thread, 0, 512, 96, kArSuspendThread);
+
+Ar::ThreadWithStack<1024> g_rlThread("rl", rl_thread, 0, 100, kArSuspendThread);
+// Ar::ThreadWithStack<1024> g_rl2Thread("rl2", rl2_thread, 0, 70, kArSuspendThread);
+
 //------------------------------------------------------------------------------
 // Code
 //------------------------------------------------------------------------------
@@ -108,6 +116,26 @@ Ar::Mutex g_someMutex("foobar");
 uint32_t us_ticker_read()
 {
     return ar_get_tick_count();
+}
+
+void say_hi(void * arg)
+{
+    printf("[%d] say_hi says hi %d\n", us_ticker_read(), int(arg));
+}
+
+void Foo::my_entry()
+{
+    int n = 0;
+    while (1)
+    {
+//         printf("hi from Foo!\n");
+
+        ar_runloop_t * rl = ar_thread_get_runloop(&g_rlThread);
+        ar_runloop_perform(rl, say_hi, (void *)(n));
+
+        Ar::Thread::sleep(750);
+        ++n;
+    }
 }
 
 void x_thread(void * arg)
@@ -177,7 +205,6 @@ void y_thread(void * arg)
     }
 }
 
-Ar::TypedChannel<uint32_t> g_adcResult("adcresult");
 extern "C" void ADC0_IRQHandler()
 {
     uint32_t result = ADC16_GetChannelConversionValue(ADC0, 0);
@@ -292,28 +319,25 @@ void dyn_test(void * arg)
     printf("__cplusplus = '%d'\n", __cplusplus);
 }
 
-Ar::Thread g_spinner;
-// Ar::Semaphore sem("s", 0);
-void sem_spin_thread(void * arg)
-{
-    Ar::Semaphore sem("s", 0);
+// Ar::Thread g_spinner;
+// // Ar::Semaphore sem("s", 0);
+// void sem_spin_thread(void * arg)
+// {
+//     Ar::Semaphore sem("s", 0);
+//
+//     while (1)
+//     {
+//         g_someMutex.get();
+//         sem.put();
+//         sem.get();
+//         g_someMutex.put();
+//     }
+// }
 
-    while (1)
-    {
-        g_someMutex.get();
-        sem.put();
-        sem.get();
-        g_someMutex.put();
-    }
-}
-
-Ar::TypedChannel<float> g_tempchan("temp");
 void my_timer_fn(Ar::Timer * t, void * arg)
 {
     float temp = g_tempchan.receive(kArNoTimeout);
 }
-Ar::Timer g_myTimer("mine", my_timer_fn, 0, kArPeriodicTimer, 1500);
-Ar::Thread * g_timerFeederThread;
 
 void created_thread(void * arg)
 {
@@ -339,7 +363,6 @@ void creator_thread(void * arg)
         Ar::Thread::sleep(1250);
     }
 }
-Ar::Thread g_creatorThread("creator", creator_thread, 0, 512, 96);
 
 void rl_thread(void * arg)
 {
@@ -348,8 +371,9 @@ void rl_thread(void * arg)
 
 // ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t function, void * param);
 
-    ar_runloop_add_timer(&rl, &g_myTimer);
-    g_myTimer.start();
+    Ar::Timer myTimer("mine2", my_timer_fn, 0, kArPeriodicTimer, 500);
+    ar_runloop_add_timer(&rl, &myTimer);
+    myTimer.start();
 
     while (true)
     {
@@ -374,33 +398,46 @@ void rl_thread(void * arg)
         }
     }
 }
-Ar::ThreadWithStack<512> g_rlThread("rl", rl_thread, 0, 100, kArSuspendThread);
+
+void rl2_thread(void * arg)
+{
+    Ar::RunLoop rl("rl2", ar_thread_get_current());
+
+    while (true)
+    {
+        ar_runloop_status_t result = rl.run();
+    }
+}
 
 void main_thread(void * arg)
 {
     Ar::Thread * self = Ar::Thread::getCurrent();
     const char * myName = self->getName();
+    printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
 
     init_adc();
 
-    printf("[%d:%s] Main thread is running\r\n", us_ticker_read(), myName);
+//     g_xThread.resume();
+//     g_yThread.resume();
+
+    g_rlThread.resume();
+//     g_rl2Thread.resume();
 
     Foo * foo = new Foo;
     g_fooThread.init("foo", foo, &Foo::my_entry, NULL, 512, 120);
 
-    g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
+//     g_dyn = new Ar::Thread("dyn", dyn_test, 0, 512, 120);
 
-// #if ROLE_TRANSMITTER
-    g_fpThread1 = new Ar::Thread("fp1", fp1_thread, &g_fchan, 1024, 100);
-    g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
-// #endif
+//     g_fpThread1 = new Ar::Thread("fp1", fp1_thread, &g_fchan, 1024, 100);
+//     g_fpThread2 = new Ar::Thread("fp2", fp2_thread, 0, 1024, 100);
 
 //     g_timerFeederThread = new Ar::Thread("temp2", fp1_thread, &g_tempchan, 512, 100);
 
-    g_spinner.init("spinner", sem_spin_thread, 0, NULL, 512, 70);
+//     g_spinner.init("spinner", sem_spin_thread, 0, NULL, 512, 70);
+
+//     g_creatorThread.resume();
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
-
 }
 
 int main(void)
