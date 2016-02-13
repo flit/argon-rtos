@@ -175,6 +175,10 @@ void idle_entry(void * param)
         }
 #endif // AR_ENABLE_SYSTEM_LOAD
 
+        while (g_ar.tickCount < g_ar.nextWakeup)
+        {
+        }
+
 #if AR_ENABLE_IDLE_SLEEP
         __DSB();
         // Hitting this bit puts the processor to sleep until the next interrupt fires.
@@ -269,9 +273,10 @@ void ar_kernel_periodic_timer_isr()
 
 #if AR_ENABLE_TICKLESS_IDLE
     // Get the elapsed time since the last timer tick.
-    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / 10000;
+    uint32_t us = ar_port_get_timer_elapsed_us();
+    uint32_t elapsed_ticks = us / 10000;
     // Process elapsed time. Invoke the scheduler if any threads were woken.
-    if (ar_kernel_increment_tick_count(elapsed_ticks)
+    if (ar_kernel_increment_tick_count(elapsed_ticks))
     {
         ar_port_service_call();
     }
