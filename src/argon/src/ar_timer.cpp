@@ -122,6 +122,9 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
         if (timer->m_runLoop)
         {
             timer->m_runLoop->m_timers.add(timer);
+
+            // Wake runloop so it will recompute its sleep time.
+            ar_runloop_wake(timer->m_runLoop);
         }
         else
         {
@@ -156,6 +159,9 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
         if (timer->m_runLoop)
         {
             timer->m_runLoop->m_timers.remove(timer);
+
+            // Wake runloop so it will recompute its sleep time.
+            ar_runloop_wake(timer->m_runLoop);
         }
         else
         {

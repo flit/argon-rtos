@@ -71,6 +71,8 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
         return kArInvalidParameterError;
     }
 
+    // TODO stop running runloop
+
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar.allObjects.runloops.remove(&runloop->m_createdNode);
 #endif
@@ -91,6 +93,9 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
 
     // Clear stop flag.
     runloop->m_stop = false;
+
+    // Set running flag.
+    runloop->m_isRunning = true;
 
     // Prepare timeout.
     uint32_t startTime = g_ar.tickCount;
@@ -173,13 +178,16 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
     g_ar.currentThread->m_runLoop = NULL;
     runloop->m_thread = NULL;
 
+    // Clear running flag.
+    runloop->m_isRunning = false;
+
     return kArRunLoopStopped;
 }
 
 void ar_runloop_wake(ar_runloop_t * runloop)
 {
     ar_thread_t * thread = runloop->m_thread;
-    if (thread)
+    if (runloop->m_isRunning && thread)
     {
         KernelLock lock;
 
@@ -218,6 +226,7 @@ ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t fun
         return kArInvalidParameterError;
     }
 
+    // TODO block if queue is full?
     if (runloop->m_functionCount >= AR_RUNLOOP_FUNCTION_QUEUE_SIZE)
     {
         return kArQueueFullError;
@@ -247,11 +256,7 @@ ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer)
         return kArInvalidParameterError;
     }
 
-//     runloop->m_timers.add(timer);
     timer->m_runLoop = runloop;
-
-    // Wake the runloop in case it is blocked.
-    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }

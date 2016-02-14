@@ -359,6 +359,7 @@ typedef struct _ar_runloop {
     uint16_t m_functionCount;
     uint16_t m_functionHead;
     uint16_t m_functionTail;
+    bool m_isRunning;
     volatile bool m_stop;
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.

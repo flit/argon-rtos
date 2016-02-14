@@ -134,6 +134,7 @@ void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
 bool ar_kernel_run_timers(ar_list_t & timersList);
+void ar_runloop_wake(ar_runloop_t * runloop);
 //@}
 
 //! @name Deferred actions
