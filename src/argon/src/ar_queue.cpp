@@ -65,6 +65,8 @@ ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storag
     queue->m_elementSize = elementSize;
     queue->m_capacity = capacity;
 
+    queue->m_runLoopNode.m_obj = queue;
+
 #if AR_GLOBAL_OBJECT_LISTS
     queue->m_createdNode.m_obj = queue;
     g_ar.allObjects.queues.add(&queue->m_createdNode);
@@ -156,6 +158,13 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
             // Unblock the head of the blocked list.
             ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
             thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
+        }
+        // Is the queue associated with a runloop?
+        else if (queue->m_runLoop)
+        {
+            // Add this queue to the list of pending queues for the runloop.
+            queue->m_runLoop->m_queues.add(queue);
+            ar_runloop_wake(queue->m_runLoop);
         }
     }
 

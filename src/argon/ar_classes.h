@@ -933,7 +933,7 @@ public:
     //! @brief Get the run loop's name.
     const char * getName() const { return m_name; }
 
-    ar_runloop_status_t run(uint32_t timeout=kArInfiniteTimeout, void * object=0, void * value=0) { return ar_runloop_run(this, timeout, object, value); }
+    ar_runloop_status_t run(uint32_t timeout=kArInfiniteTimeout, void ** object=0) { return ar_runloop_run(this, timeout, object); }
 
     ar_status_t stop() { return ar_runloop_stop(this); }
 
@@ -941,9 +941,9 @@ public:
 
     ar_status_t addTimer(ar_timer_t * timer) { return ar_runloop_add_timer(this, timer); }
 
-    ar_status_t addQueue(ar_queue_t * queue, ar_runloop_queue_handler_t callback=NULL) { return ar_runloop_add_queue(this, queue, callback); }
+    ar_status_t addQueue(ar_queue_t * queue, ar_runloop_queue_handler_t callback=NULL, void * param=NULL) { return ar_runloop_add_queue(this, queue, callback, param); }
 
-    ar_status_t addChannel(ar_channel_t * channel, ar_runloop_channel_handler_t callback=NULL) { return ar_runloop_add_channel(this, channel, callback); }
+    ar_status_t addChannel(ar_channel_t * channel, ar_runloop_channel_handler_t callback=NULL, void * param=NULL) { return ar_runloop_add_channel(this, channel, callback, param); }
 
     static ar_runloop_t * getCurrent(void) { return ar_runloop_get_current(); }
 };

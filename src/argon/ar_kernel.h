@@ -177,10 +177,10 @@ typedef void (*ar_timer_entry_t)(ar_timer_t * timer, void * param);
 typedef void (*ar_runloop_function_t)(void * param);
 
 //! @brief
-typedef void (*ar_runloop_queue_handler_t)(ar_queue_t * queue, void * value);
+typedef void (*ar_runloop_queue_handler_t)(ar_queue_t * queue, void * param);
 
 //! @brief
-typedef void (*ar_runloop_channel_handler_t)(ar_channel_t * channel, void * value);
+typedef void (*ar_runloop_channel_handler_t)(ar_channel_t * channel, void * param);
 //@}
 
 //! @name Linked lists
@@ -315,6 +315,8 @@ typedef struct _ar_queue {
     ar_list_t m_receiveBlockedList; //!< List of threads blocked waiting to receive data.
     ar_runloop_t * m_runLoop;
     ar_list_node_t m_runLoopNode;
+    ar_runloop_queue_handler_t m_runLoopHandler;
+    void * m_runLoopHandlerParam;
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -955,7 +957,7 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
 
 ar_status_t ar_runloop_delete(ar_runloop_t * runloop);
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void * object, void * value);
+ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void ** object);
 
 ar_status_t ar_runloop_stop(ar_runloop_t * runloop);
 
@@ -963,9 +965,9 @@ ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t fun
 
 ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer);
 
-ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback);
+ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback, void * param);
 
-ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback);
+ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback, void * param);
 
 ar_runloop_t * ar_runloop_get_current(void);
 

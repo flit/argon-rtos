@@ -80,7 +80,7 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     return kArSuccess;
 }
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void * object, void * value)
+ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void ** object)
 {
     if (!runloop)
     {
@@ -105,15 +105,15 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
         timeoutTicks = ar_milliseconds_to_ticks(timeout);
     }
 
+    ar_runloop_status_t returnStatus = kArRunLoopStopped;
+
     // Run it.
     do {
         // Invoke timers.
         ar_kernel_run_timers(runloop->m_timers);
 
-        // Invoke queued functions.
-        // TODO: one function per loop or all at once?
-        uint32_t count = runloop->m_functionCount;
-        while (count--)
+        // Invoke one queued function.
+        if (runloop->m_functionCount)
         {
             ar_runloop_function_t fn;
             void * param;
@@ -134,6 +134,31 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
             fn(param);
         }
 
+        // Check pending queues.
+        if (!runloop->m_queues.isEmpty())
+        {
+            ar_queue_t * queue = runloop->m_queues.m_head->getObject<ar_queue_t>();
+            assert(queue);
+            runloop->m_queues.remove(queue);
+
+            if (queue->m_runLoopHandler)
+            {
+                // Call out to run loop queue source handler.
+                queue->m_runLoopHandler(queue, queue->m_runLoopHandlerParam);
+            }
+            else
+            {
+                // No handler associated with this queue, so exit the run loop.
+                if (object)
+                {
+                    *object = reinterpret_cast<void *>(queue);
+                }
+
+                returnStatus = kArRunLoopQueueReceived;
+                break;
+            }
+        }
+
         // Check timeout. Adjust the timeout based on how long we've run so far.
         uint32_t blockTimeoutTicks = timeoutTicks;
         if (blockTimeoutTicks != kArInfiniteTimeout)
@@ -141,6 +166,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
             int32_t deltaTicks = g_ar.tickCount - startTime;
             if (deltaTicks >= timeoutTicks)
             {
+                // Timed out, exit runloop.
                 break;
             }
             blockTimeoutTicks -= deltaTicks;
@@ -158,19 +184,18 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
             }
         }
 
-        // Don't sleep if there are queued functions.
-        if (runloop->m_functionCount)
+        // Don't sleep if there are queued functions or sources.
+        if (!runloop->m_functionCount && runloop->m_queues.isEmpty())
         {
-            blockTimeoutTicks = 0;
-        }
-
-        // Sleep the runloop's thread for the adjusted timeout.
-        uint32_t blockTimeout = (blockTimeoutTicks == kArInfiniteTimeout)
-                                    ? kArInfiniteTimeout
-                                    : ar_ticks_to_milliseconds(blockTimeoutTicks);
-        if (blockTimeout)
-        {
-            ar_thread_sleep(blockTimeout);
+            // Sleep the runloop's thread for the adjusted timeout.
+            uint32_t blockTimeout = (blockTimeoutTicks == kArInfiniteTimeout)
+                                        ? kArInfiniteTimeout
+                                        : ar_ticks_to_milliseconds(blockTimeoutTicks);
+            if (blockTimeout)
+            {
+                uint32_t startSleep = g_ar.tickCount;
+                ar_thread_sleep(blockTimeout);
+            }
         }
     } while (!runloop->m_stop);
 
@@ -181,7 +206,8 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
     // Clear running flag.
     runloop->m_isRunning = false;
 
-    return kArRunLoopStopped;
+    // TODO return different status for timed out versus stopped?
+    return returnStatus;
 }
 
 void ar_runloop_wake(ar_runloop_t * runloop)
@@ -261,22 +287,25 @@ ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer)
     return kArSuccess;
 }
 
-ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback)
+ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback, void * param)
 {
     if (!runloop)
     {
         return kArInvalidParameterError;
     }
 
-    runloop->m_queues.add(queue);
+//     runloop->m_queues.add(queue);
+    queue->m_runLoopHandler = callback;
+    queue->m_runLoopHandlerParam = param;
+    queue->m_runLoop = runloop;
 
     // Wake the runloop in case it is blocked.
-    ar_runloop_wake(runloop);
+//     ar_runloop_wake(runloop);
 
     return kArSuccess;
 }
 
-ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback)
+ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback, void * param)
 {
     if (!runloop)
     {
