@@ -104,10 +104,12 @@ Ar::TypedChannel<float> g_tempchan("temp");
 Ar::Timer g_myTimer("mine", my_timer_fn, 0, kArPeriodicTimer, 1500);
 Ar::Thread * g_timerFeederThread;
 
-// Ar::Thread g_creatorThread("creator", creator_thread, 0, 512, 96, kArSuspendThread);
+Ar::Thread g_creatorThread("creator", creator_thread, 0, 512, 96, kArSuspendThread);
 
 Ar::ThreadWithStack<1024> g_rlThread("rl", rl_thread, 0, 100, kArSuspendThread);
 // Ar::ThreadWithStack<1024> g_rl2Thread("rl2", rl2_thread, 0, 70, kArSuspendThread);
+
+Ar::StaticQueue<uint32_t, 4> g_q("q");
 
 //------------------------------------------------------------------------------
 // Code
@@ -133,7 +135,7 @@ void Foo::my_entry()
         ar_runloop_t * rl = ar_thread_get_runloop(&g_rlThread);
         ar_runloop_perform(rl, say_hi, (void *)(n));
 
-        Ar::Thread::sleep(750);
+        Ar::Thread::sleep(700);
         ++n;
     }
 }
@@ -319,21 +321,6 @@ void dyn_test(void * arg)
     printf("__cplusplus = '%d'\n", __cplusplus);
 }
 
-// Ar::Thread g_spinner;
-// // Ar::Semaphore sem("s", 0);
-// void sem_spin_thread(void * arg)
-// {
-//     Ar::Semaphore sem("s", 0);
-//
-//     while (1)
-//     {
-//         g_someMutex.get();
-//         sem.put();
-//         sem.get();
-//         g_someMutex.put();
-//     }
-// }
-
 void my_timer_fn(Ar::Timer * t, void * arg)
 {
     float temp = g_tempchan.receive(kArNoTimeout);
@@ -348,19 +335,23 @@ void created_thread(void * arg)
 
 void creator_thread(void * arg)
 {
+    uint32_t n = 1;
     while (1)
     {
-        Ar::Semaphore * doneSem = new Ar::Semaphore("done", 0);
-        Ar::Thread * created = new Ar::Thread("created", created_thread, doneSem, 512, 97);
+//         Ar::Semaphore * doneSem = new Ar::Semaphore("done", 0);
+//         Ar::Thread * created = new Ar::Thread("created", created_thread, doneSem, 512, 97);
+//
+//         printf("creator thread: waiting on done sem\n");
+//         doneSem->get();
+//         printf("creator thread: got done sem\n");
+//
+//         delete created;
+//         delete doneSem;
 
-        printf("creator thread: waiting on done sem\n");
-        doneSem->get();
-        printf("creator thread: got done sem\n");
-
-        delete created;
-        delete doneSem;
+        g_q.send(n);
 
         Ar::Thread::sleep(1250);
+        ++n;
     }
 }
 
@@ -375,13 +366,14 @@ void rl_thread(void * arg)
     ar_runloop_add_timer(&rl, &myTimer);
     myTimer.start();
 
+    ar_runloop_add_queue(&rl, &g_q, NULL, 0);
+
     while (true)
     {
         ar_runloop_status_t result;
         void * obj;
-        void * value;
-        result = ar_runloop_run(&rl, kArInfiniteTimeout, &obj, &value);
-        printf("ar_runloop_run returned %d, obj=%x, value=%x\r\n", result, obj, value);
+        result = ar_runloop_run(&rl, kArInfiniteTimeout, &obj);
+        printf("ar_runloop_run returned %d, obj=%x\r\n", result, obj);
 
         switch (result)
         {
@@ -390,6 +382,12 @@ void rl_thread(void * arg)
             case kArRunLoopStopped:
                 break;
             case kArRunLoopQueueReceived:
+                printf("runloop queue received\n");
+                if (obj == static_cast<ar_queue_t *>(&g_q))
+                {
+                    uint32_t v = g_q.receive();
+                    printf("  value = %d\n", v);
+                }
                 break;
             case kArRunLoopChannelReceived:
                 break;
@@ -435,7 +433,7 @@ void main_thread(void * arg)
 
 //     g_spinner.init("spinner", sem_spin_thread, 0, NULL, 512, 70);
 
-//     g_creatorThread.resume();
+    g_creatorThread.resume();
 
     printf("[%d:%s] goodbye!\r\n", us_ticker_read(), myName);
 }
