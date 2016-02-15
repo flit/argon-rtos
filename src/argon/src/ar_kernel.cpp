@@ -88,8 +88,8 @@ bool ar_kernel_run_timers(ar_list_t & timersList)
                     break;
 
                 case kArPeriodicTimer:
-                    // Restart a periodic timer.
-                    ar_timer_start(timer);
+                    // Restart a periodic timer without introducing jitter.
+                    ar_timer_internal_start(timer, timer->m_wakeupTime + timer->m_delay);
                     break;
             }
 
@@ -465,7 +465,9 @@ void ar_kernel_run_deferred_actions()
                 ar_queue_send(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[i + 1], kArNoTimeout);
                 break;
             case kArDeferredTimerStart:
-                ar_timer_start(reinterpret_cast<ar_timer_t *>(object));
+                assert(i + 1 < queue.m_count);
+                // Argument is the timer's wakeup time, determined at the time of the original start call.
+                ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[i + 1]));
                 break;
             case kArDeferredTimerStop:
                 ar_timer_stop(reinterpret_cast<ar_timer_t *>(object));
