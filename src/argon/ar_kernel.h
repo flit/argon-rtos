@@ -95,6 +95,9 @@ typedef enum _ar_status {
     //! The timer is not running.
     kArTimerNotRunningError,
 
+    //! The timer is not associated with a run loop.
+    kArTimerNoRunLoop,
+
     //! Allocation failed.
     kArOutOfMemoryError,
 } ar_status_t;
@@ -246,7 +249,7 @@ typedef struct _ar_thread {
     uint32_t m_wakeupTime;          //!< Tick count when a sleeping thread will awaken.
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_channelData;       //!< Receive or send data pointer for blocked channel.
-    ar_runloop_t * m_runLoop;
+    ar_runloop_t * m_runLoop;   //!< Run loop associated with this thread.
 
     // Internal utility methods.
 #if defined(__cplusplus)

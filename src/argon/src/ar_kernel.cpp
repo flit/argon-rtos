@@ -124,14 +124,6 @@ void idle_entry(void * param)
 
     while (1)
     {
-        // If we handled any timers, we need to set our priority back to the normal idle thread
-        // priority. The tick handler will have raised our priority to the max in order to handle
-        // the expired timers.
-        if (ar_kernel_run_timers(g_ar.activeTimers))
-        {
-            ar_thread_set_priority(&g_ar.idleThread, kArIdleThreadPriority);
-        }
-
         // Compute system load.
 #if AR_ENABLE_SYSTEM_LOAD
         ticks = g_ar.tickCount;
@@ -228,7 +220,6 @@ void ar_kernel_run(void)
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
     g_ar.suspendedList.m_predicate = NULL;
     g_ar.sleepingList.m_predicate = ar_thread_sort_by_wakeup;
-    g_ar.activeTimers.m_predicate = ar_timer_sort_by_wakeup;
 
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
@@ -405,18 +396,6 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
 
             node = next;
         } while (g_ar.sleepingList.m_head && node != g_ar.sleepingList.m_head);
-    }
-
-    // Check for an active timer whose wakeup time has expired.
-    if (g_ar.activeTimers.m_head)
-    {
-        ar_timer_t * timer = g_ar.activeTimers.m_head->getObject<ar_timer_t>();
-        if (timer->m_wakeupTime <= g_ar.tickCount)
-        {
-            // Raise the idle thread priority to maximum so it can execute the timer.
-            // The idle thread will reduce its own priority when done.
-            ar_thread_set_priority(&g_ar.idleThread, kArMaxThreadPriority);
-        }
     }
 
     return wasThreadWoken;
@@ -601,19 +580,6 @@ uint32_t ar_kernel_get_next_wakeup_time()
         if (wakeup == 0 || sleepWakeup < wakeup)
         {
             wakeup = sleepWakeup;
-        }
-    }
-
-    // Check for an active timer. Again, the list is sorted by wakeup time.
-    node = g_ar.activeTimers.m_head;
-    if (node)
-    {
-        ar_timer_t * timer = node->getObject<ar_timer_t>();
-        uint32_t timerWakeup = timer->m_wakeupTime;
-
-        if (wakeup == 0 || timerWakeup < wakeup)
-        {
-            wakeup = timerWakeup;
         }
     }
 

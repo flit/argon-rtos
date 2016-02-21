@@ -83,38 +83,26 @@ ar_status_t ar_timer_delete(ar_timer_t * timer)
     return kArSuccess;
 }
 
-// See ar_kernel.h for documentation of this function.
+//! @brief Handles starting or restarting a timer.
 ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime)
 {
     KernelLock guard;
 
+    assert(timer->m_runLoop);
+
     // Handle a timer that is already active.
     if (timer->m_isActive)
     {
-        if (timer->m_runLoop)
-        {
-            timer->m_runLoop->m_timers.remove(timer);
-        }
-        else
-        {
-            g_ar.activeTimers.remove(timer);
-        }
+        timer->m_runLoop->m_timers.remove(timer);
     }
 
     timer->m_wakeupTime = wakeupTime;
     timer->m_isActive = true;
 
-    if (timer->m_runLoop)
-    {
-        timer->m_runLoop->m_timers.add(timer);
+    timer->m_runLoop->m_timers.add(timer);
 
-        // Wake runloop so it will recompute its sleep time.
-        ar_runloop_wake(timer->m_runLoop);
-    }
-    else
-    {
-        g_ar.activeTimers.add(timer);
-    }
+    // Wake runloop so it will recompute its sleep time.
+    ar_runloop_wake(timer->m_runLoop);
 
     return kArSuccess;
 }
@@ -125,6 +113,10 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     if (!timer)
     {
         return kArInvalidParameterError;
+    }
+    if (!timer->m_runLoop)
+    {
+        return kArTimerNoRunLoop;
     }
 
     // The callback should have been verified by the create function.
@@ -152,6 +144,10 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     {
         return kArTimerNotRunningError;
     }
+    if (!timer->m_runLoop)
+    {
+        return kArTimerNoRunLoop;
+    }
 
     // Handle locked kernel in irq state by deferring the operation.
     if (ar_port_get_irq_state() && g_ar.lockCount)
@@ -169,10 +165,7 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
             // Wake runloop so it will recompute its sleep time.
             ar_runloop_wake(timer->m_runLoop);
         }
-        else
-        {
-            g_ar.activeTimers.remove(timer);
-        }
+
         timer->m_wakeupTime = 0;
         timer->m_isActive = false;
     }
@@ -196,20 +189,11 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         // If the timer is running, we need to update the wakeup time and resort the list.
         if (timer->m_isActive)
         {
-            timer->m_wakeupTime = g_ar.tickCount + timer->m_delay;
+            // If the timer is active, it should already have a runloop set.
+            assert(timer->m_runLoop);
 
-            if (timer->m_runLoop)
-            {
-                timer->m_runLoop->m_timers.remove(timer);
-                timer->m_runLoop->m_timers.add(timer);
-            }
-            else
-            {
-                g_ar.activeTimers.remove(timer);
-                g_ar.activeTimers.add(timer);
-            }
-
-            // TODO update scheduler next wakeup time
+            uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
+            ar_timer_internal_start(timer, wakeupTime);
         }
     }
 

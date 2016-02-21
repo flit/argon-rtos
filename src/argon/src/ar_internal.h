@@ -85,7 +85,6 @@ typedef struct _ar_kernel {
     ar_list_t readyList;         //!< List of threads ready to run.
     ar_list_t suspendedList;     //!< List of suspended threads.
     ar_list_t sleepingList;      //!< List of sleeping threads.
-    ar_list_t activeTimers;       //!< List of running timers
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
     bool isRunning;                 //!< True if the kernel has been started.
     bool needsReschedule;           //!< True if we need to reschedule once the kernel is unlocked.
