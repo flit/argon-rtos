@@ -676,6 +676,10 @@ void _ar_list::add(ar_list_node_t * item)
             node = node->m_next;
         } while (node != m_head);
     }
+
+#if AR_ENABLE_LIST_CHECKS
+    check();
+#endif // AR_ENABLE_LIST_CHECKS
 }
 
 //! If the specified item is not on the list, nothing happens. In fact, the list may be empty,
@@ -719,6 +723,72 @@ void _ar_list::remove(ar_list_node_t * item)
 
         node = node->m_next;
     } while (node != m_head);
+
+#if AR_ENABLE_LIST_CHECKS
+    check();
+#endif // AR_ENABLE_LIST_CHECKS
+}
+
+#if AR_ENABLE_LIST_CHECKS
+void _ar_list::check()
+{
+    const uint32_t kNumNodes = 20;
+    ar_list_node_t * nodes[kNumNodes] = {0};
+    uint32_t count = 0;
+    uint32_t i;
+
+    // Handle empty list.
+    if (isEmpty())
+    {
+        return;
+    }
+
+    // Build array of all nodes in the list.
+    ar_list_node_t * node = m_head;
+    bool loop = true;
+    while (loop)
+    {
+        // Save this node in the list.
+        nodes[count] = node;
+        ++count;
+        if (count == kNumNodes - 1)
+        {
+            // More nodes than we have room for!
+            _halt();
+        }
+
+        node = node->m_next;
+
+        // Compare the next ptr against every node we've seen so far. If we find
+        // a match, exit the loop.
+        for (i = 0; i < count; ++i)
+        {
+            if (node == nodes[i])
+            {
+                loop = false;
+                break;
+            }
+        }
+    }
+
+    // Scan the nodes array and verify all links.
+    for (i = 0; i < count; ++i)
+    {
+        uint32_t prev = (i == 0) ? (count - 1) : (i  - 1);
+        uint32_t next = (i == count - 1) ? 0 : (i + 1);
+
+        node = nodes[i];
+        if (node->m_next != nodes[next])
+        {
+            _halt();
+        }
+        if (node->m_prev != nodes[prev])
+        {
+            _halt();
+        }
+    }
+}
+#endif // AR_ENABLE_LIST_CHECKS
 }
 
 ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object)

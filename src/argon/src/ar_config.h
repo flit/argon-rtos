@@ -140,6 +140,13 @@
     #define AR_RUNLOOP_FUNCTION_QUEUE_SIZE (8)
 #endif
 
+#if !defined(AR_ENABLE_LIST_CHECKS)
+    //! @brief Enable runtime checking of linked lists.
+    //!
+    //! Normally not required.
+    #define AR_ENABLE_LIST_CHECKS (0)
+#endif
+
 //! @}
 
 #endif // _AR_CONFIG_H_

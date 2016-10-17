@@ -224,6 +224,7 @@ typedef struct _ar_list {
     inline void remove(ar_timer_t * item);      //!< @brief Remove a timer from the list.
     inline void remove(ar_queue_t * item);      //!< @brief Remove a queue from the list.
     inline void remove(ar_channel_t * item);      //!< @brief Remove a channel from the list.
+    void check();
 #endif // __cplusplus
 } ar_list_t;
 //@}
