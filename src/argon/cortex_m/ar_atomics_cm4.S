@@ -44,12 +44,13 @@ _FN_LABEL(ar_atomic_cas)
         _FN_CANT_UNWIND
 
         dsb                             // data sync memory barrier
-        mov         r12, #0             // clear return value
         ldrex       r3, [r0]            // load exclusive current value
-        cmp         r3, r1              // does current value equal "old" value?
-        itt         eq
+        cmp         r3, r1              // does current value equal expected value?
+        ittee       eq
         strexeq     r12, r2, [r0]       // if it does, then store exclusive the new value
         eoreq       r12, r12, #1        // invert the strex result
+        clrexne                         // else, clear the exclusive load
+        movne       r12, #0             // clear return value
         mov         r0, r12             // return the result of strex
         bx          lr                  // return to caller
 
