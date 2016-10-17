@@ -82,6 +82,38 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     return kArSuccess;
 }
 
+ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
+{
+    KernelLock guard;
+
+    if (sem->m_count == 0)
+    {
+        // Count is 0, so we must block. Return immediately if the timeout is 0.
+        if (timeout == kArNoTimeout)
+        {
+            return kArTimeoutError;
+        }
+
+        // Block this thread on the semaphore.
+        ar_thread_t * thread = g_ar.currentThread;
+        thread->block(sem->m_blockedList, timeout);
+
+        // We're back from the scheduler.
+        // Check for errors and exit early if there was one.
+        if (thread->m_unblockStatus != kArSuccess)
+        {
+            // Failed to gain the semaphore, probably due to a timeout.
+            sem->m_blockedList.remove(&thread->m_blockedNode);
+            return thread->m_unblockStatus;
+        }
+    }
+
+    // Take ownership of the semaphore.
+    --sem->m_count;
+
+    return kArSuccess;
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 {
@@ -98,40 +130,26 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
             return kArNotFromInterruptError;
         }
 
-        // Handle locked kernel in irq state by deferring the get.
-        if (g_ar.lockCount)
-        {
-            return ar_post_deferred_action(kArDeferredSemaphoreGet, sem);
-        }
+        // Handle irq state by deferring the get.
+        return ar_post_deferred_action(kArDeferredSemaphoreGet, sem);
     }
 
+    return ar_semaphore_get_internal(sem, timeout);
+}
+
+ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem)
+{
+    KernelLock guard;
+
+    // Increment count.
+    ++sem->m_count;
+
+    // Are there any threads waiting on this semaphore?
+    if (sem->m_blockedList.m_head)
     {
-        KernelLock guard;
-
-        if (sem->m_count == 0)
-        {
-            // Count is 0, so we must block. Return immediately if the timeout is 0.
-            if (timeout == kArNoTimeout)
-            {
-                return kArTimeoutError;
-            }
-
-            // Block this thread on the semaphore.
-            ar_thread_t * thread = g_ar.currentThread;
-            thread->block(sem->m_blockedList, timeout);
-
-            // We're back from the scheduler.
-            // Check for errors and exit early if there was one.
-            if (thread->m_unblockStatus != kArSuccess)
-            {
-                // Failed to gain the semaphore, probably due to a timeout.
-                sem->m_blockedList.remove(&thread->m_blockedNode);
-                return thread->m_unblockStatus;
-            }
-        }
-
-        // Take ownership of the semaphore.
-        --sem->m_count;
+        // Unblock the head of the blocked list.
+        ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
     }
 
     return kArSuccess;
@@ -145,28 +163,13 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
         return kArInvalidParameterError;
     }
 
-    // Handle locked kernel in irq state by deferring the put.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
+    // Handle irq state by deferring the put.
+    if (ar_port_get_irq_state())
     {
         return ar_post_deferred_action(kArDeferredSemaphorePut, sem);
     }
 
-    {
-        KernelLock guard;
-
-        // Increment count.
-        ++sem->m_count;
-
-        // Are there any threads waiting on this semaphore?
-        if (sem->m_blockedList.m_head)
-        {
-            // Unblock the head of the blocked list.
-            ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
-            thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
-        }
-    }
-
-    return kArSuccess;
+    return ar_semaphore_put_internal(sem);
 }
 
 // See ar_kernel.h for documentation of this function.

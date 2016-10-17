@@ -124,9 +124,60 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
     return kArSuccess;
 }
 
+ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
+{
+    KernelLock guard;
+
+    // Are there any blocked threads for the opposite direction of this call?
+    if (otherDirList.isEmpty())
+    {
+        return ar_channel_block(channel, myDirList, value, timeout);
+    }
+    else
+    {
+        // Get the first thread blocked on this channel.
+        ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
+
+        // Figure out the direction of the data transfer.
+        void * src;
+        void * dest;
+        if (isSending)
+        {
+            src = value;
+            dest = thread->m_channelData;
+        }
+        else
+        {
+            src = thread->m_channelData;
+            dest = value;
+        }
+
+        // Do the transfer. Optimize word-sized channels so we don't have to call into memcpy().
+        if (channel->m_width == sizeof(uint32_t))
+        {
+            *(uint32_t *)dest = *(uint32_t *)src;
+        }
+        else
+        {
+            memcpy(dest, src, channel->m_width);
+        }
+
+        // Unblock the other side.
+        thread->unblockWithStatus(otherDirList, kArSuccess);
+    }
+
+    return kArSuccess;
+}
+
+
 //! @brief Common channel send/receive code.
 ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
+    if (!channel)
+    {
+        return kArInvalidParameterError;
+    }
+
     // Ensure that only 0 timeouts are specified when called from an IRQ handler.
     if (ar_port_get_irq_state())
     {
@@ -135,78 +186,22 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
             return kArNotFromInterruptError;
         }
 
-        // Handle locked kernel in irq state by deferring the operation.
-        if (g_ar.lockCount)
-        {
-            return ar_post_deferred_action2(kArDeferredChannelSend, channel, value);
-        }
+        // Handle irq state by deferring the operation.
+        return ar_post_deferred_action2(kArDeferredChannelSend, channel, value);
     }
 
-    {
-        KernelLock guard;
-
-        // Are there any blocked threads for the opposite direction of this call?
-        if (otherDirList.isEmpty())
-        {
-            return ar_channel_block(channel, myDirList, value, timeout);
-        }
-        else
-        {
-            // Get the first thread blocked on this channel.
-            ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
-
-            // Figure out the direction of the data transfer.
-            void * src;
-            void * dest;
-            if (isSending)
-            {
-                src = value;
-                dest = thread->m_channelData;
-            }
-            else
-            {
-                src = thread->m_channelData;
-                dest = value;
-            }
-
-            // Do the transfer. Optimize word-sized channels so we don't have to call into memcpy().
-            if (channel->m_width == sizeof(uint32_t))
-            {
-                *(uint32_t *)dest = *(uint32_t *)src;
-            }
-            else
-            {
-                memcpy(dest, src, channel->m_width);
-            }
-
-            // Unblock the other side.
-            thread->unblockWithStatus(otherDirList, kArSuccess);
-        }
-    }
-
-    return kArSuccess;
+    return ar_channel_send_receive_internal(channel, isSending, myDirList, otherDirList, value, timeout);
 }
-
 
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_channel_receive(ar_channel_t * channel, void * value, uint32_t timeout)
 {
-    if (!channel)
-    {
-        return kArInvalidParameterError;
-    }
-
     return ar_channel_send_receive(channel, false, channel->m_blockedReceivers, channel->m_blockedSenders, value, timeout);
 }
 
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_channel_send(ar_channel_t * channel, const void * value, uint32_t timeout)
 {
-    if (!channel)
-    {
-        return kArInvalidParameterError;
-    }
-
     return ar_channel_send_receive(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, const_cast<void *>(value), timeout);
 }
 

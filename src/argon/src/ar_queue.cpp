@@ -104,6 +104,59 @@ ar_status_t ar_queue_delete(ar_queue_t * queue)
     return kArSuccess;
 }
 
+ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout)
+{
+    KernelLock guard;
+
+    // Check for full queue
+    if (queue->m_count >= queue->m_capacity)
+    {
+        // If the queue is full and a zero timeout was given, return immediately.
+        if (timeout == kArNoTimeout)
+        {
+            return kArQueueFullError;
+        }
+
+        // Otherwise block until the queue has room.
+        ar_thread_t * thread = g_ar.currentThread;
+        thread->block(queue->m_sendBlockedList, timeout);
+
+        // We're back from the scheduler.
+        // Check for errors and exit early if there was one.
+        if (thread->m_unblockStatus != kArSuccess)
+        {
+            // Failed to gain the semaphore, probably due to a timeout.
+            queue->m_sendBlockedList.remove(&thread->m_blockedNode);
+            return thread->m_unblockStatus;
+        }
+    }
+
+    // fill element
+    uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
+    memcpy(elementSlot, element, queue->m_elementSize);
+
+    // Update queue pointers
+    queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
+    queue->m_count++;
+
+    // Are there any threads waiting to receive?
+    if (queue->m_receiveBlockedList.m_head)
+    {
+        // Unblock the head of the blocked list.
+        ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+        thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
+    }
+    // Is the queue associated with a runloop?
+    else if (queue->m_runLoop)
+    {
+        // Add this queue to the list of pending queues for the runloop.
+        queue->m_runLoop->m_queues.add(queue);
+        ar_runloop_wake(queue->m_runLoop);
+    }
+
+    return kArSuccess;
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout)
 {
@@ -112,63 +165,13 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
         return kArInvalidParameterError;
     }
 
-    // Handle locked kernel in irq state by deferring the operation.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
+    // Handle irq state by deferring the operation.
+    if (ar_port_get_irq_state())
     {
         return ar_post_deferred_action2(kArDeferredQueueSend, queue, const_cast<void *>(element));
     }
 
-    {
-        KernelLock guard;
-
-        // Check for full queue
-        if (queue->m_count >= queue->m_capacity)
-        {
-            // If the queue is full and a zero timeout was given, return immediately.
-            if (timeout == kArNoTimeout)
-            {
-                return kArQueueFullError;
-            }
-
-            // Otherwise block until the queue has room.
-            ar_thread_t * thread = g_ar.currentThread;
-            thread->block(queue->m_sendBlockedList, timeout);
-
-            // We're back from the scheduler.
-            // Check for errors and exit early if there was one.
-            if (thread->m_unblockStatus != kArSuccess)
-            {
-                // Failed to gain the semaphore, probably due to a timeout.
-                queue->m_sendBlockedList.remove(&thread->m_blockedNode);
-                return thread->m_unblockStatus;
-            }
-        }
-
-        // fill element
-        uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
-        memcpy(elementSlot, element, queue->m_elementSize);
-
-        // Update queue pointers
-        queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
-        queue->m_count++;
-
-        // Are there any threads waiting to receive?
-        if (queue->m_receiveBlockedList.m_head)
-        {
-            // Unblock the head of the blocked list.
-            ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
-            thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
-        }
-        // Is the queue associated with a runloop?
-        else if (queue->m_runLoop)
-        {
-            // Add this queue to the list of pending queues for the runloop.
-            queue->m_runLoop->m_queues.add(queue);
-            ar_runloop_wake(queue->m_runLoop);
-        }
-    }
-
-    return kArSuccess;
+    return ar_queue_send_internal(queue, element, timeout);
 }
 
 // See ar_kernel.h for documentation of this function.

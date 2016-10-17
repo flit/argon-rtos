@@ -124,13 +124,31 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
 
     uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
 
-    // Handle locked kernel in irq state by deferring the operation.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
+    // Handle irq state by deferring the operation.
+    if (ar_port_get_irq_state())
     {
         return ar_post_deferred_action2(kArDeferredTimerStart, timer, reinterpret_cast<void *>(wakeupTime));
     }
 
     return ar_timer_internal_start(timer, wakeupTime);
+}
+
+ar_status_t ar_timer_stop_internal(ar_timer_t * timer)
+{
+    KernelLock guard;
+
+    if (timer->m_runLoop)
+    {
+        timer->m_runLoop->m_timers.remove(timer);
+
+        // Wake runloop so it will recompute its sleep time.
+        ar_runloop_wake(timer->m_runLoop);
+    }
+
+    timer->m_wakeupTime = 0;
+    timer->m_isActive = false;
+
+    return kArSuccess;
 }
 
 // See ar_kernel.h for documentation of this function.
@@ -149,28 +167,13 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
         return kArTimerNoRunLoop;
     }
 
-    // Handle locked kernel in irq state by deferring the operation.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
+    // Handle irq state by deferring the operation.
+    if (ar_port_get_irq_state())
     {
         return ar_post_deferred_action(kArDeferredTimerStop, timer);
     }
 
-    {
-        KernelLock guard;
-
-        if (timer->m_runLoop)
-        {
-            timer->m_runLoop->m_timers.remove(timer);
-
-            // Wake runloop so it will recompute its sleep time.
-            ar_runloop_wake(timer->m_runLoop);
-        }
-
-        timer->m_wakeupTime = 0;
-        timer->m_isActive = false;
-    }
-
-    return kArSuccess;
+    return ar_timer_stop_internal(timer);
 }
 
 // See ar_kernel.h for documentation of this function.

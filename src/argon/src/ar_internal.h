@@ -68,12 +68,19 @@ typedef enum _ar_deferred_action_type {
 //! The deferred action types and objects are stored in separate arrays in order to allow for
 //! the most compact possible storage in memory. With a queue size of 8 this saves 24 bytes.
 typedef struct _ar_deferred_action_queue {
-    volatile int32_t m_count;  //!< Number of queue entries.
+    volatile int32_t m_count;   //!< Number of queue entries.
+    volatile int32_t m_first;   //!< First entry index.
+    volatile int32_t m_last;    //!< Last entry index.
     ar_deferred_action_type_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
     void * m_objects[AR_DEFERRED_ACTION_QUEUE_SIZE];    //!< Kernel objects for enqueued actions.
 
     //! @brief Returns whether the queue is currently empty.
-    bool isEmpty() { return m_count == 0; }
+    bool isEmpty() const { return m_count == 0; }
+
+    //! @brief Reserves room to insert a number of new entries.
+    //! @return First index in queue where the requested number of entries can be inserted. If there
+    //!     is not room in the queue for the requested entries, then -1 is returned.
+    int32_t insert(int32_t entryCount);
 } ar_deferred_action_queue_t;
 
 /*!
@@ -86,8 +93,9 @@ typedef struct _ar_kernel {
     ar_list_t suspendedList;     //!< List of suspended threads.
     ar_list_t sleepingList;      //!< List of sleeping threads.
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
-    bool isRunning;                 //!< True if the kernel has been started.
-    bool needsReschedule;           //!< True if we need to reschedule once the kernel is unlocked.
+    uint32_t isRunning:1;                 //!< True if the kernel has been started.
+    uint32_t needsReschedule:1;           //!< True if we need to reschedule once the kernel is unlocked.
+    uint32_t _reservedFlags:30;
     int32_t lockCount;             //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
     int32_t missedTickCount;       //!< Number of ticks that occurred while the kernel was locked.
@@ -133,7 +141,6 @@ void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
 bool ar_kernel_run_timers(ar_list_t & timersList);
-ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime);
 void ar_runloop_wake(ar_runloop_t * runloop);
 //@}
 
@@ -143,8 +150,23 @@ ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * obj
 ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg);
 //@}
 
+//! @name Internal routines
+//@{
+ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout);
+ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem);
+ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout);
+ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex);
+ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime);
+ar_status_t ar_timer_stop_internal(ar_timer_t * timer);
+ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout);
+ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
+//@}
+
+//! @name Thread entry point wrapper
+//@{
 //! @brief Thread entry point.
 void ar_thread_wrapper(ar_thread_t * thread, void * param);
+//@}
 
 //! @name List sorting predicates
 //@{

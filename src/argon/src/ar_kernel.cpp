@@ -201,7 +201,7 @@ void ar_kernel_enter_scheduler(void)
     }
     else
     {
-        assert(false);
+        g_ar.needsReschedule = true;
     }
 }
 
@@ -215,6 +215,8 @@ void ar_kernel_run(void)
     g_ar.needsReschedule = false;
     g_ar.nextWakeup = 0;
     g_ar.deferredActions.m_count = 0;
+    g_ar.deferredActions.m_first = 0;
+    g_ar.deferredActions.m_last = 0;
 
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
@@ -281,7 +283,7 @@ void ar_kernel_periodic_timer_isr()
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
-//!     current when the IRQ fired.
+//!     current when the timer IRQ fired.
 //! @return The value of the current thread's stack pointer is returned. If the scheduler
 //!     changed the current thread, this will be a different value from what was passed
 //!     in @a topOfStack.
@@ -404,19 +406,21 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
 //! @brief Execute actions deferred from interrupt context.
 void ar_kernel_run_deferred_actions()
 {
-    // Nothing to do if the queue is empty.
-    if (g_ar.deferredActions.isEmpty())
-    {
-        return;
-    }
-
+    // Kernel must not be locked. However, executing deferred actions will temporarily
+    // lock the kernel below.
     assert(g_ar.lockCount == 0);
 
-    // Examine and process each action in sequence.
-    int i = 0;
+    // Pull actions from the head of the queue and execute them.
     ar_deferred_action_queue_t & queue = g_ar.deferredActions;
-    for (; i < queue.m_count; ++i)
+    int32_t i = queue.m_first;
+    while (!queue.isEmpty())
     {
+        int32_t iPlusOne = i + 1;
+        if (iPlusOne >= AR_DEFERRED_ACTION_QUEUE_SIZE)
+        {
+            iPlusOne = 0;
+        }
+
         void * object = queue.m_objects[i];
         switch (queue.m_actions[i])
         {
@@ -424,38 +428,48 @@ void ar_kernel_run_deferred_actions()
                 // This entry contained the value for the previous action.
                 break;
             case kArDeferredSemaphorePut:
-                ar_semaphore_put(reinterpret_cast<ar_semaphore_t *>(object));
+                ar_semaphore_put_internal(reinterpret_cast<ar_semaphore_t *>(object));
                 break;
             case kArDeferredSemaphoreGet:
-                ar_semaphore_get(reinterpret_cast<ar_semaphore_t *>(object), kArNoTimeout);
+                ar_semaphore_get_internal(reinterpret_cast<ar_semaphore_t *>(object), kArNoTimeout);
                 break;
             case kArDeferredMutexPut:
-                ar_mutex_put(reinterpret_cast<ar_mutex_t *>(object));
+                ar_mutex_put_internal(reinterpret_cast<ar_mutex_t *>(object));
                 break;
             case kArDeferredMutexGet:
-                ar_mutex_get(reinterpret_cast<ar_mutex_t *>(object), kArNoTimeout);
+                ar_mutex_get_internal(reinterpret_cast<ar_mutex_t *>(object), kArNoTimeout);
                 break;
             case kArDeferredChannelSend:
-                assert(i + 1 < queue.m_count);
-                ar_channel_send(reinterpret_cast<ar_channel_t *>(object), queue.m_objects[i + 1], kArNoTimeout);
+            {
+                assert(iPlusOne < queue.m_count);
+                ar_channel_t * channel = reinterpret_cast<ar_channel_t *>(object);
+                ar_channel_send_receive_internal(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
+            }
             case kArDeferredQueueSend:
-                assert(i + 1 < queue.m_count);
-                ar_queue_send(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[i + 1], kArNoTimeout);
+                assert(iPlusOne < queue.m_count);
+                ar_queue_send_internal(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
             case kArDeferredTimerStart:
-                assert(i + 1 < queue.m_count);
+                assert(iPlusOne < queue.m_count);
                 // Argument is the timer's wakeup time, determined at the time of the original start call.
-                ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[i + 1]));
+                ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[iPlusOne]));
                 break;
             case kArDeferredTimerStop:
-                ar_timer_stop(reinterpret_cast<ar_timer_t *>(object));
+                ar_timer_stop_internal(reinterpret_cast<ar_timer_t *>(object));
+                break;
+            default:
+                // Unexpected queue entry.
+                assert(false);
                 break;
         }
-    }
 
-    // Clear the queue.
-    g_ar.deferredActions.m_count = 0;
+        // Atomically remove the entry we just processed from the queue.
+        // This is the only code that modifies the m_first member of the queue.
+        i = iPlusOne;
+        ar_atomic_dec(&queue.m_count);
+        queue.m_first = i;
+    }
 }
 
 //! @brief Function to make it clear what happened.
@@ -789,38 +803,75 @@ void _ar_list::check()
     }
 }
 #endif // AR_ENABLE_LIST_CHECKS
+
+int32_t _ar_deferred_action_queue::insert(int32_t entryCount)
+{
+    // Increment queue entry count.
+    int32_t count;
+    do {
+        count = m_count;
+
+        // Check if queue is full.
+        if (count + entryCount > AR_DEFERRED_ACTION_QUEUE_SIZE)
+        {
+            assert(false);
+            return -1;
+        }
+    } while (!ar_atomic_cas(&m_count, count, count + entryCount));
+
+    // Increment last entry index.
+    int32_t last;
+    int32_t newLast;
+    do {
+        last = m_last;
+        newLast = last + entryCount;
+        if (newLast >= AR_DEFERRED_ACTION_QUEUE_SIZE)
+        {
+            newLast = 0;
+        }
+    } while (!ar_atomic_cas(&m_last, last, newLast));
+
+    return last;
 }
 
 ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object)
 {
-    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE)
+    int32_t index = g_ar.deferredActions.insert(1);
+    if (index < 0)
     {
         assert(false);
         return kArQueueFullError;
     }
 
-    int index = ar_atomic_inc(&g_ar.deferredActions.m_count);
-
     g_ar.deferredActions.m_actions[index] = action;
     g_ar.deferredActions.m_objects[index] = object;
+
+    ar_kernel_enter_scheduler();
 
     return kArSuccess;
 }
 
 ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg)
 {
-    if (g_ar.deferredActions.m_count >= AR_DEFERRED_ACTION_QUEUE_SIZE - 1)
+    int32_t index = g_ar.deferredActions.insert(2);
+    if (index < 0)
     {
         assert(false);
         return kArQueueFullError;
     }
 
-    int index = ar_atomic_add(&g_ar.deferredActions.m_count, 2);
-
     g_ar.deferredActions.m_actions[index] = action;
     g_ar.deferredActions.m_objects[index] = object;
-    g_ar.deferredActions.m_actions[index+1] = kArDeferredActionValue;
-    g_ar.deferredActions.m_objects[index+1] = arg;
+
+    ++index;
+    if (index >= AR_DEFERRED_ACTION_QUEUE_SIZE)
+    {
+        index = 0;
+    }
+    g_ar.deferredActions.m_actions[index] = kArDeferredActionValue;
+    g_ar.deferredActions.m_objects[index] = arg;
+
+    ar_kernel_enter_scheduler();
 
     return kArSuccess;
 }

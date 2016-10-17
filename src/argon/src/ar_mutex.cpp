@@ -87,6 +87,61 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex)
     return kArSuccess;
 }
 
+ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
+{
+    KernelLock guard;
+
+    // If this thread already owns the mutex, just increment the count.
+    if (g_ar.currentThread == mutex->m_owner)
+    {
+        ++mutex->m_ownerLockCount;
+        return kArSuccess;
+    }
+    // Otherwise attempt to get the mutex.
+    else
+    {
+        // Will we block?
+        if (mutex->m_sem.m_count == 0)
+        {
+            // Return immediately if the timeout is 0. No reason to call into the sem code.
+            if (timeout == kArNoTimeout)
+            {
+                return kArTimeoutError;
+            }
+
+            // Check if we need to hoist the owning thread's priority to our own.
+            ar_thread_t * self = g_ar.currentThread;
+            if (self->m_priority > mutex->m_owner->m_priority)
+            {
+                if (!mutex->m_originalPriority)
+                {
+                    mutex->m_originalPriority = mutex->m_owner->m_priority;
+                }
+                mutex->m_owner->m_priority = self->m_priority;
+            }
+        }
+
+        ar_status_t result;
+        {
+            KernelUnlock unlock;
+            result = ar_semaphore_get_internal(&mutex->m_sem, timeout);
+        }
+        if (result == kArSuccess)
+        {
+            // Set the owner now that we own the lock.
+            mutex->m_owner = g_ar.currentThread;
+            ++mutex->m_ownerLockCount;
+        }
+        else if (result == kArTimeoutError)
+        {
+            //! @todo Need to handle timeout after hoisting the owner thread.
+
+        }
+
+        return result;
+    }
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
 {
@@ -95,81 +150,17 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
         return kArInvalidParameterError;
     }
 
-    // Handle locked kernel in irq state by deferring the get.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
+    // Handle irq state by deferring the get.
+    if (ar_port_get_irq_state())
     {
         return ar_post_deferred_action(kArDeferredMutexGet, mutex);
     }
 
-    {
-        KernelLock guard;
-
-        // If this thread already owns the mutex, just increment the count.
-        if (g_ar.currentThread == mutex->m_owner)
-        {
-            ++mutex->m_ownerLockCount;
-            return kArSuccess;
-        }
-        // Otherwise attempt to get the mutex.
-        else
-        {
-            // Will we block?
-            if (mutex->m_sem.m_count == 0)
-            {
-                // Return immediately if the timeout is 0. No reason to call into the sem code.
-                if (timeout == kArNoTimeout)
-                {
-                    return kArTimeoutError;
-                }
-
-                // Check if we need to hoist the owning thread's priority to our own.
-                ar_thread_t * self = g_ar.currentThread;
-                if (self->m_priority > mutex->m_owner->m_priority)
-                {
-                    if (!mutex->m_originalPriority)
-                    {
-                        mutex->m_originalPriority = mutex->m_owner->m_priority;
-                    }
-                    mutex->m_owner->m_priority = self->m_priority;
-                }
-            }
-
-            ar_status_t result;
-            {
-                KernelUnlock unlock;
-                result = ar_semaphore_get(&mutex->m_sem, timeout);
-            }
-            if (result == kArSuccess)
-            {
-                // Set the owner now that we own the lock.
-                mutex->m_owner = g_ar.currentThread;
-                ++mutex->m_ownerLockCount;
-            }
-            else if (result == kArTimeoutError)
-            {
-                //! @todo Need to handle timeout after hoisting the owner thread.
-
-            }
-
-            return result;
-        }
-    }
+    return ar_mutex_get_internal(mutex, timeout);
 }
 
-// See ar_kernel.h for documentation of this function.
-ar_status_t ar_mutex_put(ar_mutex_t * mutex)
+ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex)
 {
-    if (!mutex)
-    {
-        return kArInvalidParameterError;
-    }
-
-    // Handle locked kernel in irq state by deferring the put.
-    if (ar_port_get_irq_state() && g_ar.lockCount)
-    {
-        return ar_post_deferred_action(kArDeferredMutexPut, mutex);
-    }
-
     ar_status_t result = kArSuccess;
 
     {
@@ -198,7 +189,7 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
 
             {
                 KernelUnlock unlock;
-                result = ar_semaphore_put(&mutex->m_sem);
+                result = ar_semaphore_put_internal(&mutex->m_sem);
             }
 
             // Restore this thread's priority if it had been raised.
@@ -212,6 +203,23 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
     }
 
     return result;
+}
+
+// See ar_kernel.h for documentation of this function.
+ar_status_t ar_mutex_put(ar_mutex_t * mutex)
+{
+    if (!mutex)
+    {
+        return kArInvalidParameterError;
+    }
+
+    // Handle irq state by deferring the put.
+    if (ar_port_get_irq_state())
+    {
+        return ar_post_deferred_action(kArDeferredMutexPut, mutex);
+    }
+
+    return ar_mutex_put_internal(mutex);
 }
 
 // See ar_kernel.h for documentation of this function.
