@@ -75,7 +75,7 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
 
 #if AR_GLOBAL_OBJECT_LISTS
     thread->m_createdNode.m_obj = thread;
-    g_ar.allObjects.threads.add(&thread->m_createdNode);
+    g_ar_objects.threads.add(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     // prepare top of stack
@@ -120,7 +120,7 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.threads.remove(&thread->m_createdNode);
+    g_ar_objects.threads.remove(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;

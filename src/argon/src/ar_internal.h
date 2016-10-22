@@ -102,19 +102,22 @@ typedef struct _ar_kernel {
     uint32_t nextWakeup;            //!< Time of the next wakeup event.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
     ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
-#if AR_GLOBAL_OBJECT_LISTS
-    //! Contains linked lists of all the various Ar object types that have been created during runtime.
-    struct {
-        ar_list_t threads;          //!< All existing threads.
-        ar_list_t semaphores;       //!< All existing semaphores.
-        ar_list_t mutexes;          //!< All existing mutexes.
-        ar_list_t channels;         //!< All existing channels;
-        ar_list_t queues;           //!< All existing queues.
-        ar_list_t timers;           //!< All existing timers.
-        ar_list_t runloops;         //!< All existing runloops.
-    } allObjects;
-#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_kernel_t;
+
+#if AR_GLOBAL_OBJECT_LISTS
+//! Contains linked lists of all the various Ar object types that have been created during runtime.
+typedef struct _ar_all_objects {
+    ar_list_t threads;          //!< All existing threads.
+    ar_list_t semaphores;       //!< All existing semaphores.
+    ar_list_t mutexes;          //!< All existing mutexes.
+    ar_list_t channels;         //!< All existing channels;
+    ar_list_t queues;           //!< All existing queues.
+    ar_list_t timers;           //!< All existing timers.
+    ar_list_t runloops;         //!< All existing runloops.
+} ar_all_objects_t;
+
+extern ar_all_objects_t g_ar_objects;
+#endif // AR_GLOBAL_OBJECT_LISTS
 
 extern ar_kernel_t g_ar;
 

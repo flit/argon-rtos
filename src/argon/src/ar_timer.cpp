@@ -60,7 +60,7 @@ ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entr
 
 #if AR_GLOBAL_OBJECT_LISTS
     timer->m_createdNode.m_obj = timer;
-    g_ar.allObjects.timers.add(&timer->m_createdNode);
+    g_ar_objects.timers.add(&timer->m_createdNode);
 #endif
 
     return kArSuccess;
@@ -77,7 +77,7 @@ ar_status_t ar_timer_delete(ar_timer_t * timer)
     ar_timer_stop(timer);
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.timers.remove(&timer->m_createdNode);
+    g_ar_objects.timers.remove(&timer->m_createdNode);
 #endif
 
     return kArSuccess;

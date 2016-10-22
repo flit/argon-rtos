@@ -51,6 +51,11 @@ static void THREAD_STACK_OVERFLOW_DETECTED();
 //! Global kernel state.
 ar_kernel_t g_ar = {0};
 
+#if AR_GLOBAL_OBJECT_LISTS
+//! Global list of kernel objects.
+ar_all_objects_t g_ar_objects = {0};
+#endif // AR_GLOBAL_OBJECT_LISTS
+
 //! The stack for the idle thread.
 static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 

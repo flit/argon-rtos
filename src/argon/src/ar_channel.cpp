@@ -62,7 +62,7 @@ ar_status_t ar_channel_create(ar_channel_t * channel, const char * name, uint32_
 
 #if AR_GLOBAL_OBJECT_LISTS
     channel->m_createdNode.m_obj = channel;
-    g_ar.allObjects.channels.add(&channel->m_createdNode);
+    g_ar_objects.channels.add(&channel->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;
@@ -91,7 +91,7 @@ ar_status_t ar_channel_delete(ar_channel_t * channel)
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.channels.remove(&channel->m_createdNode);
+    g_ar_objects.channels.remove(&channel->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;

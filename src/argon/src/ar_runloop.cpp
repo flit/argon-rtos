@@ -57,7 +57,7 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
 
 #if AR_GLOBAL_OBJECT_LISTS
     runloop->m_createdNode.m_obj = runloop;
-    g_ar.allObjects.runloops.add(&runloop->m_createdNode);
+    g_ar_objects.runloops.add(&runloop->m_createdNode);
 #endif
 
     return kArSuccess;
@@ -74,7 +74,7 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     // TODO stop running runloop
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.runloops.remove(&runloop->m_createdNode);
+    g_ar_objects.runloops.remove(&runloop->m_createdNode);
 #endif
 
     return kArSuccess;

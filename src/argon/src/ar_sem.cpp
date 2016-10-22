@@ -55,7 +55,7 @@ ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigne
 
 #if AR_GLOBAL_OBJECT_LISTS
     sem->m_createdNode.m_obj = sem;
-    g_ar.allObjects.semaphores.add(&sem->m_createdNode);
+    g_ar_objects.semaphores.add(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;
@@ -76,7 +76,7 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.semaphores.remove(&sem->m_createdNode);
+    g_ar_objects.semaphores.remove(&sem->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;

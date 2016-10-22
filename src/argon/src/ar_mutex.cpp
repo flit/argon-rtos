@@ -63,8 +63,8 @@ ar_status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
 
 #if AR_GLOBAL_OBJECT_LISTS
         mutex->m_sem.m_createdNode.m_obj = mutex;
-        g_ar.allObjects.semaphores.remove(&mutex->m_sem.m_createdNode);
-        g_ar.allObjects.mutexes.add(&mutex->m_sem.m_createdNode);
+        g_ar_objects.semaphores.remove(&mutex->m_sem.m_createdNode);
+        g_ar_objects.mutexes.add(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
     }
 
@@ -81,7 +81,7 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex)
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
-    g_ar.allObjects.mutexes.remove(&mutex->m_sem.m_createdNode);
+    g_ar_objects.mutexes.remove(&mutex->m_sem.m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
     return kArSuccess;
