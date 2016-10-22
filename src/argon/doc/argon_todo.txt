@@ -9,7 +9,7 @@ Ideas
 √ Get global object lists working.
 √ Implement timers.
 * Implement priority inheritence for mutexes.
-* Finish user interrupt support.
+√ Finish user interrupt support.
 √ Clean up member function support for threads.
 - Either implement or remove Thread::join().
 x More thorough testing using cppunit. [Massive effort to get cppunit compiling under IAR.]
@@ -18,7 +18,7 @@ x Event flags?
 x Invert thread priorities, so that 0 is highest priority? This is the more common arrangement for RTOSes.
 √ Floating point support for M4F.
 √ Use circular linked lists instead of NULL terminated.
-* Use a lock on the scheduler instead of disabling interrupts.
+√ Use a lock on the scheduler instead of disabling interrupts.
 - Handle a thread changing its own priority when it owns a mutex and has been hoisted in priority.
 √ Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
 √ Sort thread sleeping list by wakeup time.
@@ -26,9 +26,9 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 - Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
 * Support tickless idle.
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
-- Use MSP for idle thread and timers. (?)
+x Use MSP for idle thread and timers. (?)
 - Handle changing system clock by updating SysTick.
-* Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
+√ Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
 x Replace queue with buffered channel?
 √ Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
 x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
@@ -60,15 +60,15 @@ x Consider possibilities of run-to-completion threads that share a stack.
 - Add a deferred call mechanism that works from ISRs.
 - Channels only need one blocked list.
 - Some timer code is included even if timers are not used in the application.
-- Reset MSP when kernel starts so there is no wasted stack space.
+x Reset MSP when kernel starts so there is no wasted stack space.
 - Rename _halt() to ar_port_halt_cpu().
 - Restore stack size or stack top in thread struct so we can compute stack usage.
-- ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
+x ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
 - Add comprehensive kernel event recording/trace capability.
-- Limit channel and queue element size to a single word.
-- Add run loops.
-- Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
-- Return errors for non-zero timeouts in calls from timers, like for ISRs.
+- Limit channel and queue element size to a single word. (?)
+* Add run loops.
+* Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
+- Return errors for non-zero timeouts in calls from timers, like for ISRs. (?)
 - Normalize channel and queue class send() and receive() methods' use of ptrs, references, or by value.
 - Add a header to kernel object structs with type and name pointer?
 - Change to a single ar_object_get_name() API?
@@ -84,6 +84,13 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Add support for blocks.
 - MPU support.
 - 64-bit tick counter.
+√ Move g_ar.allObjects to its own global variable.
+√ Add a sleep until API.
+- Share a common timeout list for timers and blocked threads?
+- Main thread needs to be able to stop by returning from main()
+- Use a function pointer table for deferred actions to solve issue with bringing in lots of code into link.
+- Provide API to turn main() into a thread and start scheduler.
+- ISR coroutines?
 
 
 Issues
@@ -170,6 +177,8 @@ Run loops
         - channel
         - sem?
 
+- Merge timers and function calls?
+    - Timers would just be function calls with a delay and/or period
 
 void my_thread(void * arg)
 {
