@@ -238,11 +238,23 @@ void ar_thread_sleep(uint32_t milliseconds)
         return;
     }
 
+    ar_thread_sleep_until(ar_ticks_to_milliseconds(g_ar.tickCount) + milliseconds);
+}
+
+// See ar_kernel.h for documentation of this function.
+void ar_thread_sleep_until(uint32_t wakeup)
+{
+    // bail if there is not a running thread to put to sleep
+    if (wakeup <= ar_get_millisecond_count() || !g_ar.currentThread)
+    {
+        return;
+    }
+
     {
         KernelLock guard;
 
         // put the current thread on the sleeping list
-        g_ar.currentThread->m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(milliseconds);
+        g_ar.currentThread->m_wakeupTime = ar_milliseconds_to_ticks(wakeup);
 
         g_ar.readyList.remove(g_ar.currentThread);
         g_ar.currentThread->m_state = kArThreadSleeping;

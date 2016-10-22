@@ -248,6 +248,15 @@ public:
     //! @param milliseconds The number of milliseconds to sleep the calling thread. A sleep time
     //!     of 0 is ignored.
     static void sleep(unsigned milliseconds) { ar_thread_sleep(milliseconds); }
+
+    //! @brief Put the current thread to sleep until a specific time.
+    //!
+    //! Does nothing if Ar is not running.
+    //!
+    //! @param wakeup The wakeup time in milliseconds. If the time is not in the future, i.e., less than
+    //!  or equal to the current value returned by ar_get_millisecond_count(), then the sleep request is
+    //!  ignored.
+    static void sleepUntil(unsigned wakeup) { ar_thread_sleep_until(wakeup); }
     //@}
 
     //! @name Thread priority

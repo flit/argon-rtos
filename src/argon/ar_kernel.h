@@ -535,6 +535,17 @@ ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread);
 void ar_thread_sleep(uint32_t milliseconds);
 
 /*!
+ * @brief Put the current thread to sleep until a specific time.
+ *
+ * Does nothing if Ar is not running.
+ *
+ * @param wakeup The wakeup time in milliseconds. If the time is not in the future, i.e., less than
+ *  or equal to the current value returned by ar_get_millisecond_count(), then the sleep request is
+ *  ignored.
+ */
+void ar_thread_sleep_until(uint32_t wakeup);
+
+/*!
  * @brief Get the thread's name.
  *
  * @return Pointer to the name of the thread.
