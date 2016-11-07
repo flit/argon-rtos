@@ -617,13 +617,23 @@ uint32_t ar_get_system_load(void)
 // See ar_kernel.h for documentation of this function.
 uint32_t ar_get_tick_count(void)
 {
+#if AR_ENABLE_TICKLESS_IDLE
+    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / 10000;
+    return g_ar.tickCount + elapsed_ticks;
+#else
     return g_ar.tickCount;
+#endif // AR_ENABLE_TICKLESS_IDLE
 }
 
 // See ar_kernel.h for documentation of this function.
 uint32_t ar_get_millisecond_count(void)
 {
+#if AR_ENABLE_TICKLESS_IDLE
+    uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 1000;
+    return g_ar.tickCount * ar_get_milliseconds_per_tick() + elapsed_ms;
+#else
     return g_ar.tickCount * ar_get_milliseconds_per_tick();
+#endif // AR_ENABLE_TICKLESS_IDLE
 }
 
 //! Updates the list node's links and those of @a node so that the object is inserted before

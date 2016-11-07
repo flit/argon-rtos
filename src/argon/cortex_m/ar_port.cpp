@@ -142,6 +142,13 @@ void ar_port_set_timer_delay(bool enable, uint32_t delay_us)
         // Enable SysTick and its IRQ.
         SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
     }
+    else
+    {
+        // Enable SysTick for maximum count but disable IRQ.
+        SysTick->LOAD = SysTick_LOAD_RELOAD_Msk;
+        SysTick->VAL = 0;
+        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+    }
 }
 
 uint32_t ar_port_get_timer_elapsed_us()
