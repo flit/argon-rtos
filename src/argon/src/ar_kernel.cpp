@@ -446,17 +446,14 @@ void ar_kernel_run_deferred_actions()
                 break;
             case kArDeferredChannelSend:
             {
-                assert(iPlusOne < queue.m_count);
                 ar_channel_t * channel = reinterpret_cast<ar_channel_t *>(object);
                 ar_channel_send_receive_internal(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
             }
             case kArDeferredQueueSend:
-                assert(iPlusOne < queue.m_count);
                 ar_queue_send_internal(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
             case kArDeferredTimerStart:
-                assert(iPlusOne < queue.m_count);
                 // Argument is the timer's wakeup time, determined at the time of the original start call.
                 ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[iPlusOne]));
                 break;
@@ -829,11 +826,7 @@ int32_t _ar_deferred_action_queue::insert(int32_t entryCount)
     int32_t newLast;
     do {
         last = m_last;
-        newLast = last + entryCount;
-        if (newLast >= AR_DEFERRED_ACTION_QUEUE_SIZE)
-        {
-            newLast = 0;
-        }
+        newLast = (last + entryCount) % AR_DEFERRED_ACTION_QUEUE_SIZE;
     } while (!ar_atomic_cas(&m_last, last, newLast));
 
     return last;
