@@ -347,7 +347,7 @@ public:
 
     //! @brief Constructor to set the thread entry to a member function.
     template <class T>
-    ThreadWithStack(const char * name, T * object, void (T::*entry)(), void * stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)
+    ThreadWithStack(const char * name, T * object, void (T::*entry)(), uint8_t priority, bool startImmediately=true)
     {
         Thread::init<T>(name, object, entry, m_stack, S, priority, startImmediately);
     }
