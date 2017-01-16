@@ -564,6 +564,12 @@ public:
     //! @brief Returns the current owning thread, if there is one.
     ar_thread_t * getOwner() { return (ar_thread_t *)m_owner; }
 
+    //! @brief Returns whether the mutex is currently locked.
+    //!
+    //! @retval true The mutex is locked.
+    //! @retval false The mutex is unlocked.
+    bool isLocked() { return ar_mutex_is_locked(this); }
+
     /*!
      * @brief Utility class to automatically get and put a mutex.
      *
