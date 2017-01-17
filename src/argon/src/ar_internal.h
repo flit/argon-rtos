@@ -96,9 +96,9 @@ typedef struct _ar_kernel {
     uint32_t isRunning:1;                 //!< True if the kernel has been started.
     uint32_t needsReschedule:1;           //!< True if we need to reschedule once the kernel is unlocked.
     uint32_t _reservedFlags:30;
-    int32_t lockCount;             //!< Whether the kernel is locked.
+    volatile int32_t lockCount;     //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
-    int32_t missedTickCount;       //!< Number of ticks that occurred while the kernel was locked.
+    int32_t missedTickCount;        //!< Number of ticks that occurred while the kernel was locked.
     uint32_t nextWakeup;            //!< Time of the next wakeup event.
     volatile unsigned systemLoad;   //!< Percent of system load from 0-100. The volatile is necessary so that the IAR optimizer doesn't remove the entire load calculation loop of the idle_entry() function.
     ar_thread_t idleThread;         //!< The lowest priority thread in the system. Executes only when no other threads are ready.
