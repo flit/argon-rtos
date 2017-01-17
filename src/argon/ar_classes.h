@@ -528,7 +528,7 @@ public:
     ~Mutex() { ar_mutex_delete(this); }
 
     //! @brief Get the mutex's name.
-    const char * getName() const { return m_sem.m_name; }
+    const char * getName() const { return m_name; }
 
     //! @brief Lock the mutex.
     //!

@@ -279,10 +279,14 @@ typedef struct _ar_semaphore {
  * @ingroup ar_mutex
  */
 typedef struct _ar_mutex {
-    ar_semaphore_t m_sem;               //!< Underlying semaphore for the mutex.
+    const char * m_name;            //!< Name of the mutex.
     volatile ar_thread_t * m_owner;     //!< Current owner thread of the mutex.
     volatile unsigned m_ownerLockCount; //!< Number of times the owner thread has locked the mutex.
     uint8_t m_originalPriority;         //!< Original priority of the owner thread before its priority was raised.
+    ar_list_t m_blockedList;        //!< List of threads blocked on the mutex.
+#if AR_GLOBAL_OBJECT_LISTS
+    ar_list_node_t m_createdNode;   //!< Created list node.
+#endif // AR_GLOBAL_OBJECT_LISTS
 } ar_mutex_t;
 
 /*!
