@@ -34,7 +34,7 @@ x Replace queue with buffered channel?
 x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 √ Replace IrqDisableAndRestore class with a more generic kernel lock class that will work for Cortex-M as well as any other system.
 * Write an automated test suite.
-- Rewrite mutex to not be based on sem. (?)
+√ Rewrite mutex to not be based on sem.
 √ Unblock blocked threads when deleting a queue.
 √ Simplify Thread class variants.
 * Run main() in a thread.
@@ -91,6 +91,7 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Use a function pointer table for deferred actions to solve issue with bringing in lots of code into link.
 - Provide API to turn main() into a thread and start scheduler.
 - ISR coroutines?
+- _ar_list::remove() has an unnecessary search loop.
 
 
 Issues
