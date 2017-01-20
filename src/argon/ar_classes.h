@@ -452,35 +452,6 @@ public:
     //! @brief Returns the current semaphore count.
     unsigned getCount() const { return m_count; }
 
-    /*!
-     * @brief Utility class to automatically get and put a semaphore.
-     *
-     * @ingroup ar_sem
-     *
-     * This class is intended to be stack allocated. It gets and holds a semaphore for the
-     * duration of the scope in which it is declared. Once it goes out of scope, the destructor
-     * automatically puts the semaphore.
-     */
-    class Guard
-    {
-    public:
-        //! @brief Constructor which gets the semaphore.
-        Guard(Semaphore & sem)
-        :   m_sem(sem)
-        {
-            m_sem.get(kArInfiniteTimeout);
-        }
-
-        //! @brief Destructor that puts the semaphore.
-        ~Guard()
-        {
-            m_sem.put();
-        }
-
-    protected:
-        Semaphore & m_sem;  //!< The semaphore to hold.
-    };
-
 private:
     //! @brief Disable copy constructor.
     Semaphore(const Semaphore & other);
