@@ -191,7 +191,7 @@ typedef void (*ar_runloop_channel_handler_t)(ar_channel_t * channel, void * para
 /*!
  * @brief Linked list node.
  */
-typedef struct _ar_list_node {
+struct _ar_list_node {
     ar_list_node_t * m_next;    //!< Next node in the list.
     ar_list_node_t * m_prev;    //!< Previous node in the list.
     void * m_obj;               //!< Pointer to the object on the list.
@@ -202,7 +202,7 @@ typedef struct _ar_list_node {
     template <typename T> T * getObject() { return reinterpret_cast<T *>(m_obj); }
     void insertBefore(ar_list_node_t * node);   //!< @brief Insert this node before another node on the list.
 #endif // __cplusplus
-} ar_list_node_t;
+};
 
 /*!
  * @brief Linked list.
@@ -234,7 +234,7 @@ typedef struct _ar_list {
  *
  * @ingroup ar_thread
  */
-typedef struct _ar_thread {
+struct _ar_thread {
     volatile uint8_t * m_stackPointer;  //!< Current stack pointer.
     ar_thread_port_data_t m_portData; //!< Port-specific thread data.
     const char * m_name;        //!< Thread name.
@@ -257,7 +257,7 @@ typedef struct _ar_thread {
     void block(ar_list_t & blockedList, uint32_t timeout);
     void unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockStatus);
 #endif // __cplusplus
-} ar_thread_t;
+};
 
 /*!
  * @brief Counting semaphore.
@@ -294,7 +294,7 @@ typedef struct _ar_mutex {
  *
  * @ingroup ar_chan
  */
-typedef struct _ar_channel {
+struct _ar_channel {
     const char * m_name;            //!< Name of the channel.
     uint32_t m_width;               //!< Size in bytes of the channel's data.
     ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
@@ -304,14 +304,14 @@ typedef struct _ar_channel {
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Node on the created channels list.
 #endif // AR_GLOBAL_OBJECT_LISTS
-} ar_channel_t;
+};
 
 /*!
  * @brief Queue.
  *
  * @ingroup ar_queue
  */
-typedef struct _ar_queue {
+struct _ar_queue {
     const char * m_name;    //!< Name of the queue.
     uint8_t * m_elements;   //!< Pointer to element storage.
     unsigned m_elementSize; //!< Number of bytes occupied by each element.
@@ -328,14 +328,14 @@ typedef struct _ar_queue {
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
 #endif // AR_GLOBAL_OBJECT_LISTS
-} ar_queue_t;
+};
 
 /*!
  * @brief Timer.
  *
  * @ingroup ar_timer
  */
-typedef struct _ar_timer {
+struct _ar_timer {
     const char * m_name;            //!< Name of the timer.
     ar_list_node_t m_activeNode;    //!< Node for the list of active timers.
 #if AR_GLOBAL_OBJECT_LISTS
@@ -349,14 +349,14 @@ typedef struct _ar_timer {
     bool m_isActive;            //!< Whether the timer is running and on the active timers list.
     ar_runloop_t * m_runLoop;
     ar_list_node_t m_runLoopNode;
-} ar_timer_t;
+};
 
 /*!
  * @brief Run loop.
  *
  * @ingroup ar_runloop
  */
-typedef struct _ar_runloop {
+struct _ar_runloop {
     const char * m_name;
     ar_thread_t * m_thread;
     ar_list_t m_timers;
@@ -374,7 +374,7 @@ typedef struct _ar_runloop {
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
 #endif // AR_GLOBAL_OBJECT_LISTS
-} ar_runloop_t;
+};
 
 //------------------------------------------------------------------------------
 // API
