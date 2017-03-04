@@ -87,6 +87,9 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
         return kArRunLoopError;
     }
 
+    // Clear returned object.
+    *object = NULL;
+
     // Associate this runloop with the current thread.
     g_ar.currentThread->m_runLoop = runloop;
     runloop->m_thread = g_ar.currentThread;
@@ -163,7 +166,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
         uint32_t blockTimeoutTicks = timeoutTicks;
         if (blockTimeoutTicks != kArInfiniteTimeout)
         {
-            int32_t deltaTicks = g_ar.tickCount - startTime;
+            uint32_t deltaTicks = g_ar.tickCount - startTime;
             if (deltaTicks >= timeoutTicks)
             {
                 // Timed out, exit runloop.
@@ -193,7 +196,6 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
                                         : ar_ticks_to_milliseconds(blockTimeoutTicks);
             if (blockTimeout)
             {
-                uint32_t startSleep = g_ar.tickCount;
                 ar_thread_sleep(blockTimeout);
             }
         }
