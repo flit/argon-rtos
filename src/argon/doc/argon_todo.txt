@@ -92,6 +92,7 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Provide API to turn main() into a thread and start scheduler.
 - ISR coroutines?
 - _ar_list::remove() has an unnecessary search loop.
+- handle all thread states in ar_thread_suspend().
 
 
 Issues

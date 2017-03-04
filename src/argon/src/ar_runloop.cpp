@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Immo Software
+ * Copyright (c) 2016-2017 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -217,17 +217,7 @@ void ar_runloop_wake(ar_runloop_t * runloop)
     ar_thread_t * thread = runloop->m_thread;
     if (runloop->m_isRunning && thread)
     {
-        KernelLock lock;
-
-        if (thread->m_state == kArThreadSleeping)
-        {
-            // Remove thread from the sleeping list.
-            g_ar.sleepingList.remove(thread);
-
-            // Put the thread back onto the ready list.
-            thread->m_state = kArThreadReady;
-            g_ar.readyList.add(thread);
-        }
+        ar_thread_resume(thread);
     }
 }
 

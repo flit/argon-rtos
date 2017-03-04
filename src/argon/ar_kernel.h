@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 Immo Software
+ * Copyright (c) 2007-2017 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -100,6 +100,9 @@ typedef enum _ar_status {
 
     //! Allocation failed.
     kArOutOfMemoryError,
+
+    //! The thread is an invalid state for the given operation.
+    kArInvalidStateError,
 } ar_status_t;
 
 //! @brief Options for creating a new thread.
@@ -526,6 +529,12 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t newPriority);
  */
 ar_thread_t * ar_thread_get_current(void);
 
+/*!
+ * @brief Get the runloop currently associated with the given thread.
+ *
+ * @return Pointer to the runloop runnning on the thread, if there is one. If there is not an
+ *      associated runloop, then NULL will be returned.
+ */
 ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread);
 
 /*!
@@ -533,8 +542,11 @@ ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread);
  *
  * Does nothing if Ar is not running.
  *
+ * A sleeping thread can be woken early by calling ar_thread_resume().
+ *
  * @param milliseconds The number of milliseconds to sleep the calling thread. A sleep time
- *     of 0 is ignored.
+ *     of 0 is ignored. If #kArInfiniteTimeout is passed for the sleep time, the thread will
+ *     simply be suspended.
  */
 void ar_thread_sleep(uint32_t milliseconds);
 
@@ -542,6 +554,8 @@ void ar_thread_sleep(uint32_t milliseconds);
  * @brief Put the current thread to sleep until a specific time.
  *
  * Does nothing if Ar is not running.
+ *
+ * A sleeping thread can be woken early by calling ar_thread_resume().
  *
  * @param wakeup The wakeup time in milliseconds. If the time is not in the future, i.e., less than
  *  or equal to the current value returned by ar_get_millisecond_count(), then the sleep request is

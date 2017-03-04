@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 Immo Software
+ * Copyright (c) 2007-2017 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -137,16 +137,27 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
     {
         KernelLock guard;
 
-        if (thread->m_state == kArThreadReady)
+        switch (thread->m_state)
         {
-            return kArSuccess;
+            case kArThreadReady:
+            case kArThreadRunning:
+                return kArSuccess;
+
+            case kArThreadSuspended:
+                g_ar.suspendedList.remove(thread);
+                break;
+
+            case kArThreadSleeping:
+                g_ar.sleepingList.remove(thread);
+                break;
+
+            default:
+                return kArInvalidStateError;
         }
-        else if (thread->m_state == kArThreadSuspended)
-        {
-            g_ar.suspendedList.remove(thread);
-            thread->m_state = kArThreadReady;
-            g_ar.readyList.add(thread);
-        }
+
+        // Put the thread back on the read list.
+        thread->m_state = kArThreadReady;
+        g_ar.readyList.add(thread);
 
         // yield to scheduler if there is not a running thread or if this thread
         // has a higher priority that the running one
@@ -170,6 +181,7 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
     {
         KernelLock guard;
 
+        // TODO handle all states properly
         if (thread->m_state == kArThreadSuspended)
         {
             // Nothing needs doing if the thread is already suspended.
@@ -238,7 +250,15 @@ void ar_thread_sleep(uint32_t milliseconds)
         return;
     }
 
-    ar_thread_sleep_until(ar_ticks_to_milliseconds(g_ar.tickCount) + milliseconds);
+    // Sleeping infinitely is equivalent to suspending the thread.
+    if (milliseconds == kArInfiniteTimeout)
+    {
+        ar_thread_suspend(g_ar.currentThread);
+    }
+    else
+    {
+        ar_thread_sleep_until(ar_ticks_to_milliseconds(g_ar.tickCount) + milliseconds);
+    }
 }
 
 // See ar_kernel.h for documentation of this function.
