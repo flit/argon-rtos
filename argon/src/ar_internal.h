@@ -212,17 +212,13 @@ public:
     //! @brief Saves lock state then modifies it.
     KernelGuard()
     {
-//         m_savedMask = ar_port_set_lock(E);
         if (E)
         {
             ar_atomic_inc(&g_ar.lockCount);
         }
         else
         {
-            if (g_ar.lockCount == 0)
-            {
-                Ar::_halt();
-            }
+            assert(g_ar.lockCount != 0);
             ar_atomic_dec(&g_ar.lockCount);
         }
     }
@@ -232,12 +228,8 @@ public:
     {
         if (E)
         {
-            if (g_ar.lockCount == 0)
-            {
-                Ar::_halt();
-            }
+            assert(g_ar.lockCount != 0);
             ar_atomic_dec(&g_ar.lockCount);
-//             ar_port_set_lock(!E);
             if (g_ar.lockCount == 0 && g_ar.needsReschedule)
             {
                 ar_kernel_enter_scheduler();
@@ -246,15 +238,11 @@ public:
         else
         {
             ar_atomic_inc(&g_ar.lockCount);
-//             ar_port_set_lock(!E);
         }
     }
-
-private:
-//     bool m_savedMask;    //!< The lock state saved by the constructor.
 };
 
-typedef KernelGuard<true> KernelLock;  //!< Lock kernel.
+typedef KernelGuard<true> KernelLock;       //!< Lock kernel.
 typedef KernelGuard<false> KernelUnlock;    //!< Unlock kernel.
 
 #endif // _AR_INTERNAL_H_
