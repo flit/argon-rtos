@@ -36,7 +36,7 @@
 #define _AR_KERNEL_H_
 
 #include "ar_port.h"
-#include "src/ar_config.h"
+#include "ar_config.h"
 
 //------------------------------------------------------------------------------
 // Constants
