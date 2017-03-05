@@ -901,6 +901,8 @@ private:
 
 /*!
  * @brief Run loop.
+ *
+ * @ingroup ar_runloop
  */
 class RunLoop : public _ar_runloop
 {

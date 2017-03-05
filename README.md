@@ -64,25 +64,11 @@ Kernel object sizes:
 
 These sizes are as of 21 Dec 2014, and will probably change in the future. All above sizes were obtained using IAR EWARM 7.30 with full optimization enabled.
 
-### Supported chips and boards
-
-These are the devices that have demo projects included in the repository. The kernel itself will build for any Cortex-M device.
-
-<table>
-<tr><th>Family</th><th>Part Number</th><th>Board</th></tr>
-<tr><td>Freescale Kinetis</td><td>KL25Z128xxx4</td><td>FRDM-KL25Z</td></tr>
-<tr><td></td><td>KL43Z256xxx4</td><td>FRDM-KL43Z</td></tr>
-<tr><td></td><td>K20DX128xxx5</td><td>FRDM-K20D50M</td></tr>
-<tr><td></td><td>K22FN512xxx12</td><td>FRDM-K22F</td></tr>
-<tr><td></td><td>K60DZ128xxx10</td><td>TWR-K60N512</td></tr>
-<tr><td></td><td>K64F1M0xxx12</td><td>FRDM-K64F</td></tr>
-</table>
-
 ### Source code
 
-The code for the Argon kernel is in the `argon/` directory in the repository.
+The code for the Argon kernel is in the `src/` directory in the repository. Public headers are in the `include/` directory.
 
-The [mbed](http://mbed.org) libraries are included under `src/mbed`, to provide a simple C++ driver API for demo applications. mbed device HALs are located in `src/mbed/targets`.
+The argon-rtos repository is intended to be usable as a submodule in other git repositories.
 
 ### Contributions
 
@@ -92,8 +78,8 @@ Contributions are welcome! Please create a pull request in GitHub.
 
 The Argon RTOS is open source software released with a BSD three-clause license. See the included LICENSE.txt file for details.
 
-Copyright © 2007-2017 Immo Software.
+The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.
 
-The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br/>
+Copyright © 2007-2017 Immo Software.<br/>
 Portions Copyright © 2014-2017 NXP
 

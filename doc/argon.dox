@@ -21,6 +21,9 @@
 @defgroup ar_timer Timers
 @ingroup ar
 
+@defgroup ar_runloop Run Loops
+@ingroup ar
+
 @defgroup ar_time Time Utilities
 @ingroup ar
 
