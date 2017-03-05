@@ -38,6 +38,7 @@
 #include "argon/argon.h"
 #include "ar_port.h"
 #include "ar_config.h"
+#include <assert.h>
 
 //------------------------------------------------------------------------------
 // Definitions
