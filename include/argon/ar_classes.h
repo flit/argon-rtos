@@ -900,6 +900,64 @@ private:
 };
 
 /*!
+ * @brief Timer object taking a member function callback.
+ *
+ * @ingroup ar_timer
+ */
+template <class T>
+class TimerWithMemberCallback : public Timer
+{
+public:
+
+    //! @brief Timer callback function that takes an instance of this class.
+    typedef void (T::*callback_t)(Timer * timer);
+
+    //! @brief Default constructor.
+    TimerWithMemberCallback<T>() {}
+
+    //! @brief Constructor taking a member function callback.
+    TimerWithMemberCallback<T>(const char * name, T * object, callback_t callback, ar_timer_mode_t timerMode, uint32_t delay)
+    {
+        init(name, object, callback, timerMode, delay);
+    }
+
+    //! @brief Destructor.
+    ~TimerWithMemberCallback<T>() {}
+
+    //! @brief Initialize the timer with a member function callback.
+    ar_status_t init(const char * name, T * object, callback_t callback, ar_timer_mode_t timerMode, uint32_t delay)
+    {
+        m_memberCallback = callback;
+        return Timer::init(name, member_callback, object, timerMode, delay);
+    }
+
+protected:
+
+    callback_t m_memberCallback;    //!< The user timer callback.
+
+    //! @brief Call the member function.
+    void invoke(T * obj)
+    {
+        (obj->*m_memberCallback)(this);
+    }
+
+    //! @brief Template function to invoke a callback that is a member function.
+    static void member_callback(Timer * timer, void * param)
+    {
+        TimerWithMemberCallback<T> * _this = static_cast<TimerWithMemberCallback<T> *>(timer);
+        T * obj = static_cast<T *>(param);
+        _this->invoke(obj);
+    }
+
+private:
+    //! @brief Disable copy constructor.
+    TimerWithMemberCallback<T>(const TimerWithMemberCallback<T> & other);
+
+    //! @brief Disable assignment operator.
+    TimerWithMemberCallback<T>& operator=(const TimerWithMemberCallback<T> & other);
+};
+
+/*!
  * @brief Run loop.
  *
  * @ingroup ar_runloop
