@@ -216,7 +216,7 @@ const char * ar_timer_get_name(ar_timer_t * timer)
     return timer ? timer->m_name : NULL;
 }
 
-ar_status_t Timer::init(const char * name, entry_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
+ar_status_t Timer::init(const char * name, callback_t callback, void * param, ar_timer_mode_t timerMode, uint32_t delay)
 {
     m_userCallback = callback;
 
