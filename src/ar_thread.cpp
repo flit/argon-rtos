@@ -106,22 +106,52 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
-    if (thread->m_state != kArThreadDone)
+    // Clear runloop association.
+    if (thread->m_runLoop)
     {
-        // Remove from ready list if it's on there, and switch to another thread
-        // if we're disposing of our own thread.
-        ar_thread_suspend(thread);
-
-        // Now remove from the suspended list
-        {
-            KernelLock guard;
-            g_ar.suspendedList.remove(thread);
-        }
+        thread->m_runLoop->m_thread = NULL;
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar_objects.threads.remove(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
+
+    if (thread->m_state != kArThreadDone)
+    {
+        // Remove from whatever list the thread is on.
+        {
+            KernelLock guard;
+
+            switch (thread->m_state)
+            {
+                case kArThreadReady:
+                case kArThreadRunning:
+                    g_ar.readyList.remove(thread);
+                    break;
+
+                case kArThreadSuspended:
+                    g_ar.suspendedList.remove(thread);
+                    break;
+
+                case kArThreadSleeping:
+                    g_ar.sleepingList.remove(thread);
+                    break;
+
+                default:
+                    return kArInvalidStateError;
+            }
+
+            // Mark thread as finished.
+            thread->m_state = kArThreadDone;
+        }
+    }
+
+    // Are we deleting ourself?
+    if (thread == g_ar.currentThread)
+    {
+        // Switch to the scheduler to let another thread take over
+        ar_kernel_enter_scheduler();
+    }
 
     return kArSuccess;
 }
