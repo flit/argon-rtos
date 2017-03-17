@@ -1061,7 +1061,9 @@ static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return 
 int32_t ar_atomic_add(volatile int32_t * value, int32_t delta);
 
 /*!
- * @brief Atomically increment a value.
+ * @brief Atomically increment a value by 1.
+ *
+ * A memory barrier is performed prior to the add operation.
  *
  * @param value Pointer to the word to increment.
  * @return The original value is returned.
@@ -1069,7 +1071,9 @@ int32_t ar_atomic_add(volatile int32_t * value, int32_t delta);
 static inline int32_t ar_atomic_inc(volatile int32_t * value) { return ar_atomic_add(value, 1); }
 
 /*!
- * @brief Atomically decrement a value.
+ * @brief Atomically decrement a value by 1.
+ *
+ * A memory barrier is performed prior to the add operation.
  *
  * @param value Pointer to the word to decrement.
  * @return The original value is returned.
@@ -1079,9 +1083,9 @@ static inline int32_t ar_atomic_dec(volatile int32_t * value) { return ar_atomic
 /*!
  * @brief Atomic compare and swap operation.
  *
- * Tests the word pointed to by @a value for equality with @a oldValue. If they are
+ * Tests the word pointed to by @a value for equality with @a expectedValue. If they are
  * equal, the word pointed to by @a value is set to @a newValue. If *value is not
- * equal to @a oldValue, then no change is made. The return value indicates whether
+ * equal to @a expectedValue, then no change is made. The return value indicates whether
  * the swap was performed. Of course, this entire operation is guaranteed to be
  * atomic even on multiprocessor platforms.
  *
@@ -1089,7 +1093,7 @@ static inline int32_t ar_atomic_dec(volatile int32_t * value) { return ar_atomic
  *
  * @param value Pointer to the word to compare and swap.
  * @param expectedValue Value to compare against.
- * @param newValue Value to value to swap in if *value is equal to oldValue.
+ * @param newValue Value to value to swap in if *value is equal to expectedValue.
  * @retval false No change was made to *value.
  * @retval true The swap was performed, and *value is now equal to newValue.
  */
