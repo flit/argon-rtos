@@ -80,7 +80,7 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     return kArSuccess;
 }
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void ** object)
+ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object)
 {
     if (!runloop)
     {
@@ -88,7 +88,10 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
     }
 
     // Clear returned object.
-    *object = NULL;
+    if (object)
+    {
+        object->m_queue = NULL;
+    }
 
     // Associate this runloop with the current thread.
     g_ar.currentThread->m_runLoop = runloop;
@@ -154,7 +157,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, voi
                 // No handler associated with this queue, so exit the run loop.
                 if (object)
                 {
-                    *object = reinterpret_cast<void *>(queue);
+                    object->m_queue = queue;
                 }
 
                 returnStatus = kArRunLoopQueueReceived;

@@ -979,7 +979,7 @@ public:
     //! @brief Get the run loop's name.
     const char * getName() const { return m_name; }
 
-    ar_runloop_status_t run(uint32_t timeout=kArInfiniteTimeout, void ** object=0) { return ar_runloop_run(this, timeout, object); }
+    ar_runloop_status_t run(uint32_t timeout=kArInfiniteTimeout, ar_runloop_result_t * object=0) { return ar_runloop_run(this, timeout, object); }
 
     ar_status_t stop() { return ar_runloop_stop(this); }
 

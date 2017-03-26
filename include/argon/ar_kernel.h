@@ -379,6 +379,16 @@ struct _ar_runloop {
 #endif // AR_GLOBAL_OBJECT_LISTS
 };
 
+/*!
+ * @brief Run loop result.
+ *
+ * @ingroup ar_runloop
+ */
+typedef union _ar_runloop_result {
+    ar_queue_t * m_queue;
+    ar_channel_t * m_channel;
+} ar_runloop_result_t;
+
 //------------------------------------------------------------------------------
 // API
 //------------------------------------------------------------------------------
@@ -990,7 +1000,7 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
 
 ar_status_t ar_runloop_delete(ar_runloop_t * runloop);
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, void ** object);
+ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object);
 
 ar_status_t ar_runloop_stop(ar_runloop_t * runloop);
 
