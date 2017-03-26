@@ -42,6 +42,9 @@
 // Constants
 //------------------------------------------------------------------------------
 
+//! @brief Current version of Argon (v1.2.0).
+#define AR_VERSION (0x00010200)
+
 //! @brief Timeout constants.
 //!
 //! @ingroup ar
