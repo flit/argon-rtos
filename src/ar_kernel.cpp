@@ -34,7 +34,6 @@
 #include "ar_internal.h"
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
 using namespace Ar;
 
@@ -545,10 +544,6 @@ void ar_kernel_scheduler()
     if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
     {
         delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
-        if (delay == 0)
-        {
-            printf("delay is 0\n");
-        }
     }
     bool enable = (g_ar.nextWakeup != 0);
     ar_port_set_timer_delay(enable, delay);
