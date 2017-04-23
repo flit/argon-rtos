@@ -484,6 +484,15 @@ ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread)
     return thread ? thread->m_runLoop : 0;
 }
 
+uint32_t ar_thread_get_load(ar_thread_t * thread)
+{
+#if AR_ENABLE_SYSTEM_LOAD
+    return thread ? thread->m_permilleCpu : 0;
+#else // AR_ENABLE_SYSTEM_LOAD
+    return 0;
+#endif // AR_ENABLE_SYSTEM_LOAD
+}
+
 // See ar_classes.h for documentation of this function.
 Thread::~Thread()
 {

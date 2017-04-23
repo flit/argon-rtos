@@ -257,6 +257,10 @@ struct _ar_thread {
     ar_status_t m_unblockStatus;       //!< Status code to return from a blocking function upon unblocking.
     void * m_channelData;       //!< Receive or send data pointer for blocked channel.
     ar_runloop_t * m_runLoop;   //!< Run loop associated with this thread.
+#if AR_ENABLE_SYSTEM_LOAD
+    uint16_t m_permilleCpu;     //!< Per mille of this thread's CPU usage (range of 1-1000).
+    uint32_t m_loadAccumulator; //!< Number of microseconds this thread has run during the current load computation period.
+#endif // AR_ENABLE_SYSTEM_LOAD
 
     // Internal utility methods.
 #if defined(__cplusplus)
@@ -582,6 +586,15 @@ void ar_thread_sleep_until(uint32_t wakeup);
  * @return Pointer to the name of the thread.
  */
 const char * ar_thread_get_name(ar_thread_t * thread);
+
+/*!
+ * @brief Get the amount of CPU time the thread is using.
+ *
+ * Thread CPU usage is computed once every second for all threads.
+ *
+ * @return Per mille of CPU load for the given thread. Value is 0-1000.
+ */
+uint32_t ar_thread_get_load(ar_thread_t * thread);
 //@}
 
 //! @}

@@ -76,12 +76,19 @@
 #endif
 
 #if !defined(AR_ENABLE_SYSTEM_LOAD)
-    //! @brief When set to 1 the idle thread will compute the system load percentage.
+    //! @brief When set to 1, per-thread and system load will be computed.
     #define AR_ENABLE_SYSTEM_LOAD (1)
 #endif
 
+#if !defined(AR_SYSTEM_LOAD_SAMPLE_PERIOD)
+    //! @brief Microsecond period over which load of system load is computed.
+    //!
+    //! Normally this is 1 second.
+    #define AR_SYSTEM_LOAD_SAMPLE_PERIOD (1000000)
+#endif
+
 #if !defined(AR_IDLE_THREAD_STACK_SIZE)
-    //! @brief Size in bytes of the idle and timer thread's stack.
+    //! @brief Size in bytes of the idle thread's stack.
     #define AR_IDLE_THREAD_STACK_SIZE (512)
 #endif // AR_IDLE_THREAD_STACK_SIZE
 

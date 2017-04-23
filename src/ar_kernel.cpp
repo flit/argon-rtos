@@ -43,6 +43,10 @@ using namespace Ar;
 
 static void THREAD_STACK_OVERFLOW_DETECTED();
 
+#if AR_ENABLE_SYSTEM_LOAD
+static void ar_kernel_update_thread_loads();
+#endif // AR_ENABLE_SYSTEM_LOAD
+
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
@@ -109,68 +113,11 @@ bool ar_kernel_run_timers(ar_list_t & timersList)
 //!
 //! This thread just spins forever.
 //!
-//! If the #AR_ENABLE_SYSTEM_LOAD define has been set to 1 then this thread will
-//! also calculate the average system load once per second. The system load is
-//! accessible with the Kernel::getSystemLoad() static member.
-//!
 //! @param param Ignored.
 void idle_entry(void * param)
 {
-#if AR_ENABLE_SYSTEM_LOAD
-    uint32_t start;
-    uint32_t last;
-    uint32_t ticks;
-    uint32_t skipped = 0;
-
-    start = g_ar.tickCount;
-    last = start;
-#endif // AR_ENABLE_SYSTEM_LOAD
-
     while (1)
     {
-        // Compute system load.
-#if AR_ENABLE_SYSTEM_LOAD
-        ticks = g_ar.tickCount;
-
-        if (ticks != last)
-        {
-            uint32_t diff = ticks - last;
-
-            if (ticks - start >= 100)
-            {
-                unsigned s = start + 100 - ticks;
-
-                if (diff - 1 > s)
-                {
-                    skipped += s;
-                }
-                else
-                {
-                    skipped += diff - 1;
-                }
-
-                g_ar.systemLoad = skipped;
-
-                // start over counting
-                if (diff - 1 > s)
-                {
-                    skipped = diff - 1 - s;
-                }
-                else
-                {
-                    skipped = 0;
-                }
-                start = ticks;
-            }
-            else
-            {
-                skipped += diff - 1;
-            }
-
-            last = ticks;
-        }
-#endif // AR_ENABLE_SYSTEM_LOAD
-
         while (g_ar.tickCount < g_ar.nextWakeup)
         {
         }
@@ -221,6 +168,12 @@ void ar_kernel_run(void)
     g_ar.deferredActions.m_count = 0;
     g_ar.deferredActions.m_first = 0;
     g_ar.deferredActions.m_last = 0;
+
+#if AR_ENABLE_SYSTEM_LOAD
+    g_ar.lastLoadStart = ar_get_microseconds();
+    g_ar.lastSwitchIn = 0;
+    g_ar.systemLoad = 0;
+#endif // AR_ENABLE_SYSTEM_LOAD
 
     // Init list predicates.
     g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
@@ -479,10 +432,50 @@ void THREAD_STACK_OVERFLOW_DETECTED()
     _halt();
 }
 
+#if AR_ENABLE_SYSTEM_LOAD
+//! Update the CPU load for all threads based on the current load accumulator values.
+//! Also updates the total system load.
+void ar_kernel_update_thread_loads()
+{
+    ar_list_node_t * start = g_ar_objects.threads.m_head;
+    ar_list_node_t * node = start;
+    assert(node);
+    do {
+        ar_thread_t * thread = node->getObject<ar_thread_t>();
+        thread->m_permilleCpu = 1000 * thread->m_loadAccumulator / AR_SYSTEM_LOAD_SAMPLE_PERIOD;
+        thread->m_loadAccumulator = 0;
+        node = node->m_next;
+    } while (node != start);
+
+    // Update total system load based on the idle thread's load.
+    g_ar.systemLoad = 1000 - g_ar.idleThread.m_permilleCpu;
+}
+#endif // AR_ENABLE_SYSTEM_LOAD
+
 void ar_kernel_scheduler()
 {
     // There must always be at least one thread on the ready list.
     assert(g_ar.readyList.m_head);
+
+#if AR_ENABLE_SYSTEM_LOAD
+    // Update thread active time accumulator.
+    if (g_ar.currentThread)
+    {
+        uint64_t now = ar_get_microseconds();
+        uint64_t w = now - g_ar.lastLoadStart;
+        if (w >= AR_SYSTEM_LOAD_SAMPLE_PERIOD)
+        {
+            uint64_t o = w - AR_SYSTEM_LOAD_SAMPLE_PERIOD;
+            g_ar.currentThread->m_loadAccumulator += static_cast<uint32_t>(now - g_ar.lastSwitchIn - o);
+            ar_kernel_update_thread_loads();
+            g_ar.lastLoadStart = now - o;
+            g_ar.lastSwitchIn = g_ar.lastLoadStart;
+        }
+
+        g_ar.currentThread->m_loadAccumulator += static_cast<uint32_t>(now - g_ar.lastSwitchIn);
+        g_ar.lastSwitchIn = now;
+    }
+#endif // AR_ENABLE_SYSTEM_LOAD
 
     // Find the next ready thread using a round-robin search algorithm.
     ar_list_node_t * start;
@@ -606,7 +599,11 @@ bool ar_kernel_is_running(void)
 // See ar_kernel.h for documentation of this function.
 uint32_t ar_get_system_load(void)
 {
+#if AR_ENABLE_SYSTEM_LOAD
     return g_ar.systemLoad;
+#else // AR_ENABLE_SYSTEM_LOAD
+    return 0;
+#endif // AR_ENABLE_SYSTEM_LOAD
 }
 
 // See ar_kernel.h for documentation of this function.
