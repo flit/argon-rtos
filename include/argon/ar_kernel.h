@@ -270,6 +270,21 @@ struct _ar_thread {
 };
 
 /*!
+ * @brief Current status of a thread.
+ *
+ * This struct holds a report on the current status of a thread. The ar_thread_get_report()
+ * API will fill in an array of these structs with the status of all threads.
+ *
+ * @ingroup ar_thread
+ */
+typedef struct _ar_thread_status {
+    ar_thread_t * m_thread;     //!< Pointer to the thread's structure.
+    const char * m_name;        //!< Thread's name.
+    uint32_t m_cpu;             //!< Per mille CPU usage of the thread over the last sampling period, with a range of 1-1000.
+    ar_thread_state_t m_state;  //!< Current thread state.
+} ar_thread_status_t;
+
+/*!
  * @brief Counting semaphore.
  *
  * @ingroup ar_sem
@@ -595,6 +610,11 @@ const char * ar_thread_get_name(ar_thread_t * thread);
  * @return Per mille of CPU load for the given thread. Value is 0-1000.
  */
 uint32_t ar_thread_get_load(ar_thread_t * thread);
+
+/*!
+ * @brief Get a report of all thread's status.
+ */
+uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries);
 //@}
 
 //! @}

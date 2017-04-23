@@ -493,6 +493,36 @@ uint32_t ar_thread_get_load(ar_thread_t * thread)
 #endif // AR_ENABLE_SYSTEM_LOAD
 }
 
+uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries)
+{
+    uint32_t threadCount = 0;
+    ar_list_node_t * start = g_ar_objects.threads.m_head;
+    ar_list_node_t * node = start;
+    assert(node);
+    do {
+        ar_thread_t * thread = node->getObject<ar_thread_t>();
+
+        if (report)
+        {
+            report->m_thread = thread;
+            report->m_name = thread->m_name;
+#if AR_ENABLE_SYSTEM_LOAD
+            report->m_cpu = thread->m_permilleCpu;
+#else // AR_ENABLE_SYSTEM_LOAD
+            report->m_cpu = 0;
+#endif // AR_ENABLE_SYSTEM_LOAD
+            report->m_state = thread->m_state;
+
+            ++report;
+        }
+        ++threadCount;
+
+        node = node->m_next;
+    } while (node != start && threadCount < maxEntries);
+
+    return threadCount;
+}
+
 // See ar_classes.h for documentation of this function.
 Thread::~Thread()
 {
