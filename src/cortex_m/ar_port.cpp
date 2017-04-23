@@ -59,6 +59,8 @@ enum _exception_priorities
 extern "C" void SysTick_Handler(void);
 extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
 
+uint64_t ar_get_microseconds() __attribute__((weak));
+
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
@@ -301,6 +303,11 @@ void ar_port_service_call()
     __ISB();
 }
 #endif // DEBUG
+
+uint64_t ar_get_microseconds()
+{
+    return static_cast<uint64_t>(ar_get_millisecond_count()) * 1000ull;
+}
 
 //------------------------------------------------------------------------------
 // EOF
