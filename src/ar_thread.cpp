@@ -496,29 +496,34 @@ uint32_t ar_thread_get_load(ar_thread_t * thread)
 uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries)
 {
     uint32_t threadCount = 0;
-    ar_list_node_t * start = g_ar_objects.threads.m_head;
-    ar_list_node_t * node = start;
-    assert(node);
-    do {
-        ar_thread_t * thread = node->getObject<ar_thread_t>();
+    ar_list_t * threadLists[] = { &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList };
+    uint32_t i = 0;
+    for (; i < ARRAY_SIZE(threadLists) && threadCount < maxEntries; ++i)
+    {
+        ar_list_node_t * start = threadLists[i]->m_head;
+        ar_list_node_t * node = start;
+        assert(node);
+        do {
+            ar_thread_t * thread = node->getObject<ar_thread_t>();
 
-        if (report)
-        {
-            report->m_thread = thread;
-            report->m_name = thread->m_name;
+            if (report)
+            {
+                report->m_thread = thread;
+                report->m_name = thread->m_name;
 #if AR_ENABLE_SYSTEM_LOAD
-            report->m_cpu = thread->m_permilleCpu;
+                report->m_cpu = thread->m_permilleCpu;
 #else // AR_ENABLE_SYSTEM_LOAD
-            report->m_cpu = 0;
+                report->m_cpu = 0;
 #endif // AR_ENABLE_SYSTEM_LOAD
-            report->m_state = thread->m_state;
+                report->m_state = thread->m_state;
 
-            ++report;
-        }
-        ++threadCount;
+                ++report;
+            }
+            ++threadCount;
 
-        node = node->m_next;
-    } while (node != start && threadCount < maxEntries);
+            node = node->m_next;
+        } while (node != start && threadCount < maxEntries);
+    }
 
     return threadCount;
 }

@@ -44,6 +44,10 @@
 // Definitions
 //------------------------------------------------------------------------------
 
+#if !defined(ARRAY_SIZE)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#endif
+
 enum
 {
     //! Signature value written to the top of each thread's the stack. The scheduler looks
