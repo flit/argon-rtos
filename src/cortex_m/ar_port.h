@@ -105,9 +105,9 @@ struct ThreadContext
 };
 
 //! @brief Stop the CPU because of a serious error.
-inline void _halt()
+static inline void _halt()
 {
-    asm volatile ("bkpt #0");
+    __BKPT(0);
 }
 
 //! @}
@@ -116,14 +116,11 @@ inline void _halt()
 
 #endif // defined(__cplusplus)
 
-//! @brief
-bool ar_port_set_lock(bool lockIt);
-
 #if DEBUG
 //! @brief Make the PendSV exception pending.
 void ar_port_service_call();
 #else // DEBUG
-inline void ar_port_service_call()
+static inline void ar_port_service_call()
 {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     __DSB();
