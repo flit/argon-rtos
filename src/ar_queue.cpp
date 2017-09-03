@@ -87,13 +87,13 @@ ar_status_t ar_queue_delete(ar_queue_t * queue)
     ar_thread_t * thread;
     while (queue->m_sendBlockedList.m_head)
     {
-        thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
+        thread = queue->m_sendBlockedList.getHead<ar_thread_t>();
         thread->unblockWithStatus(queue->m_sendBlockedList, kArObjectDeletedError);
     }
 
     while (queue->m_receiveBlockedList.m_head)
     {
-        thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+        thread = queue->m_receiveBlockedList.getHead<ar_thread_t>();
         thread->unblockWithStatus(queue->m_receiveBlockedList, kArObjectDeletedError);
     }
 
@@ -146,7 +146,7 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
     if (queue->m_receiveBlockedList.m_head)
     {
         // Unblock the head of the blocked list.
-        ar_thread_t * thread = queue->m_receiveBlockedList.m_head->getObject<ar_thread_t>();
+        ar_thread_t * thread = queue->m_receiveBlockedList.getHead<ar_thread_t>();
         thread->unblockWithStatus(queue->m_receiveBlockedList, kArSuccess);
     }
     // Is the queue associated with a runloop?
@@ -225,7 +225,7 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
         if (queue->m_sendBlockedList.m_head)
         {
             // Unblock the head of the blocked list.
-            ar_thread_t * thread = queue->m_sendBlockedList.m_head->getObject<ar_thread_t>();
+            ar_thread_t * thread = queue->m_sendBlockedList.getHead<ar_thread_t>();
             thread->unblockWithStatus(queue->m_sendBlockedList, kArSuccess);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 Immo Software
+ * Copyright (c) 2007-2017 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -80,13 +80,13 @@ ar_status_t ar_channel_delete(ar_channel_t * channel)
     ar_thread_t * thread;
     while (channel->m_blockedSenders.m_head)
     {
-        thread = channel->m_blockedSenders.m_head->getObject<ar_thread_t>();
+        thread = channel->m_blockedSenders.getHead<ar_thread_t>();
         thread->unblockWithStatus(channel->m_blockedSenders, kArObjectDeletedError);
     }
 
     while (channel->m_blockedReceivers.m_head)
     {
-        thread = channel->m_blockedReceivers.m_head->getObject<ar_thread_t>();
+        thread = channel->m_blockedReceivers.getHead<ar_thread_t>();
         thread->unblockWithStatus(channel->m_blockedReceivers, kArObjectDeletedError);
     }
 
@@ -136,7 +136,7 @@ ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSend
     else
     {
         // Get the first thread blocked on this channel.
-        ar_thread_t * thread = otherDirList.m_head->getObject<ar_thread_t>();
+        ar_thread_t * thread = otherDirList.getHead<ar_thread_t>();
 
         // Figure out the direction of the data transfer.
         void * src;

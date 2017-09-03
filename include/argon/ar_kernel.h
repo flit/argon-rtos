@@ -219,6 +219,8 @@ typedef struct _ar_list {
 
     // Internal utility methods.
 #if defined(__cplusplus)
+    //! @brief Convert the node head's @a m_obj pointer to a particular type.
+    template <typename T> T * getHead() { return m_head ? m_head->getObject<T>() : 0; }
     inline bool isEmpty() const;                //!< @brief Return whether the list is empty.
     void add(ar_list_node_t * item);            //!< @brief Add an item to the list.
     inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.

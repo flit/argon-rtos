@@ -190,7 +190,7 @@ ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex)
         if (mutex->m_blockedList.m_head)
         {
             // Unblock the head of the blocked list.
-            ar_thread_t * thread = mutex->m_blockedList.m_head->getObject<ar_thread_t>();
+            ar_thread_t * thread = mutex->m_blockedList.getHead<ar_thread_t>();
             thread->unblockWithStatus(mutex->m_blockedList, kArSuccess);
         }
     }

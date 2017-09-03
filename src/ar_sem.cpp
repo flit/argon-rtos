@@ -72,7 +72,7 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     // Unblock all threads blocked on this semaphore.
     while (sem->m_blockedList.m_head)
     {
-        sem->m_blockedList.m_head->getObject<ar_thread_t>()->unblockWithStatus(sem->m_blockedList, kArObjectDeletedError);
+        sem->m_blockedList.getHead<ar_thread_t>()->unblockWithStatus(sem->m_blockedList, kArObjectDeletedError);
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
@@ -152,7 +152,7 @@ ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem)
     if (sem->m_blockedList.m_head)
     {
         // Unblock the head of the blocked list.
-        ar_thread_t * thread = sem->m_blockedList.m_head->getObject<ar_thread_t>();
+        ar_thread_t * thread = sem->m_blockedList.getHead<ar_thread_t>();
         thread->unblockWithStatus(sem->m_blockedList, kArSuccess);
     }
 
