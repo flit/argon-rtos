@@ -734,14 +734,19 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex);
 /*!
  * @brief Lock the mutex.
  *
- * If the thread that already owns the mutex calls get() more than once, a count is incremented
- * rather than attempting to decrement the underlying semaphore again. The converse is true for
- * put(), thus allowing a thread to lock a mutex any number of times as long as there are
- * matching get() and put() calls.
+ * Mutexes are recursive, meaning that one thread can lock a mutex more than once when it
+ * already owns the lock. In this case, an internal count is incremented to track the number
+ * of times the owning thread has locked the mutex. The owner must make a matching number of
+ * calls to put in order to actually release the lock. Thus, a thread can lock a mutex any
+ * number of times as long as there are matching get() and put() calls.
+ *
+ * Mutexes implement priority inheritance. If a given thread attempts to lock a
+ * mutex that is currently owned by a thread of lower priority, the lock owner thread has
+ * its priority boosted to that of the highest priority thread waiting to grab the lock.
  *
  * @param mutex Pointer to the mutex.
  * @param timeout The maximum number of milliseconds that the caller is willing to wait in a
- *     blocked state before the semaphore can be obtained. If this value is 0, or #kArNoTimeout,
+ *     blocked state before the lock can be obtained. If this value is 0, or #kArNoTimeout,
  *     then this method will return immediately if the lock cannot be obtained. Setting
  *     the timeout to #kArInfiniteTimeout will cause the thread to wait forever for a chance to
  *     get the lock.
@@ -749,7 +754,7 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex);
  * @retval kArSuccess The mutex was obtained without error.
  * @retval kArTimeoutError The specified amount of time has elapsed before the mutex could be
  *     obtained.
- * @retval kArObjectDeletedError Another thread deleted the semaphore while the caller was
+ * @retval kArObjectDeletedError Another thread deleted the mutex while the caller was
  *     blocked on it.
  */
 ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
@@ -758,9 +763,15 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout);
  * @brief Unlock the mutex.
  *
  * Only the owning thread is allowed to unlock the mutex. If the owning thread has called get()
- * multiple times, it must also call put() the same number of time before the underlying
- * semaphore is actually released. It is illegal to call put() when the mutex is not owned by
- * the calling thread.
+ * multiple times, it must also call put() the same number of time before the lock is actually
+ * released. It is illegal to call put() when the mutex is not owned by the calling thread.
+ *
+ * If the owning thread had its priority boosted due to priority inheritance, then its priority
+ * will be restored to the original value.
+ *
+ * Execution will transition to the highest priority thread blocked on the mutex. This is likely
+ * to happen even before ar_mutex_put() returns. If there are no threads of higher priority
+ * waiting for the mutex, then no context change is performed.
  *
  * @param mutex Pointer to the mutex.
  *
