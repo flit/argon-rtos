@@ -86,7 +86,7 @@ ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
 {
     KernelLock guard;
 
-    if (sem->m_count == 0)
+    while (sem->m_count == 0)
     {
         // Count is 0, so we must block. Return immediately if the timeout is 0.
         if (timeout == kArNoTimeout)
@@ -98,7 +98,10 @@ ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
         ar_thread_t * thread = g_ar.currentThread;
         thread->block(sem->m_blockedList, timeout);
 
-        // We're back from the scheduler.
+        // We're back from the scheduler. We'll loop and recheck the sem counter, in case
+        // a higher priority thread grabbed it between when we were unblocked and when we
+        // actually started running.
+
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
         {
@@ -109,6 +112,7 @@ ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
     }
 
     // Take ownership of the semaphore.
+    assert(sem->m_count > 0);
     --sem->m_count;
 
     return kArSuccess;

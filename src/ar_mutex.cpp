@@ -92,9 +92,9 @@ ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
     else
     {
         // Will we block?
-        if (mutex->m_ownerLockCount != 0)
+        while (mutex->m_ownerLockCount != 0)
         {
-            // Return immediately if the timeout is 0. No reason to call into the sem code.
+            // Return immediately if the timeout is 0.
             if (timeout == kArNoTimeout)
             {
                 return kArTimeoutError;
@@ -115,18 +115,22 @@ ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
             // Block this thread on the mutex.
             self->block(mutex->m_blockedList, timeout);
 
-            // We're back from the scheduler.
+            // We're back from the scheduler. We'll loop and recheck the ownership counter, in case
+            // a higher priority thread grabbed the lock between when we were unblocked and when we
+            // actually started running.
+
             // Check for errors and exit early if there was one.
             if (self->m_unblockStatus != kArSuccess)
             {
                 //! @todo Need to handle timeout after hoisting the owner thread.
-                // Failed to gain the semaphore, probably due to a timeout.
+                // Failed to gain the mutex, probably due to a timeout.
                 mutex->m_blockedList.remove(&self->m_blockedNode);
                 return self->m_unblockStatus;
             }
         }
 
         // Take ownership of the lock.
+        assert(mutex->m_owner == NULL && mutex->m_ownerLockCount == 0);
         mutex->m_owner = g_ar.currentThread;
         ++mutex->m_ownerLockCount;
     }

@@ -108,8 +108,8 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
 {
     KernelLock guard;
 
-    // Check for full queue
-    if (queue->m_count >= queue->m_capacity)
+    // Check for full queue.
+    while (queue->m_count >= queue->m_capacity)
     {
         // If the queue is full and a zero timeout was given, return immediately.
         if (timeout == kArNoTimeout)
@@ -125,13 +125,13 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
         // Check for errors and exit early if there was one.
         if (thread->m_unblockStatus != kArSuccess)
         {
-            // Failed to gain the semaphore, probably due to a timeout.
+            // Probably timed out waiting for room in the queue.
             queue->m_sendBlockedList.remove(&thread->m_blockedNode);
             return thread->m_unblockStatus;
         }
     }
 
-    // fill element
+    // Copy queue element into place.
     uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
     memcpy(elementSlot, element, queue->m_elementSize);
 
@@ -185,8 +185,8 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
     {
         KernelLock guard;
 
-        // Check for empty queue
-        if (queue->m_count == 0)
+        // Check for empty queue.
+        while (queue->m_count == 0)
         {
             if (timeout == kArNoTimeout)
             {
@@ -197,17 +197,17 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
             ar_thread_t * thread = g_ar.currentThread;
             thread->block(queue->m_receiveBlockedList, timeout);
 
-            // We're back from the scheduler. Interrupts are still disabled.
+            // We're back from the scheduler.
             // Check for errors and exit early if there was one.
             if (thread->m_unblockStatus != kArSuccess)
             {
-                // Failed to gain the semaphore, probably due to a timeout.
+                // Timed out waiting for the queue to not be empty, or another error occurred.
                 queue->m_receiveBlockedList.remove(&thread->m_blockedNode);
                 return thread->m_unblockStatus;
             }
         }
 
-        // read out data
+        // Read out data.
         uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
         memcpy(element, elementSlot, queue->m_elementSize);
 
