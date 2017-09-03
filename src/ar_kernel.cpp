@@ -438,19 +438,21 @@ void THREAD_STACK_OVERFLOW_DETECTED()
 void ar_kernel_update_thread_loads()
 {
     // Scan threads in all states in a way that doesn't depend on g_ar_objects.
-    ar_list_t * threadLists[] = { &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList };
+    ar_list_t * const threadLists[] = { &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList };
     uint32_t i = 0;
     for (; i < ARRAY_SIZE(threadLists); ++i)
     {
         ar_list_node_t * start = threadLists[i]->m_head;
-        ar_list_node_t * node = start;
-        assert(node);
-        do {
-            ar_thread_t * thread = node->getObject<ar_thread_t>();
-            thread->m_permilleCpu = 1000 * thread->m_loadAccumulator / AR_SYSTEM_LOAD_SAMPLE_PERIOD;
-            thread->m_loadAccumulator = 0;
-            node = node->m_next;
-        } while (node != start);
+        if (start)
+        {
+            ar_list_node_t * node = start;
+            do {
+                ar_thread_t * thread = node->getObject<ar_thread_t>();
+                thread->m_permilleCpu = 1000 * thread->m_loadAccumulator / AR_SYSTEM_LOAD_SAMPLE_PERIOD;
+                thread->m_loadAccumulator = 0;
+                node = node->m_next;
+            } while (node != start);
+        }
     }
 
     // Update total system load based on the idle thread's load.
