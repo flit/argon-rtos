@@ -135,9 +135,12 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
     uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_tail);
     memcpy(elementSlot, element, queue->m_elementSize);
 
-    // Update queue pointers
-    queue->m_tail = (queue->m_tail + 1) % queue->m_capacity;
-    queue->m_count++;
+    // Update queue tail pointer and count.
+    if (++queue->m_tail >= queue->m_capacity)
+    {
+        queue->m_tail = 0;
+    }
+    ++queue->m_count;
 
     // Are there any threads waiting to receive?
     if (queue->m_receiveBlockedList.m_head)
@@ -211,9 +214,12 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
         uint8_t * elementSlot = QUEUE_ELEMENT(queue, queue->m_head);
         memcpy(element, elementSlot, queue->m_elementSize);
 
-        // update queue
-        queue->m_head = (queue->m_head + 1) % queue->m_capacity;
-        queue->m_count--;
+        // Update queue head and count.
+        if (++queue->m_head >= queue->m_capacity)
+        {
+            queue->m_head = 0;
+        }
+        --queue->m_count;
 
         // Are there any threads waiting to send?
         if (queue->m_sendBlockedList.m_head)
