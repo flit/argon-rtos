@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Immo Software
+ * Copyright (c) 2013-2017 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
