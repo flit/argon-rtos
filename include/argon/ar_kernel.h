@@ -50,62 +50,29 @@
 //! @ingroup ar
 enum _ar_timeouts
 {
-    //! Return immediately if a resource cannot be acquired.
-    kArNoTimeout = 0,
-
-    //! Pass this value to wait forever to acquire a resource.
-    kArInfiniteTimeout = 0xffffffffUL
+    kArNoTimeout = 0,                   //!< Return immediately if a resource cannot be acquired.
+    kArInfiniteTimeout = 0xffffffffUL   //!< Pass this value to wait forever to acquire a resource.
 };
 
 //! @brief Argon status and error codes.
 //!
 //! @ingroup ar
 typedef enum _ar_status {
-    //! Operation was successful.
-    kArSuccess = 0,
-
-    //! Timeout while blocked on an object.
-    kArTimeoutError,
-
-    //! An object was deleted while a thread was blocked on it. This may be
-    //! a semaphore, mutex, or queue.
-    kArObjectDeletedError,
-
-    //! The queue is at maximum capacity and cannot accept more elements.
-    kArQueueFullError,
-
-    //! No elements are in the queue.
-    kArQueueEmptyError,
-
-    //! The requested thread priority is invalid.
-    kArInvalidPriorityError,
-
-    //! The thread's stack size is too small.
-    kArStackSizeTooSmallError,
-
-    //! The requested operation cannot be performed from interrupt context.
-    kArNotFromInterruptError,
-
-    //! The caller is not the owning thread.
-    kArNotOwnerError,
-
-    //! The mutex is already unlocked.
-    kArAlreadyUnlockedError,
-
-    //! An invalid parameter value was passed to the function.
-    kArInvalidParameterError,
-
-    //! The timer is not running.
-    kArTimerNotRunningError,
-
-    //! The timer is not associated with a run loop.
-    kArTimerNoRunLoop,
-
-    //! Allocation failed.
-    kArOutOfMemoryError,
-
-    //! The thread is an invalid state for the given operation.
-    kArInvalidStateError,
+    kArSuccess = 0,             //!< Operation was successful.
+    kArTimeoutError,            //!< Timeout while blocked on an object.
+    kArObjectDeletedError,      //!< An object was deleted while a thread was blocked on it. This may be a semaphore, mutex, or queue.
+    kArQueueFullError,          //!< The queue is at maximum capacity and cannot accept more elements.
+    kArQueueEmptyError,         //!< No elements are in the queue.
+    kArInvalidPriorityError,    //!< The requested thread priority is invalid.
+    kArStackSizeTooSmallError,  //!< The thread's stack size is too small.
+    kArNotFromInterruptError,   //!< The requested operation cannot be performed from interrupt context.
+    kArNotOwnerError,           //!< The caller is not the owning thread.
+    kArAlreadyUnlockedError,    //!< The mutex is already unlocked.
+    kArInvalidParameterError,   //!< An invalid parameter value was passed to the function.
+    kArTimerNotRunningError,    //!< The timer is not running.
+    kArTimerNoRunLoop,          //!< The timer is not associated with a run loop.
+    kArOutOfMemoryError,        //!< Allocation failed.
+    kArInvalidStateError,       //!< The thread is an invalid state for the given operation.
 } ar_status_t;
 
 //! @brief Options for creating a new thread.
