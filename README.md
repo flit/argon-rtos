@@ -3,7 +3,7 @@ Argon RTOS
 
 Small embedded RTOS with C and C++ APIs.
 
-*Version*: 1.0.2<br/>
+*Version*: 1.2.0<br/>
 *Status*: Actively under development. Stable API. Well tested in several real applications.
 
 Tested cores:
