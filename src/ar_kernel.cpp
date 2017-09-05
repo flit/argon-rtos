@@ -649,6 +649,31 @@ void _ar_list_node::insertBefore(ar_list_node_t * node)
     node->m_prev = this;
 }
 
+//! Performs a linear search of the linked list.
+bool _ar_list::contains(ar_list_node_t * item)
+{
+    // Check if the node is even on a list.
+    if (item->m_next == NULL || item->m_prev == NULL)
+    {
+        return false;
+    }
+
+    if (m_head)
+    {
+        ar_list_node_t * node = m_head;
+        do {
+            if (node == item)
+            {
+                // Matching node was found in the list.
+                return true;
+            }
+            node = node->m_next;
+        } while (node != m_head);
+    }
+
+    return false;
+}
+
 //! The item is inserted in either FIFO or sorted order, depending on whether the predicate
 //! member is set. If the predicate is NULL, the new list item will be inserted at the
 //! end of the list, maintaining FIFO order.

@@ -152,9 +152,13 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
     // Is the queue associated with a runloop?
     else if (queue->m_runLoop)
     {
-        // Add this queue to the list of pending queues for the runloop.
-        queue->m_runLoop->m_queues.add(queue);
-        ar_runloop_wake(queue->m_runLoop);
+        // Add this queue to the list of pending queues for the runloop, but first check
+        // whether the queue is already pending so we don't attempt to add it twice.
+        if (!queue->m_runLoop->m_queues.contains(&queue->m_runLoopNode))
+        {
+            queue->m_runLoop->m_queues.add(queue);
+            ar_runloop_wake(queue->m_runLoop);
+        }
     }
 
     return kArSuccess;
