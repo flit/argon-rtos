@@ -73,6 +73,7 @@ typedef enum _ar_status {
     kArTimerNoRunLoop,          //!< The timer is not associated with a run loop.
     kArOutOfMemoryError,        //!< Allocation failed.
     kArInvalidStateError,       //!< The thread is an invalid state for the given operation.
+    kArAlreadyAttachedError,    //!< The object is already attached to a runloop.
 } ar_status_t;
 
 //! @brief Options for creating a new thread.

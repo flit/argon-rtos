@@ -284,25 +284,28 @@ ar_status_t ar_runloop_add_timer(ar_runloop_t * runloop, ar_timer_t * timer)
 
 ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_runloop_queue_handler_t callback, void * param)
 {
-    if (!runloop)
+    if (!runloop || !queue)
     {
         return kArInvalidParameterError;
     }
 
-//     runloop->m_queues.add(queue);
+    // A queue can only be added to one runloop at a time.
+    if (queue->m_runLoop != NULL && queue->m_runLoop != runloop)
+    {
+        return kArAlreadyAttachedError;
+    }
+
+    // Set runloop on the queue.
     queue->m_runLoopHandler = callback;
     queue->m_runLoopHandlerParam = param;
     queue->m_runLoop = runloop;
-
-    // Wake the runloop in case it is blocked.
-//     ar_runloop_wake(runloop);
 
     return kArSuccess;
 }
 
 ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback, void * param)
 {
-    if (!runloop)
+    if (!runloop || !channel)
     {
         return kArInvalidParameterError;
     }
