@@ -145,23 +145,29 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
         {
             ar_queue_t * queue = runloop->m_queues.getHead<ar_queue_t>();
             assert(queue);
-            runloop->m_queues.remove(queue);
-
-            if (queue->m_runLoopHandler)
+            if (queue->m_count < 2)
             {
-                // Call out to run loop queue source handler.
-                queue->m_runLoopHandler(queue, queue->m_runLoopHandlerParam);
+                runloop->m_queues.remove(queue);
             }
-            else
-            {
-                // No handler associated with this queue, so exit the run loop.
-                if (object)
-                {
-                    object->m_queue = queue;
-                }
 
-                returnStatus = kArRunLoopQueueReceived;
-                break;
+            if (queue->m_count > 0)
+            {
+                if (queue->m_runLoopHandler)
+                {
+                    // Call out to run loop queue source handler.
+                    queue->m_runLoopHandler(queue, queue->m_runLoopHandlerParam);
+                }
+                else
+                {
+                    // No handler associated with this queue, so exit the run loop.
+                    if (object)
+                    {
+                        object->m_queue = queue;
+                    }
+
+                    returnStatus = kArRunLoopQueueReceived;
+                    break;
+                }
             }
         }
 
