@@ -196,6 +196,9 @@ void ar_kernel_run(void)
     // Init port.
     ar_port_init_system();
 
+    // Init trace.
+    ar_trace_init();
+
     // We're now ready to run
     g_ar.isRunning = true;
 
@@ -529,6 +532,8 @@ void ar_kernel_scheduler()
         {
             g_ar.currentThread->m_state = kArThreadReady;
         }
+
+        ar_trace_2(kArTraceThreadSwitch, g_ar.currentThread->m_state, highest);
 
         highest->m_state = kArThreadRunning;
         g_ar.currentThread = highest;

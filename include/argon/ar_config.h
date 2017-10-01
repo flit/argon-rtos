@@ -154,6 +154,11 @@
     #define AR_ENABLE_LIST_CHECKS (0)
 #endif
 
+#if !defined(AR_ENABLE_TRACE)
+    //! @brief Enable kernel event tracing.
+    #define AR_ENABLE_TRACE (DEBUG)
+#endif
+
 //! @}
 
 #endif // _AR_CONFIG_H_

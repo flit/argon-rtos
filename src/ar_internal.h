@@ -48,11 +48,29 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
 
+#if !defined(WEAK)
+#define WEAK __attribute__((weak))
+#endif
+
+#if !defined(ALWAYS_INLINE)
+#define ALWAYS_INLINE __attribute__((always_inline))
+#endif
+
 enum
 {
     //! Signature value written to the top of each thread's the stack. The scheduler looks
     //! for this value every time it activates a thread and halts if it is missing.
     kStackCheckValue = 0xdeadbeef
+};
+
+//! All events start with a 32-bit message on ITM port 31, composed of an event ID in the
+//! top 8 bits plus a 24-bit value. Certain events are also followed by a 32-bit value in
+//! ITM port 30.
+enum _ar_trace_events
+{
+    kArTraceThreadSwitch = 1,   //!< 2 value: 0=previous thread's new state, 1=new thread id
+    kArTraceThreadCreated = 2,  //!< 2 value: 0=unused, 1=new thread id
+    kArTraceThreadDeleted = 3,  //!< 2 value: 0=unused, 1=deleted thread id
 };
 
 //! @brief Types of deferred actions.
@@ -197,6 +215,24 @@ bool ar_timer_sort_by_wakeup(ar_list_node_t * a, ar_list_node_t * b);
 extern "C" void ar_kernel_periodic_timer_isr(void);
 extern "C" uint32_t ar_kernel_yield_isr(uint32_t topOfStack);
 //@}
+
+#if AR_ENABLE_TRACE
+//! @name Kernel trace
+//@{
+//! @brief
+WEAK void ar_trace_init();
+
+//! @brief
+WEAK void ar_trace_1(uint8_t eventID, uint32_t data);
+
+//! @brief
+WEAK void ar_trace_2(uint8_t eventID, uint32_t data0, void * data1);
+//@}
+#else
+static inline ALWAYS_INLINE void ar_trace_init() {}
+static inline ALWAYS_INLINE void ar_trace_1(uint8_t eventID, uint32_t data) {}
+static inline ALWAYS_INLINE void ar_trace_2(uint8_t eventID, uint32_t data0, void * data1) {}
+#endif // AR_ENABLE_TRACE
 
 // Inline list method implementation.
 inline bool _ar_list::isEmpty() const { return m_head == NULL; }

@@ -89,6 +89,8 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
         g_ar.suspendedList.add(thread);
     }
 
+    ar_trace_2(kArTraceThreadCreated, 0, thread);
+
     // Resume thread if requested.
     if (startImmediately)
     {
@@ -145,6 +147,8 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
             thread->m_state = kArThreadDone;
         }
     }
+
+    ar_trace_2(kArTraceThreadDeleted, 0, thread);
 
     // Are we deleting ourself?
     if (thread == g_ar.currentThread)

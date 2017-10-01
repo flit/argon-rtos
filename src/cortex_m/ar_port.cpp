@@ -59,8 +59,6 @@ enum _exception_priorities
 extern "C" void SysTick_Handler(void);
 extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
 
-uint64_t ar_get_microseconds() __attribute__((weak));
-
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
@@ -285,10 +283,54 @@ void ar_port_service_call()
 }
 #endif // DEBUG
 
-uint64_t ar_get_microseconds()
+WEAK uint64_t ar_get_microseconds()
 {
     return static_cast<uint64_t>(ar_get_millisecond_count()) * 1000ull;
 }
+
+#if AR_ENABLE_TRACE
+void ar_trace_init()
+{
+}
+
+//! @brief Send one trace event word via ITM port 31.
+void ar_trace_1(uint8_t eventID, uint32_t data)
+{
+    if (ITM->TCR & ITM_TCR_ITMENA_Msk)
+    {
+        // Wait until we can send the event.
+        while (!ITM->PORT[31].u32)
+        {
+        }
+
+        // Event consists of 8-bit event ID plus 24-bits of event data.
+        ITM->PORT[31].u32 = (static_cast<uint32_t>(eventID) << 24) | (data & 0x00ffffff);
+    }
+}
+
+//! @brief Send a 2-word trace event via ITM ports 31 and 30.
+void ar_trace_2(uint8_t eventID, uint32_t data0, void * data1)
+{
+    if (ITM->TCR & ITM_TCR_ITMENA_Msk)
+    {
+        // Wait until we can send the event.
+        while (!ITM->PORT[31].u32)
+        {
+        }
+
+        // Event consists of 8-bit event ID plus 24-bits of event data.
+        ITM->PORT[31].u32 = (static_cast<uint32_t>(eventID) << 24) | (data0 & 0x00ffffff);
+
+        // Wait until we can send the event.
+        while (!ITM->PORT[30].u32)
+        {
+        }
+
+        // Send second data on port 30.
+        ITM->PORT[30].u32 = reinterpret_cast<uint32_t>(data1);
+    }
+}
+#endif // AR_ENABLE_TRACE
 
 //------------------------------------------------------------------------------
 // EOF
