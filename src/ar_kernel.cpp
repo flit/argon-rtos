@@ -407,15 +407,18 @@ void ar_kernel_run_deferred_actions()
                 break;
             case kArDeferredChannelSend:
             {
+                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
                 ar_channel_t * channel = reinterpret_cast<ar_channel_t *>(object);
                 ar_channel_send_receive_internal(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
             }
             case kArDeferredQueueSend:
+                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
                 ar_queue_send_internal(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[iPlusOne], kArNoTimeout);
                 break;
             case kArDeferredTimerStart:
                 // Argument is the timer's wakeup time, determined at the time of the original start call.
+                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
                 ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[iPlusOne]));
                 break;
             case kArDeferredTimerStop:
