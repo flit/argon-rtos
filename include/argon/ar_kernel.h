@@ -232,6 +232,7 @@ struct _ar_thread {
     uint16_t m_permilleCpu;     //!< Per mille of this thread's CPU usage (range of 1-1000).
     uint32_t m_loadAccumulator; //!< Number of microseconds this thread has run during the current load computation period.
 #endif // AR_ENABLE_SYSTEM_LOAD
+    uint32_t * m_stackTop;
 
     // Internal utility methods.
 #if defined(__cplusplus)

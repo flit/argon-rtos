@@ -180,6 +180,7 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
     uint32_t delta = sp & 7;
     sp -= delta;
     stackSize = (stackSize - delta) & ~7;
+    thread->m_stackTop = reinterpret_cast<uint32_t *>(sp);
     thread->m_stackBottom = reinterpret_cast<uint32_t *>(sp - stackSize);
 
 #if AR_THREAD_STACK_PATTERN_FILL

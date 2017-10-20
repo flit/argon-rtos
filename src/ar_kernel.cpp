@@ -539,12 +539,16 @@ void ar_kernel_scheduler()
         g_ar.currentThread = highest;
     }
 
-    // Check for stack overflow on the selected thread.
-    assert(g_ar.currentThread);
-    uint32_t check = *(g_ar.currentThread->m_stackBottom);
-    if (check != kStackCheckValue)
+    // Check for stack overflow on the current thread.
+    if (g_ar.currentThread)
     {
-        THREAD_STACK_OVERFLOW_DETECTED();
+        uint32_t current = reinterpret_cast<uint32_t>(g_ar.currentThread->m_stackPointer);
+        uint32_t bottom = reinterpret_cast<uint32_t>(g_ar.currentThread->m_stackBottom);
+        uint32_t check = *(g_ar.currentThread->m_stackBottom);
+        if ((current < bottom) || (check != kStackCheckValue))
+        {
+            THREAD_STACK_OVERFLOW_DETECTED();
+        }
     }
 
 #if AR_ENABLE_TICKLESS_IDLE
