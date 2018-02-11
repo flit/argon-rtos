@@ -341,11 +341,10 @@ struct _ar_timer {
     ar_timer_entry_t m_callback;    //!< Timer expiration callback.
     void * m_param;                 //!< Arbitrary parameter for the callback.
     ar_timer_mode_t m_mode;         //!< One-shot or periodic mode.
+    bool m_isActive;            //!< Whether the timer is running and on the active timers list.
     uint32_t m_delay;           //!< Delay in ticks.
     uint32_t m_wakeupTime;      //!< Expiration time in ticks.
-    bool m_isActive;            //!< Whether the timer is running and on the active timers list.
     ar_runloop_t * m_runLoop;
-    ar_list_node_t m_runLoopNode;
 };
 
 /*!
