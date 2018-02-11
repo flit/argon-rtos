@@ -45,43 +45,43 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 - Reduce kernel object sizes as much as possible.
 - Make ar_kernel_run() set the current thread to the idle thread so the scheduler doesn't need a special case the first time it is executed.
 - Improve thread init and port APIs so the Thread class doesn't require an extra entry point wrapper.
-- Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
-- Separate tick timer routine sources so they can easily be replaced by the user.
-- Do we even need the suspended thread list?
+* Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
+- Separate tick timer routine sources so they can easily be replaced by the user (or make weak).
+- Do we even need the suspended thread list? (used for cpu usage and thread reports)
 - Deal with wrapping of tick counter.
 - Clean up enter_scheduler() vs ar_port_service_call() usage, switch threads.
 √ Save stack bottom instead of top in thread struct?
-- Support member function callbacks in Timer.
+√ Support member function callbacks in Timer.
 √ Remove m_createdNode members of kernel object structs if AR_GLOBAL_OBJECT_LISTS is not set.
 - Need to be able to restart a thread once it has completed execution.
 √ Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
 - Move more internal stuff into Ar namespace.
 x Consider possibilities of run-to-completion threads that share a stack.
-- Add a deferred call mechanism that works from ISRs.
+- Add a user deferred call mechanism that works from ISRs (just use run loops?).
 - Channels only need one blocked list.
 - Some timer code is included even if timers are not used in the application.
 x Reset MSP when kernel starts so there is no wasted stack space.
 - Rename _halt() to ar_port_halt_cpu().
-- Restore stack size or stack top in thread struct so we can compute stack usage.
+√ Restore stack size or stack top in thread struct so we can compute stack usage.
 x ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
 - Add comprehensive kernel event recording/trace capability.
 - Limit channel and queue element size to a single word. (?)
-* Add run loops.
-* Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
-- Return errors for non-zero timeouts in calls from timers, like for ISRs. (?)
+√ Add run loops.
+√ Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
+x Return errors for non-zero timeouts in calls from timers, like for ISRs. (?)
 - Normalize channel and queue class send() and receive() methods' use of ptrs, references, or by value.
-- Add a header to kernel object structs with type and name pointer?
+- Add a common header to kernel object structs with type and name pointer?
 - Change to a single ar_object_get_name() API?
 - Can we replace the ar_list_node_t object pointer member with a calculation of node struct offset from the header of the containing kernel object struct?
 x Change function pointer types to not be pointers, then make params etc pointers.
 - Remove "m_" from kernel object member names since they are public and accessed directly?
 √ Make kernel object class destructors non-virtual, except for Thread; no virtual methods, and this will save a vptr&table for each class.
 - Remove "2" on ar_post_deferred_action2() and use overloading.
-- Use SVCall for most kernel APIs.
+- Use SVCall for most kernel APIs and run threads in user mode.
 √ KernelLock doesn't need a member to store saved state because g_ar.lockCount can be used.
-- Have scheduler compute thread CPU usage.
+√ Have scheduler compute thread CPU usage.
 - Remove need for idle thread by staying in scheduler until a thread becomes ready.
-- Add support for blocks.
+- Add optional support for blocks.
 - Abstracted MPU support.
 - 64-bit tick counter.
 √ Move g_ar.allObjects to its own global variable.
@@ -92,19 +92,27 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Provide API to turn main() into a thread and start scheduler.
 - _ar_list::remove() has an unnecessary search loop.
 - handle all thread states in ar_thread_suspend().
-- Add config option for enabling dynamic stack allocation, so malloc() is not required.
+- Add config option for enabling dynamic stack allocation option, so malloc() is not required.
+- Handle rescheduling from deferred action in same PendSV invocation, so PendSV is not immediately re-entered.
+- g_ar.lastLoadStartTime goes very large (many days) if cpu load is very high.
+- Need an API that can broadcast to wake up multiple threads.
+- Add thread stack usage to ar_thread_status_t and compute in ar_thread_get_report().
+- Calling ar_timer_set_delay() from within periodic timer callback will result in double delay, since ar_kernel_run_timers() will reschedule it again; use flag in timer to solve.
+- Let user allocate runloop function call queue.
+- Either implement runloop channel support or remove related APIs.
+- Provide option to coalesce function calls added to runloop queue.
 
 
 Issues
 ------
 
 x Use of timers requires another stack.
-- Timers all share a single stack.
+√ Timers all share a single stack.
 - Idle thread requires a stack.
-- Interrupts are disabled to protect kernel objects.
-- System load has garbage value if idle thread is only run to invoke timers.
-- It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
-- Sometimes deferred actions are not being executed as soon as the kernel is unlocked, or the kernel is not being properly unlocked, causing a situation where the deferred action queue can overflow.
+√ Interrupts are disabled to protect kernel objects.
+x System load has garbage value if idle thread is only run to invoke timers.
+x It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
+? Sometimes deferred actions are not being executed as soon as the kernel is unlocked, or the kernel is not being properly unlocked, causing a situation where the deferred action queue can overflow.
 - Idle thread will WFI sometimes when we don't want it to, like when running timers back to back.
 - Blocking the idle thread will cause the scheduler to assert.
 
@@ -115,7 +123,6 @@ Renaming
 ar::thread
 ar::thread_with_stack<S>
 ar::sem
-ar::sem::guard
 ar::mutex
 ar::mutex::guard
 ar::base_chan
