@@ -298,9 +298,6 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 //! has arrived. If the thread's state is #kArThreadBlocked then its unblock status
 //! is set to #kArTimeoutError.
 //!
-//! This function also checks if any timers have expired. If so, it changes the idle thread's
-//! priority to be the maximum, so it can immediately handle the timers.
-//!
 //! @param ticks The number of ticks that have elapsed. Normally this will only be 1,
 //!     and must be at least 1, but may be higher if interrupts are disabled for a
 //!     long time.
