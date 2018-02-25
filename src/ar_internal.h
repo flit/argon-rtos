@@ -119,14 +119,14 @@ protected:
  */
 typedef struct _ar_kernel {
     ar_thread_t * currentThread;    //!< The currently running thread.
-    ar_kernel_port_data_t port;     //!< Port-specific kernel data.
-    ar_list_t readyList;         //!< List of threads ready to run.
-    ar_list_t suspendedList;     //!< List of suspended threads.
-    ar_list_t sleepingList;      //!< List of sleeping threads.
+    ar_list_t readyList;            //!< List of threads ready to run.
+    ar_list_t suspendedList;        //!< List of suspended threads.
+    ar_list_t sleepingList;         //!< List of sleeping threads.
+    uint32_t isRunning:1;           //!< True if the kernel has been started.
+    uint32_t needsReschedule:1;     //!< True if we need to reschedule once the kernel is unlocked.
+    uint32_t isRunningDeferred:1;   //!< True if the kernel is executing deferred actions.
+    uint32_t _reservedFlags:29;
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
-    uint32_t isRunning:1;                 //!< True if the kernel has been started.
-    uint32_t needsReschedule:1;           //!< True if we need to reschedule once the kernel is unlocked.
-    uint32_t _reservedFlags:30;
     volatile int32_t lockCount;     //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
     int32_t missedTickCount;        //!< Number of ticks that occurred while the kernel was locked.

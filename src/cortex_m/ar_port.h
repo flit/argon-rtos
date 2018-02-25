@@ -54,13 +54,6 @@ typedef struct _ar_thread_port_data {
 #endif // __FPU_USED
 } ar_thread_port_data_t;
 
-/*!
- * @brief Cortex-M specific kernel data.
- */
-typedef struct _ar_kernel_port_data {
-    bool hasExtendedFrame;  //!< Used solely to pass info back to asm PendSV handler code.
-} ar_kernel_port_data_t;
-
 enum
 {
     kSchedulerQuanta_ms = 10
