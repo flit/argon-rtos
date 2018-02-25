@@ -42,6 +42,7 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 static void THREAD_STACK_OVERFLOW_DETECTED();
+static void DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED();
 
 #if AR_ENABLE_SYSTEM_LOAD
 static void ar_kernel_update_thread_loads();
