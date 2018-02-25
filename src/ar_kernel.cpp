@@ -460,37 +460,42 @@ void ar_kernel_scheduler()
     }
 #endif // AR_ENABLE_SYSTEM_LOAD
 
-    // Find the next ready thread using a round-robin search algorithm.
-    ar_list_node_t * start;
+    // Find the next ready thread.
+    ar_list_node_t * firstNode = g_ar.readyList.m_head;
+    ar_thread_t * first = firstNode->getObject<ar_thread_t>();
+    ar_thread_t * highest = NULL;
 
-    // Handle both the first time the scheduler runs and g_ar.currentThread is NULL, and the case where
-    // the current thread was suspended. For both cases we want to start searching at the beginning
-    // of the ready list. Otherwise start searching at the current thread.
-    if (!g_ar.currentThread || g_ar.currentThread->m_state != kArThreadRunning)
+    // Handle these cases by selecting the first thread in the ready list, which will have the
+    // highest priority since the ready list is sorted.
+    // 1. The first time the scheduler runs and g_ar.currentThread is NULL.
+    // 2. The current thread was suspended.
+    // 3. Higher priority thread became ready.
+    if (!g_ar.currentThread
+        || g_ar.currentThread->m_state != kArThreadRunning
+        || first->m_priority > g_ar.currentThread->m_priority)
     {
-        start = g_ar.readyList.m_head;
+        highest = first;
     }
+    // Else handle these cases:
+    // 2. We're performing round-robin scheduling.
+    // 3. Shouldn't switch the thread.
     else
     {
-        start = &g_ar.currentThread->m_threadNode;
-    }
+        // Start with the current thread.
+        ar_list_node_t * startNode = &g_ar.currentThread->m_threadNode;
+        uint8_t startPriority = startNode->getObject<ar_thread_t>()->m_priority;
 
-    assert(start);
-    ar_list_node_t * next = start;
-    ar_thread_t * highest = next->getObject<ar_thread_t>();
-    uint8_t priority = highest->m_priority;
+        // Pick up the next thread in the ready list.
+        ar_list_node_t * nextNode = startNode->m_next;
+        highest = nextNode->getObject<ar_thread_t>();
 
-    // Iterate over the ready list, finding the highest priority thread.
-    do {
-        ar_thread_t * nextThread = next->getObject<ar_thread_t>();
-        if (nextThread->m_state == kArThreadReady && nextThread->m_priority > priority)
+        // If the next thread is not the same priority, then go back to the start of the ready list.
+        if (highest->m_priority != startPriority)
         {
-            highest = nextThread;
-            priority = nextThread->m_priority;
+            highest = first;
+            assert(highest->m_priority == startPriority);
         }
-
-        next = next->m_next;
-    } while (next != start);
+    }
 
     // Switch to newly selected thread.
     assert(highest);
