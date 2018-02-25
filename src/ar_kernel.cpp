@@ -856,6 +856,16 @@ int32_t _ar_deferred_action_queue::insert(int32_t entryCount)
 
 ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * object)
 {
+    // If the kernel is not already locked, immediately invoke the action.
+    {
+        KernelLock locker;
+        if (g_ar.lockCount == 1)
+        {
+            action(object, NULL);
+            return kArSuccess;
+        }
+    }
+
     int32_t index = insert(1);
     if (index < 0)
     {
@@ -873,6 +883,16 @@ ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * obj
 
 ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * object, void * arg)
 {
+    // If the kernel is not already locked, immediately invoke the action.
+    {
+        KernelLock locker;
+        if (g_ar.lockCount == 1)
+        {
+            action(object, arg);
+            return kArSuccess;
+        }
+    }
+
     int32_t index = insert(2);
     if (index < 0)
     {
