@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -45,6 +45,12 @@ using namespace Ar;
 //! @param q The queue object.
 //! @param i Index of the queue element, base 0.
 #define QUEUE_ELEMENT(q, i) (&(q)->m_elements[(q)->m_elementSize * (i)])
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static void ar_queue_deferred_send(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Implementation
@@ -164,6 +170,11 @@ ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uin
     return kArSuccess;
 }
 
+static void ar_queue_deferred_send(void * object, void * object2)
+{
+    ar_queue_send_internal(reinterpret_cast<ar_queue_t *>(object), object2, kArNoTimeout);
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t timeout)
 {
@@ -175,7 +186,7 @@ ar_status_t ar_queue_send(ar_queue_t * queue, const void * element, uint32_t tim
     // Handle irq state by deferring the operation.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action2(kArDeferredQueueSend, queue, const_cast<void *>(element));
+        return g_ar.deferredActions.post(ar_queue_deferred_send, queue, const_cast<void *>(element));
     }
 
     return ar_queue_send_internal(queue, element, timeout);

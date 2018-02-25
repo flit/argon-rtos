@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -36,6 +36,13 @@
 #include <assert.h>
 
 using namespace Ar;
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static void ar_semaphore_deferred_get(void * object, void * object2);
+static void ar_semaphore_deferred_put(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -118,6 +125,11 @@ ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
     return kArSuccess;
 }
 
+static void ar_semaphore_deferred_get(void * object, void * object2)
+{
+    ar_semaphore_get_internal(reinterpret_cast<ar_semaphore_t *>(object), kArNoTimeout);
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
 {
@@ -135,7 +147,7 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
         }
 
         // Handle irq state by deferring the get.
-        return ar_post_deferred_action(kArDeferredSemaphoreGet, sem);
+        return g_ar.deferredActions.post(ar_semaphore_deferred_get, sem);
     }
 
     return ar_semaphore_get_internal(sem, timeout);
@@ -159,6 +171,11 @@ ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem)
     return kArSuccess;
 }
 
+static void ar_semaphore_deferred_put(void * object, void * object2)
+{
+    ar_semaphore_put_internal(reinterpret_cast<ar_semaphore_t *>(object));
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
 {
@@ -170,7 +187,7 @@ ar_status_t ar_semaphore_put(ar_semaphore_t * sem)
     // Handle irq state by deferring the put.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action(kArDeferredSemaphorePut, sem);
+        return g_ar.deferredActions.post(ar_semaphore_deferred_put, sem);
     }
 
     return ar_semaphore_put_internal(sem);

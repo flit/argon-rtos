@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -36,6 +36,13 @@
 #include <assert.h>
 
 using namespace Ar;
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static void ar_mutex_deferred_get(void * object, void * object2);
+static void ar_mutex_deferred_put(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Implementation
@@ -138,6 +145,11 @@ ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
     return kArSuccess;
 }
 
+static void ar_mutex_deferred_get(void * object, void * object2)
+{
+    ar_mutex_get_internal(reinterpret_cast<ar_mutex_t *>(object), kArNoTimeout);
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
 {
@@ -149,7 +161,7 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
     // Handle irq state by deferring the get.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action(kArDeferredMutexGet, mutex);
+        return g_ar.deferredActions.post(ar_mutex_deferred_get, mutex);
     }
 
     return ar_mutex_get_internal(mutex, timeout);
@@ -198,6 +210,11 @@ ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex)
     return kArSuccess;
 }
 
+static void ar_mutex_deferred_put(void * object, void * object2)
+{
+    ar_mutex_put_internal(reinterpret_cast<ar_mutex_t *>(object));
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_mutex_put(ar_mutex_t * mutex)
 {
@@ -209,7 +226,7 @@ ar_status_t ar_mutex_put(ar_mutex_t * mutex)
     // Handle irq state by deferring the put.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action(kArDeferredMutexPut, mutex);
+        return g_ar.deferredActions.post(ar_mutex_deferred_put, mutex);
     }
 
     return ar_mutex_put_internal(mutex);

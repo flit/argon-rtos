@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -36,6 +36,13 @@
 #include <assert.h>
 
 using namespace Ar;
+
+//------------------------------------------------------------------------------
+// Code
+//------------------------------------------------------------------------------
+
+static void ar_timer_deferred_start(void * object, void * object2);
+static void ar_timer_deferred_stop(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -107,6 +114,11 @@ ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime)
     return kArSuccess;
 }
 
+static void ar_timer_deferred_start(void * object, void * object2)
+{
+    ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(object2));
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_timer_start(ar_timer_t * timer)
 {
@@ -127,7 +139,7 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     // Handle irq state by deferring the operation.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action2(kArDeferredTimerStart, timer, reinterpret_cast<void *>(wakeupTime));
+        return g_ar.deferredActions.post(ar_timer_deferred_start, timer, reinterpret_cast<void *>(wakeupTime));
     }
 
     return ar_timer_internal_start(timer, wakeupTime);
@@ -151,6 +163,11 @@ ar_status_t ar_timer_stop_internal(ar_timer_t * timer)
     return kArSuccess;
 }
 
+static void ar_timer_deferred_stop(void * object, void * object2)
+{
+    ar_timer_stop_internal(reinterpret_cast<ar_timer_t *>(object));
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_timer_stop(ar_timer_t * timer)
 {
@@ -170,7 +187,7 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     // Handle irq state by deferring the operation.
     if (ar_port_get_irq_state())
     {
-        return ar_post_deferred_action(kArDeferredTimerStop, timer);
+        return g_ar.deferredActions.post(ar_timer_deferred_stop, timer);
     }
 
     return ar_timer_stop_internal(timer);

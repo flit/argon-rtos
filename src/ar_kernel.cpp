@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -384,47 +384,13 @@ void ar_kernel_run_deferred_actions()
             iPlusOne = 0;
         }
 
-        void * object = queue.m_objects[i];
-        switch (queue.m_actions[i])
+        ar_deferred_action_queue_t::deferred_action_t action = queue.m_actions[i];
+
+        // Ignore action entries that contain an extra argument value for the previous action.
+        if (reinterpret_cast<uint32_t>(action) != ar_deferred_action_queue_t::kActionExtraValue)
         {
-            case kArDeferredActionValue:
-                // This entry contained the value for the previous action.
-                break;
-            case kArDeferredSemaphorePut:
-                ar_semaphore_put_internal(reinterpret_cast<ar_semaphore_t *>(object));
-                break;
-            case kArDeferredSemaphoreGet:
-                ar_semaphore_get_internal(reinterpret_cast<ar_semaphore_t *>(object), kArNoTimeout);
-                break;
-            case kArDeferredMutexPut:
-                ar_mutex_put_internal(reinterpret_cast<ar_mutex_t *>(object));
-                break;
-            case kArDeferredMutexGet:
-                ar_mutex_get_internal(reinterpret_cast<ar_mutex_t *>(object), kArNoTimeout);
-                break;
-            case kArDeferredChannelSend:
-            {
-                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
-                ar_channel_t * channel = reinterpret_cast<ar_channel_t *>(object);
-                ar_channel_send_receive_internal(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, queue.m_objects[iPlusOne], kArNoTimeout);
-                break;
-            }
-            case kArDeferredQueueSend:
-                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
-                ar_queue_send_internal(reinterpret_cast<ar_queue_t *>(object), queue.m_objects[iPlusOne], kArNoTimeout);
-                break;
-            case kArDeferredTimerStart:
-                // Argument is the timer's wakeup time, determined at the time of the original start call.
-                assert(queue.m_actions[iPlusOne] == kArDeferredActionValue);
-                ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(queue.m_objects[iPlusOne]));
-                break;
-            case kArDeferredTimerStop:
-                ar_timer_stop_internal(reinterpret_cast<ar_timer_t *>(object));
-                break;
-            default:
-                // Unexpected queue entry.
-                assert(false);
-                break;
+            assert(action);
+            action(queue.m_objects[i],  queue.m_objects[iPlusOne]);
         }
 
         // Atomically remove the entry we just processed from the queue.
@@ -888,42 +854,42 @@ int32_t _ar_deferred_action_queue::insert(int32_t entryCount)
     return last;
 }
 
-ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object)
+ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * object)
 {
-    int32_t index = g_ar.deferredActions.insert(1);
+    int32_t index = insert(1);
     if (index < 0)
     {
         assert(false);
         return kArQueueFullError;
     }
 
-    g_ar.deferredActions.m_actions[index] = action;
-    g_ar.deferredActions.m_objects[index] = object;
+    m_actions[index] = action;
+    m_objects[index] = object;
 
     ar_kernel_enter_scheduler();
 
     return kArSuccess;
 }
 
-ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg)
+ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * object, void * arg)
 {
-    int32_t index = g_ar.deferredActions.insert(2);
+    int32_t index = insert(2);
     if (index < 0)
     {
         assert(false);
         return kArQueueFullError;
     }
 
-    g_ar.deferredActions.m_actions[index] = action;
-    g_ar.deferredActions.m_objects[index] = object;
+    m_actions[index] = action;
+    m_objects[index] = object;
 
     ++index;
     if (index >= AR_DEFERRED_ACTION_QUEUE_SIZE)
     {
         index = 0;
     }
-    g_ar.deferredActions.m_actions[index] = kArDeferredActionValue;
-    g_ar.deferredActions.m_objects[index] = arg;
+    m_actions[index] = reinterpret_cast<deferred_action_t>(kActionExtraValue);
+    m_objects[index] = arg;
 
     ar_kernel_enter_scheduler();
 

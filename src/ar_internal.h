@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Immo Software
+ * Copyright (c) 2013-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -73,33 +73,41 @@ enum _ar_trace_events
     kArTraceThreadDeleted = 3,  //!< 2 value: 0=unused, 1=deleted thread id
 };
 
-//! @brief Types of deferred actions.
-typedef enum _ar_deferred_action_type {
-    kArDeferredActionValue,
-    kArDeferredSemaphorePut,
-    kArDeferredSemaphoreGet,
-    kArDeferredMutexPut,
-    kArDeferredMutexGet,
-    kArDeferredChannelSend,
-    kArDeferredQueueSend,
-    kArDeferredTimerStart,
-    kArDeferredTimerStop,
-} ar_deferred_action_type_t;
-
 //! @brief Queue containing deferred actions.
 //!
-//! The deferred action types and objects are stored in separate arrays in order to allow for
-//! the most compact possible storage in memory. With a queue size of 8 this saves 24 bytes.
+//! The deferred action queue is used to postpone kernel operations performed in interrupt context
+//! until the scheduler runs, in the lowest possible interrupt priority. This is part of the
+//! support for never disabling interrupts on Cortex-M.
+//!
+//! The deferred actions enqueued in this queue are composed of a function pointer and object
+//! value. The function pointer points to a very small deferred action stub function that simply
+//! calls the right kernel object operation routine with the correct parameters. If a deferred
+//! action requires two parameters, a special #kActionExtraValue constant can be inserted
+//! in the queue to mark an entry as holding the second parameter for the previous action.
 typedef struct _ar_deferred_action_queue {
+    //! @brief Constant used to mark an action queue entry as containing an extra argument for the
+    //!     previous action.
+    static const uint32_t kActionExtraValue = 0xfeedf00d;
+
+    //! @brief The deferred action function pointer.
+    typedef void (*deferred_action_t)(void * object, void * object2);
+
     volatile int32_t m_count;   //!< Number of queue entries.
     volatile int32_t m_first;   //!< First entry index.
     volatile int32_t m_last;    //!< Last entry index.
-    ar_deferred_action_type_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
+    deferred_action_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
     void * m_objects[AR_DEFERRED_ACTION_QUEUE_SIZE];    //!< Kernel objects for enqueued actions.
 
     //! @brief Returns whether the queue is currently empty.
     bool isEmpty() const { return m_count == 0; }
 
+    //! @brief Enqueues a new deferred action.
+    ar_status_t post(deferred_action_t action, void * object);
+
+    //! @brief Enqueues a new deferred action with two arguments.
+    ar_status_t post(deferred_action_t action, void * object, void * arg);
+
+protected:
     //! @brief Reserves room to insert a number of new entries.
     //! @return First index in queue where the requested number of entries can be inserted. If there
     //!     is not room in the queue for the requested entries, then -1 is returned.
@@ -172,12 +180,6 @@ void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
 bool ar_kernel_run_timers(ar_list_t & timersList);
 void ar_runloop_wake(ar_runloop_t * runloop);
-//@}
-
-//! @name Deferred actions
-//@{
-ar_status_t ar_post_deferred_action(ar_deferred_action_type_t action, void * object);
-ar_status_t ar_post_deferred_action2(ar_deferred_action_type_t action, void * object, void * arg);
 //@}
 
 //! @name Internal routines

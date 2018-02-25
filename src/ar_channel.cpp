@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -43,6 +43,7 @@ using namespace Ar;
 
 static ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void * value, uint32_t timeout);
 static ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
+static void ar_channel_deferred_send(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -169,6 +170,11 @@ ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSend
     return kArSuccess;
 }
 
+static void ar_channel_deferred_send(void * object, void * object2)
+{
+    ar_channel_t * channel = reinterpret_cast<ar_channel_t *>(object);
+    ar_channel_send_receive_internal(channel, true, channel->m_blockedSenders, channel->m_blockedReceivers, object2, kArNoTimeout);
+}
 
 //! @brief Common channel send/receive code.
 ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
@@ -187,7 +193,7 @@ ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_l
         }
 
         // Handle irq state by deferring the operation.
-        return ar_post_deferred_action2(kArDeferredChannelSend, channel, value);
+        return g_ar.deferredActions.post(ar_channel_deferred_send, channel, value);
     }
 
     return ar_channel_send_receive_internal(channel, isSending, myDirList, otherDirList, value, timeout);
