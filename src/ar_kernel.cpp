@@ -721,40 +721,35 @@ void _ar_list::add(ar_list_node_t * item)
 void _ar_list::remove(ar_list_node_t * item)
 {
     // the list must not be empty
-    if (m_head == NULL)
+    assert(m_head != NULL);
+    assert(item->m_next);
+    assert(item->m_prev);
+#if AR_ENABLE_LIST_CHECKS
+    assert(contains(item));
+#endif // AR_ENABLE_LIST_CHECKS
+
+    // Adjust other nodes' links.
+    item->m_prev->m_next = item->m_next;
+    item->m_next->m_prev = item->m_prev;
+
+    // Special case for removing the list head.
+    if (m_head == item)
     {
-        return;
+        // Handle a single item list by clearing the list head.
+        if (item->m_next == m_head)
+        {
+            m_head = NULL;
+        }
+        // Otherwise just update the list head to the second list element.
+        else
+        {
+            m_head = item->m_next;
+        }
     }
 
-    ar_list_node_t * node = m_head;
-    do {
-        if (node == item)
-        {
-            node->m_prev->m_next = node->m_next;
-            node->m_next->m_prev = node->m_prev;
-
-            // Special case for removing the list head.
-            if (m_head == node)
-            {
-                // Handle a single item list by clearing the list head.
-                if (node->m_next == m_head)
-                {
-                    m_head = NULL;
-                }
-                // Otherwise just update the list head to the second list element.
-                else
-                {
-                    m_head = node->m_next;
-                }
-            }
-
-            item->m_next = NULL;
-            item->m_prev = NULL;
-            break;
-        }
-
-        node = node->m_next;
-    } while (node != m_head);
+    // Clear links.
+    item->m_next = NULL;
+    item->m_prev = NULL;
 
 #if AR_ENABLE_LIST_CHECKS
     check();
