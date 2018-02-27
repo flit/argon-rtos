@@ -418,16 +418,15 @@ void ar_kernel_update_thread_loads()
     uint32_t i = 0;
     for (; i < ARRAY_SIZE(threadLists); ++i)
     {
-        ar_list_node_t * start = threadLists[i]->m_head;
-        if (start)
+        if (!threadLists[i]->isEmpty())
         {
-            ar_list_node_t * node = start;
+            ar_list_node_t * node = threadLists[i]->m_head;
             do {
                 ar_thread_t * thread = node->getObject<ar_thread_t>();
                 thread->m_permilleCpu = 1000 * thread->m_loadAccumulator / AR_SYSTEM_LOAD_SAMPLE_PERIOD;
                 thread->m_loadAccumulator = 0;
                 node = node->m_next;
-            } while (node != start);
+            } while (node != threadLists[i]->m_head);
         }
     }
 
