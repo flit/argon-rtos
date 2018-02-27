@@ -237,18 +237,15 @@ void ar_kernel_periodic_timer_isr()
     // Get the elapsed time since the last timer tick.
     uint32_t us = ar_port_get_timer_elapsed_us();
     uint32_t elapsed_ticks = us / 10000;
+#else // AR_ENABLE_TICKLESS_IDLE
+    uint32_t elapsed_ticks = 1;
+#endif // AR_ENABLE_TICKLESS_IDLE
+
     // Process elapsed time. Invoke the scheduler if any threads were woken.
     if (ar_kernel_increment_tick_count(elapsed_ticks))
     {
         ar_port_service_call();
     }
-#else // AR_ENABLE_TICKLESS_IDLE
-    ar_kernel_increment_tick_count(1);
-    ar_port_service_call();
-#endif // AR_ENABLE_TICKLESS_IDLE
-
-    // This case should never happen because of the idle thread.
-    assert(g_ar.currentThread);
 }
 
 //! @param topOfStack This parameter should be the stack pointer of the thread that was
