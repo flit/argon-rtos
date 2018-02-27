@@ -438,6 +438,8 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
 //!     the thread had called when it was originally blocked.
 void _ar_thread::unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockStatus)
 {
+    assert(m_state == kArThreadBlocked);
+
     // Remove from the sleeping list if it was on there. Won't hurt if
     // the thread is not on that list.
     if (m_wakeupTime && g_ar.sleepingList.m_head)
