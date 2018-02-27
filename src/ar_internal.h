@@ -131,6 +131,7 @@ typedef struct _ar_kernel {
     volatile uint32_t tickCount;    //!< Current tick count.
     int32_t missedTickCount;        //!< Number of ticks that occurred while the kernel was locked.
     uint32_t nextWakeup;            //!< Time of the next wakeup event.
+    uint32_t threadIdCounter;       //!< Counter for generating unique thread IDs.
 #if AR_ENABLE_SYSTEM_LOAD
     uint64_t lastLoadStart;         //!< Microseconds timestamp for last load computation start.
     uint64_t lastSwitchIn;          //!< Microseconds timestamp when current thread was switched in.

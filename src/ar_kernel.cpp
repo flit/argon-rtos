@@ -170,6 +170,8 @@ void ar_kernel_run(void)
     assert(g_ar.readyList.m_head);
 
     // Init some misc fields.
+    // Note that we do _not_ init threadIdCounter since it will already have been incremented
+    // some for any statically-initialized threads.
     g_ar.needsReschedule = false;
     g_ar.nextWakeup = 0;
     g_ar.deferredActions.m_count = 0;
@@ -506,7 +508,7 @@ void ar_kernel_scheduler()
             g_ar.currentThread->m_state = kArThreadReady;
         }
 
-        ar_trace_2(kArTraceThreadSwitch, g_ar.currentThread->m_state, highest);
+        ar_trace_1(kArTraceThreadSwitch, (g_ar.currentThread->m_state << 16) | highest->m_uniqueId);
 
         highest->m_state = kArThreadRunning;
         g_ar.currentThread = highest;

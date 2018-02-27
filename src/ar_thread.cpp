@@ -68,6 +68,7 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
     thread->m_priority = priority;
     thread->m_state = kArThreadSuspended;
     thread->m_entry = entry;
+    thread->m_uniqueId = ++g_ar.threadIdCounter;
 
     // Set list node references back to the thread object.
     thread->m_threadNode.m_obj = thread;
