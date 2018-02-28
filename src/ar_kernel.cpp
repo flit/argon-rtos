@@ -286,6 +286,7 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 
     // Run the scheduler. It will modify g_ar.currentThread if switching threads.
     ar_kernel_scheduler();
+    g_ar.needsReschedule = 0;
 
     // The idle thread prevents this condition.
     assert(g_ar.currentThread);
@@ -373,6 +374,8 @@ void ar_kernel_run_deferred_actions()
     // lock the kernel below.
     assert(g_ar.lockCount == 0);
 
+    g_ar.isRunningDeferred = 1;
+
     // Pull actions from the head of the queue and execute them.
     ar_deferred_action_queue_t & queue = g_ar.deferredActions;
     int32_t i = queue.m_first;
@@ -399,6 +402,8 @@ void ar_kernel_run_deferred_actions()
         ar_atomic_dec(&queue.m_count);
         queue.m_first = i;
     }
+
+    g_ar.isRunningDeferred = 0;
 }
 
 //! @brief Function to make it clear what happened.

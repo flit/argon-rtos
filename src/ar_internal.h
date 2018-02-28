@@ -278,7 +278,7 @@ public:
         {
             assert(g_ar.lockCount != 0);
             ar_atomic_dec(&g_ar.lockCount);
-            if (g_ar.lockCount == 0 && g_ar.needsReschedule)
+            if (g_ar.lockCount == 0 && g_ar.needsReschedule && !g_ar.isRunningDeferred)
             {
                 ar_kernel_enter_scheduler();
             }
