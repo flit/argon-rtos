@@ -530,14 +530,18 @@ void ar_kernel_scheduler()
 
 #if AR_ENABLE_TICKLESS_IDLE
     // Compute delay until next wakeup event and adjust timer.
-    g_ar.nextWakeup = ar_kernel_get_next_wakeup_time();
-    uint32_t delay = 0;
-    if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
+    uint32_t wakeup = ar_kernel_get_next_wakeup_time();
+    if (wakeup != g_ar.nextWakeup)
     {
-        delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
+        g_ar.nextWakeup = wakeup;
+        uint32_t delay = 0;
+        if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
+        {
+            delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
+        }
+        bool enable = (g_ar.nextWakeup != 0);
+        ar_port_set_timer_delay(enable, delay);
     }
-    bool enable = (g_ar.nextWakeup != 0);
-    ar_port_set_timer_delay(enable, delay);
 #endif // AR_ENABLE_TICKLESS_IDLE
 }
 
