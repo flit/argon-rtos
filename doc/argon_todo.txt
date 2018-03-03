@@ -8,12 +8,12 @@ Ideas
 √ Add constructors and copy constructors.
 √ Get global object lists working.
 √ Implement timers.
-* Implement priority inheritence for mutexes.
+√ Implement priority inheritence for mutexes.
 √ Finish user interrupt support.
 √ Clean up member function support for threads.
-- Either implement or remove Thread::join().
+- Add Thread::join()?
 x More thorough testing using cppunit. [Massive effort to get cppunit compiling under IAR.]
-- Unpriveledged support?
+- Unprivileged support?
 x Event flags?
 x Invert thread priorities, so that 0 is highest priority? This is the more common arrangement for RTOSes.
 √ Floating point support for M4F.
@@ -23,11 +23,11 @@ x Invert thread priorities, so that 0 is highest priority? This is the more comm
 √ Check the IPSR to determine whether it is in an IRQ, so the irq depth doesn't have to be manually adjusted.
 √ Sort thread sleeping list by wakeup time.
 - Add link from thread to object it's blocked on. (?)
-- Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
+√ Make scheduler smart enough to do round robin using beginning of ready list since that list is sorted by priority. i.e., it doesn't need to scan the entire list.
 * Support tickless idle.
 - High resolution timers. Tickless idle could be used to support timers with resolutions higher than a tick.
 x Use MSP for idle thread and timers. (?)
-- Handle changing system clock by updating SysTick.
+- Handle changing system clock by updating SysTick. Need to add API?
 √ Proper Cortex-M RTOS support (no IRQ disabling, reduced locking, etc).
 x Replace queue with buffered channel?
 √ Add an internal utility function to get whether we're in an IRQ; use it instead of checking IRQ depth.
@@ -45,7 +45,7 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 - Reduce kernel object sizes as much as possible.
 - Make ar_kernel_run() set the current thread to the idle thread so the scheduler doesn't need a special case the first time it is executed.
 - Improve thread init and port APIs so the Thread class doesn't require an extra entry point wrapper.
-* Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
+x Add port kernel data struct so the extended frame flag can be included in g_ar. (Really useful?)
 - Separate tick timer routine sources so they can easily be replaced by the user (or make weak).
 - Do we even need the suspended thread list? (used for cpu usage and thread reports)
 - Deal with wrapping of tick counter.
@@ -59,12 +59,12 @@ x Use nullptr instead of NULL (provide compatibility macro for pre-C++11).
 x Consider possibilities of run-to-completion threads that share a stack.
 - Add a user deferred call mechanism that works from ISRs (just use run loops?).
 - Channels only need one blocked list.
-- Some timer code is included even if timers are not used in the application.
+- Some timer object code is included even if timers are not used in the application.
 x Reset MSP when kernel starts so there is no wasted stack space.
 - Rename _halt() to ar_port_halt_cpu().
 √ Restore stack size or stack top in thread struct so we can compute stack usage.
 x ar_kernel_enter_scheduler() no longer does anything but call ar_port_service_call(). Merge the two.
-- Add comprehensive kernel event recording/trace capability.
+- Add kernel event recording/trace capability, with ability to report via ITM.
 - Limit channel and queue element size to a single word. (?)
 √ Add run loops.
 √ Move code that handles timer one-shot vs periodic from idle thread to new timer invoke() routine.
@@ -76,31 +76,44 @@ x Return errors for non-zero timeouts in calls from timers, like for ISRs. (?)
 x Change function pointer types to not be pointers, then make params etc pointers.
 - Remove "m_" from kernel object member names since they are public and accessed directly?
 √ Make kernel object class destructors non-virtual, except for Thread; no virtual methods, and this will save a vptr&table for each class.
-- Remove "2" on ar_post_deferred_action2() and use overloading.
-- Use SVCall for most kernel APIs and run threads in user mode.
+√ Remove "2" on ar_post_deferred_action2() and use overloading.
+- Run kernel in privileged mode and use SVCall for most kernel APIs?
 √ KernelLock doesn't need a member to store saved state because g_ar.lockCount can be used.
 √ Have scheduler compute thread CPU usage.
 - Remove need for idle thread by staying in scheduler until a thread becomes ready.
 - Add optional support for blocks.
 - Abstracted MPU support.
-- 64-bit tick counter.
+- Replace tick counter with 64-bit microsecond time.
 √ Move g_ar.allObjects to its own global variable.
 √ Add a sleep until API.
 - Share a common timeout list for timers and blocked threads?
 - Main thread needs to be able to stop by returning from main()
-- Use a function pointer table for deferred actions to solve issue with bringing in lots of code into link.
-- Provide API to turn main() into a thread and start scheduler.
-- _ar_list::remove() has an unnecessary search loop.
-- handle all thread states in ar_thread_suspend().
+√ Use a function pointer table for deferred kernel actions to solve issue with bringing in lots of code into link.
+- Replace main thread support with API to turn main() into a thread and start scheduler.
+√ _ar_list::remove() has an unnecessary search loop, should only be used in list-check mode.
+- Handle all thread states in ar_thread_suspend().
 - Add config option for enabling dynamic stack allocation option, so malloc() is not required.
-- Handle rescheduling from deferred action in same PendSV invocation, so PendSV is not immediately re-entered.
-- g_ar.lastLoadStartTime goes very large (many days) if cpu load is very high.
-- Need an API that can broadcast to wake up multiple threads.
+√ Handle needsReschedule from within a deferred action in the same PendSV invocation, so PendSV is not immediately re-entered.
+* g_ar.lastLoadStartTime goes very large (many days) if cpu load is very high. [32-bit µs wrapping]
+- Need a kernel object that can broadcast to wake up multiple threads.
 - Add thread stack usage to ar_thread_status_t and compute in ar_thread_get_report().
 - Calling ar_timer_set_delay() from within periodic timer callback will result in double delay, since ar_kernel_run_timers() will reschedule it again; use flag in timer to solve.
 - Let user allocate runloop function call queue.
 - Either implement runloop channel support or remove related APIs.
 - Provide option to coalesce function calls added to runloop queue.
+√ Add config option to compute thread stack usage and provide via ar_thread_get_report().
+- Free dynamically allocated stack when thread is deleted.
+- Handle case where a timer would fire again while it is executing.
+- Track time spent in scheduler.
+- Protect thread stacks with MPU.
+- Allow timers to be stopped from timer callback.
+- Consider replacing special member function callback support with member function thunk class.
+* Only defer irq operations if the kernel is locked, otherwise execute immediately.
+- Change ar_runloop_run() to return ar_status_t instead of its own type.
+- Remove queue and channel handler function support from runloops?
+- Only run the scheduler when we know we need to switch threads.
+- Only handle round-robin in the tick timer (except for tickless).
+- Make thread load computation work for tickless idle.
 
 
 Issues
@@ -113,7 +126,7 @@ x Use of timers requires another stack.
 x System load has garbage value if idle thread is only run to invoke timers.
 x It's very unintuitive to have default ctor for sem, mutex, channel? not actually init the object.
 ? Sometimes deferred actions are not being executed as soon as the kernel is unlocked, or the kernel is not being properly unlocked, causing a situation where the deferred action queue can overflow.
-- Idle thread will WFI sometimes when we don't want it to, like when running timers back to back.
+? Idle thread will WFI sometimes when we don't want it to, like when running timers back to back.
 - Blocking the idle thread will cause the scheduler to assert.
 
 
