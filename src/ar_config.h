@@ -75,22 +75,27 @@
     #define AR_ENABLE_IDLE_SLEEP (!(DEBUG))
 #endif
 
-#if !defined(AR_ENABLE_SYSTEM_LOAD)
-    //! @brief When set to 1, per-thread and system load will be computed.
-    #define AR_ENABLE_SYSTEM_LOAD (1)
-#endif
-
-#if !defined(AR_SYSTEM_LOAD_SAMPLE_PERIOD)
-    //! @brief Microsecond period over which load of system load is computed.
-    //!
-    //! Normally this is 1 second.
-    #define AR_SYSTEM_LOAD_SAMPLE_PERIOD (1000000)
-#endif
-
 #if !defined(AR_IDLE_THREAD_STACK_SIZE)
     //! @brief Size in bytes of the idle thread's stack.
     #define AR_IDLE_THREAD_STACK_SIZE (200)
 #endif // AR_IDLE_THREAD_STACK_SIZE
+
+//@}
+
+//! @name System load config
+//@{
+
+#if !defined(AR_ENABLE_SYSTEM_LOAD)
+    //! @brief When set to 1, per-thread and total system CPU load will be computed.
+    #define AR_ENABLE_SYSTEM_LOAD (1)
+#endif
+
+#if !defined(AR_SYSTEM_LOAD_SAMPLE_PERIOD)
+    //! @brief Microsecond period over which CPU load is computed.
+    //!
+    //! The nominal sampler period is 1 second.
+    #define AR_SYSTEM_LOAD_SAMPLE_PERIOD (1000000)
+#endif
 
 //@}
 
