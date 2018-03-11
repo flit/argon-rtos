@@ -86,6 +86,21 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
     {
         return kArRunLoopError;
     }
+    // It's ok to nest runs of the runloop, but only on a single thread.
+    if (runloop->m_isRunning && runloop->m_thread != g_ar.currentThread)
+    {
+        return kArRunLoopError;
+    }
+    // Another check to make sure no other runloop is already running on the current thread.
+    if (g_ar.currentThread->m_runLoop && g_ar.currentThread->m_runLoop != runloop)
+    {
+        return kArRunLoopError;
+    }
+    // Disallow running from interrupt context.
+    if (ar_port_get_irq_state())
+    {
+        return kArRunLoopError;
+    }
 
     // Clear returned object.
     if (object)
