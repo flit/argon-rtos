@@ -255,6 +255,8 @@ void ar_kernel_periodic_timer_isr()
 //!     in @a topOfStack.
 uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 {
+    assert(!g_ar.lockCount);
+
     // save top of stack for the thread we interrupted
     if (g_ar.currentThread)
     {
