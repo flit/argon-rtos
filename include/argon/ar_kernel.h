@@ -363,9 +363,9 @@ struct _ar_runloop {
         ar_runloop_function_t function;
         void * param;
     } m_functions[AR_RUNLOOP_FUNCTION_QUEUE_SIZE];
-    uint16_t m_functionCount;
-    uint16_t m_functionHead;
-    uint16_t m_functionTail;
+    volatile int32_t m_functionCount;
+    volatile int32_t m_functionHead;
+    volatile int32_t m_functionTail;
     bool m_isRunning;
     volatile bool m_stop;
 #if AR_GLOBAL_OBJECT_LISTS

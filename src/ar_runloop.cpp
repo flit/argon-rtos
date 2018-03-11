@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Immo Software
+ * Copyright (c) 2016-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -121,23 +121,17 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
         // Invoke one queued function.
         if (runloop->m_functionCount)
         {
-            ar_runloop_function_t fn;
-            void * param;
+            uint16_t i = runloop->m_functionHead;
+            uint16_t iPlusOne = (i + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
 
-            {
-                KernelLock lock;
+            ar_runloop_t::_ar_runloop_function_info fn = runloop->m_functions[i];
 
-                ar_runloop_t::_ar_runloop_function_info * fnPtr = &runloop->m_functions[runloop->m_functionHead];
-                fn = fnPtr->function;
-                param = fnPtr->param;
+            ar_atomic_dec(&runloop->m_functionCount);
+            // This is the only line that modifies m_functionHead.
+            runloop->m_functionHead = iPlusOne;
 
-                runloop->m_functionHead = (runloop->m_functionHead + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
-                --runloop->m_functionCount;
-            }
-
-            // Call function.
-            assert(fn);
-            fn(param);
+            assert(fn.function);
+            fn.function(fn.param);
         }
 
         // Check pending queues.
@@ -254,21 +248,14 @@ ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t fun
     }
 
     // TODO block if queue is full?
-    if (runloop->m_functionCount >= AR_RUNLOOP_FUNCTION_QUEUE_SIZE)
+    int32_t tail = ar_kernel_atomic_queue_insert(1, runloop->m_functionCount, runloop->m_functionTail, AR_RUNLOOP_FUNCTION_QUEUE_SIZE);
+    if (tail == -1)
     {
         return kArQueueFullError;
     }
-
-    {
-        KernelLock lock;
-
-        ar_runloop_t::_ar_runloop_function_info * fnPtr = &runloop->m_functions[runloop->m_functionTail];
-        fnPtr->function = function;
-        fnPtr->param = param;
-
-        runloop->m_functionTail = (runloop->m_functionTail + 1) % AR_RUNLOOP_FUNCTION_QUEUE_SIZE;
-        ++runloop->m_functionCount;
-    }
+    ar_runloop_t::_ar_runloop_function_info & fn = runloop->m_functions[tail];
+    fn.function = function;
+    fn.param = param;
 
     // Wake the runloop in case it is blocked.
     ar_runloop_wake(runloop);
