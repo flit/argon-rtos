@@ -389,13 +389,13 @@ void ar_kernel_run_deferred_actions()
             iPlusOne = 0;
         }
 
-        ar_deferred_action_queue_t::deferred_action_t action = queue.m_actions[i];
+        ar_deferred_action_queue_t::_ar_deferred_action_queue_entry & entry = queue.m_entries[i];
 
         // Ignore action entries that contain an extra argument value for the previous action.
-        if (reinterpret_cast<uint32_t>(action) != ar_deferred_action_queue_t::kActionExtraValue)
+        if (reinterpret_cast<uint32_t>(entry.action) != ar_deferred_action_queue_t::kActionExtraValue)
         {
-            assert(action);
-            action(queue.m_objects[i],  queue.m_objects[iPlusOne]);
+            assert(entry.action);
+            entry.action(entry.object, queue.m_entries[iPlusOne].object);
         }
 
         // Atomically remove the entry we just processed from the queue.
@@ -873,8 +873,8 @@ ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * obj
         return kArQueueFullError;
     }
 
-    m_actions[index] = action;
-    m_objects[index] = object;
+    m_entries[index].action = action;
+    m_entries[index].object = object;
 
     ar_kernel_enter_scheduler();
 
@@ -890,16 +890,16 @@ ar_status_t _ar_deferred_action_queue::post(deferred_action_t action, void * obj
         return kArQueueFullError;
     }
 
-    m_actions[index] = action;
-    m_objects[index] = object;
+    m_entries[index].action = action;
+    m_entries[index].object = object;
 
     ++index;
     if (index >= AR_DEFERRED_ACTION_QUEUE_SIZE)
     {
         index = 0;
     }
-    m_actions[index] = reinterpret_cast<deferred_action_t>(kActionExtraValue);
-    m_objects[index] = arg;
+    m_entries[index].action = reinterpret_cast<deferred_action_t>(kActionExtraValue);
+    m_entries[index].object = arg;
 
     ar_kernel_enter_scheduler();
 

@@ -95,8 +95,10 @@ typedef struct _ar_deferred_action_queue {
     volatile int32_t m_count;   //!< Number of queue entries.
     volatile int32_t m_first;   //!< First entry index.
     volatile int32_t m_last;    //!< Last entry index.
-    deferred_action_t m_actions[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< Enqueued actions.
-    void * m_objects[AR_DEFERRED_ACTION_QUEUE_SIZE];    //!< Kernel objects for enqueued actions.
+    struct _ar_deferred_action_queue_entry {
+        deferred_action_t action; //!< Enqueued action.
+        void * object;    //!< Kernel object or parameter for enqueued action.
+    } m_entries[AR_DEFERRED_ACTION_QUEUE_SIZE]; //!< The deferred action queue entries.
 
     //! @brief Returns whether the queue is currently empty.
     bool isEmpty() const { return m_count == 0; }
