@@ -55,6 +55,10 @@ ar_status_t ar_semaphore_create(ar_semaphore_t * sem, const char * name, unsigne
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(sem, 0, sizeof(ar_semaphore_t));
     sem->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
@@ -74,6 +78,10 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     if (!sem)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     // Unblock all threads blocked on this semaphore.

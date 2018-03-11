@@ -48,6 +48,10 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(runloop, 0, sizeof(ar_runloop_t));
 
@@ -69,6 +73,10 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     if (!runloop)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     // TODO stop running runloop

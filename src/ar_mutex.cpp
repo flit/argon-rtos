@@ -55,6 +55,10 @@ ar_status_t ar_mutex_create(ar_mutex_t * mutex, const char * name)
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(mutex, 0, sizeof(ar_mutex_t));
     mutex->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
@@ -77,6 +81,10 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex)
     if (!mutex)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
 #if AR_GLOBAL_OBJECT_LISTS

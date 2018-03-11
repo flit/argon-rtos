@@ -56,6 +56,10 @@ ar_status_t ar_channel_create(ar_channel_t * channel, const char * name, uint32_
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(channel, 0, sizeof(ar_channel_t));
     channel->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
@@ -75,6 +79,10 @@ ar_status_t ar_channel_delete(ar_channel_t * channel)
     if (!channel)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     // Unblock all threads blocked on this channel.

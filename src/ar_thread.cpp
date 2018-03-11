@@ -67,6 +67,10 @@ ar_status_t ar_thread_create(ar_thread_t * thread, const char * name, ar_thread_
     {
         return kArStackSizeTooSmallError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     // Clear thread structure.
     memset(thread, 0, sizeof(ar_thread_t));
@@ -116,6 +120,10 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
     if (!thread)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     // Clear runloop association.
@@ -347,6 +355,10 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     if (priority == kArIdleThreadPriority && thread != &g_ar.idleThread)
     {
@@ -380,6 +392,12 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
 // See ar_kernel.h for documentation of this function.
 void ar_thread_sleep(uint32_t milliseconds)
 {
+    // Cannot sleep in interrup context.
+    if (ar_port_get_irq_state())
+    {
+        return;
+    }
+
     // bail if there is not a running thread to put to sleep
     if (milliseconds == 0 || !g_ar.currentThread)
     {
@@ -400,6 +418,12 @@ void ar_thread_sleep(uint32_t milliseconds)
 // See ar_kernel.h for documentation of this function.
 void ar_thread_sleep_until(uint32_t wakeup)
 {
+    // Cannot sleep in interrup context.
+    if (ar_port_get_irq_state())
+    {
+        return;
+    }
+
     // bail if there is not a running thread to put to sleep
     if (wakeup <= ar_get_millisecond_count() || !g_ar.currentThread)
     {

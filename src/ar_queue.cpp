@@ -63,6 +63,10 @@ ar_status_t ar_queue_create(ar_queue_t * queue, const char * name, void * storag
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(queue, 0, sizeof(ar_queue_t));
 
@@ -87,6 +91,10 @@ ar_status_t ar_queue_delete(ar_queue_t * queue)
     if (!queue)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     // Unblock all threads blocked on this queue.
@@ -198,6 +206,10 @@ ar_status_t ar_queue_receive(ar_queue_t * queue, void * element, uint32_t timeou
     if (!queue || !element)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     {

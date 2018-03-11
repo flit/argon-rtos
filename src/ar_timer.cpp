@@ -57,6 +57,10 @@ ar_status_t ar_timer_create(ar_timer_t * timer, const char * name, ar_timer_entr
     {
         return kArInvalidParameterError;
     }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
+    }
 
     memset(timer, 0, sizeof(ar_timer_t));
 
@@ -81,6 +85,10 @@ ar_status_t ar_timer_delete(ar_timer_t * timer)
     if (!timer)
     {
         return kArInvalidParameterError;
+    }
+    if (ar_port_get_irq_state())
+    {
+        return kArNotFromInterruptError;
     }
 
     ar_timer_stop(timer);
