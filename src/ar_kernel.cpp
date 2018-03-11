@@ -832,7 +832,33 @@ void _ar_list::check()
 }
 #endif // AR_ENABLE_LIST_CHECKS
 
-//! @brief Function to make it clear what happened.
+//! @brief Atomically allocate entries at the end of a queue.
+int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCount, volatile int32_t & qTail, int32_t qSize)
+{
+    // Increment queue entry count.
+    int32_t count;
+    do {
+        count = qCount;
+
+        // Check if queue is full.
+        if (count + entryCount > qSize)
+        {
+            return -1;
+        }
+    } while (!ar_atomic_cas(&qCount, count, count + entryCount));
+
+    // Increment last entry index.
+    int32_t last;
+    int32_t newLast;
+    do {
+        last = qTail;
+        newLast = (last + entryCount) % qSize;
+    } while (!ar_atomic_cas(&qTail, last, newLast));
+
+    return last;
+}
+
+//! @brief There is no more room available in the deferred action queue.
 void DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED()
 {
     _halt();
@@ -840,27 +866,11 @@ void DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED()
 
 int32_t _ar_deferred_action_queue::insert(int32_t entryCount)
 {
-    // Increment queue entry count.
-    int32_t count;
-    do {
-        count = m_count;
-
-        // Check if queue is full.
-        if (count + entryCount > AR_DEFERRED_ACTION_QUEUE_SIZE)
-        {
-            DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED();
-            return -1;
-        }
-    } while (!ar_atomic_cas(&m_count, count, count + entryCount));
-
-    // Increment last entry index.
-    int32_t last;
-    int32_t newLast;
-    do {
-        last = m_last;
-        newLast = (last + entryCount) % AR_DEFERRED_ACTION_QUEUE_SIZE;
-    } while (!ar_atomic_cas(&m_last, last, newLast));
-
+    int32_t last = ar_kernel_atomic_queue_insert(entryCount, m_count, m_last, AR_DEFERRED_ACTION_QUEUE_SIZE);
+    if (last == -1)
+    {
+        DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED();
+    }
     return last;
 }
 
