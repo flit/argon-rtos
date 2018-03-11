@@ -57,9 +57,9 @@ x Add port kernel data struct so the extended frame flag can be included in g_ar
 √ Make _ar_thread_t::block() enter the scheduler itself, to reduce duplicated code. Same with unblockWithStatus() when the unblocked thread is highest priority.
 - Move more internal stuff into Ar namespace.
 x Consider possibilities of run-to-completion threads that share a stack.
-- Add a user deferred call mechanism that works from ISRs (just use run loops?).
+√ Add a user deferred call mechanism that works from ISRs. [use run loops]
 - Channels only need one blocked list.
-- Some timer object code is included even if timers are not used in the application.
+√ Some timer object code is included even if timers are not used in the application. [Fixed with runloops.]
 x Reset MSP when kernel starts so there is no wasted stack space.
 - Rename _halt() to ar_port_halt_cpu().
 √ Restore stack size or stack top in thread struct so we can compute stack usage.
@@ -91,22 +91,21 @@ x Change function pointer types to not be pointers, then make params etc pointer
 √ Use a function pointer table for deferred kernel actions to solve issue with bringing in lots of code into link.
 - Replace main thread support with API to turn main() into a thread and start scheduler.
 √ _ar_list::remove() has an unnecessary search loop, should only be used in list-check mode.
-- Handle all thread states in ar_thread_suspend().
+√ Handle all thread states in ar_thread_suspend().
 - Add config option for enabling dynamic stack allocation option, so malloc() is not required.
 √ Handle needsReschedule from within a deferred action in the same PendSV invocation, so PendSV is not immediately re-entered.
-* g_ar.lastLoadStartTime goes very large (many days) if cpu load is very high. [32-bit µs wrapping]
 - Need a kernel object that can broadcast to wake up multiple threads.
 - Add thread stack usage to ar_thread_status_t and compute in ar_thread_get_report().
 - Calling ar_timer_set_delay() from within periodic timer callback will result in double delay, since ar_kernel_run_timers() will reschedule it again; use flag in timer to solve.
 - Let user allocate runloop function call queue.
 - Either implement runloop channel support or remove related APIs.
 - Provide option to coalesce function calls added to runloop queue.
-√ Add config option to compute thread stack usage and provide via ar_thread_get_report().
+- Add config option to compute thread stack usage and provide via ar_thread_get_report().
 - Free dynamically allocated stack when thread is deleted.
 - Handle case where a timer would fire again while it is executing.
-- Track time spent in scheduler.
+x Track time spent in scheduler.
 - Protect thread stacks with MPU.
-- Allow timers to be stopped from timer callback.
+√ Allow timers to be stopped from timer callback.
 - Consider replacing special member function callback support with member function thunk class.
 * Only defer irq operations if the kernel is locked, otherwise execute immediately.
 - Change ar_runloop_run() to return ar_status_t instead of its own type.
@@ -114,6 +113,10 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Only run the scheduler when we know we need to switch threads.
 - Only handle round-robin in the tick timer (except for tickless).
 - Make thread load computation work for tickless idle.
+- Return error from all APIs that cannot be called from IRQ when invoked from IRQ.
+- Support 16- and 8-bit atomic operations.
+- Use 16-bit atomic operations to reduce deferred action and runloop perform queue struct sizes.
+- Move to a solely tickless architecture.
 
 
 Issues
