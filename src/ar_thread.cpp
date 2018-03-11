@@ -259,7 +259,6 @@ static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread)
 {
     KernelLock guard;
 
-    // TODO handle all states properly
     switch (thread->m_state)
     {
         // Move ready threads to suspended list.
