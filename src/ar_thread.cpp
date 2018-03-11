@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 Immo Software
+ * Copyright (c) 2007-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -37,6 +37,15 @@
 #include <stdio.h>
 
 using namespace Ar;
+
+//------------------------------------------------------------------------------
+// Prototypes
+//------------------------------------------------------------------------------
+
+static ar_status_t ar_thread_resume_internal(ar_thread_t * thread);
+static void ar_thread_deferred_resume(void * object, void * object2);
+static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread);
+static void ar_thread_deferred_suspend(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -113,52 +122,98 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
     if (thread->m_runLoop)
     {
         thread->m_runLoop->m_thread = NULL;
+        thread->m_runLoop = NULL;
     }
 
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar_objects.threads.remove(&thread->m_createdNode);
 #endif // AR_GLOBAL_OBJECT_LISTS
 
-    if (thread->m_state != kArThreadDone)
+    ar_trace_2(kArTraceThreadDeleted, 0, thread);
+
+    // Remove from whatever list the thread is on, and set state to done.
+    // If we're deleting the current thread, then execution will never proceed past
+    // this block.
     {
-        // Remove from whatever list the thread is on.
+        KernelLock guard;
+
+        switch (thread->m_state)
         {
-            KernelLock guard;
+            case kArThreadReady:
+            case kArThreadRunning:
+                g_ar.readyList.remove(thread);
+                break;
 
-            switch (thread->m_state)
-            {
-                case kArThreadReady:
-                case kArThreadRunning:
-                    g_ar.readyList.remove(thread);
-                    break;
+            case kArThreadSuspended:
+                g_ar.suspendedList.remove(thread);
+                break;
 
-                case kArThreadSuspended:
-                    g_ar.suspendedList.remove(thread);
-                    break;
+            case kArThreadBlocked:
+            case kArThreadSleeping:
+                g_ar.sleepingList.remove(thread);
+                break;
 
-                case kArThreadSleeping:
-                    g_ar.sleepingList.remove(thread);
-                    break;
+            case kArThreadDone:
+                break;
 
-                default:
-                    return kArInvalidStateError;
-            }
+            case kArThreadUnknown:
+                return kArInvalidStateError;
+        }
 
-            // Mark thread as finished.
-            thread->m_state = kArThreadDone;
+        // Mark thread as finished.
+        thread->m_state = kArThreadDone;
+
+        // Are we deleting ourself?
+        if (thread == g_ar.currentThread)
+        {
+            g_ar.needsReschedule = true;
         }
     }
 
-    ar_trace_2(kArTraceThreadDeleted, 0, thread);
+    return kArSuccess;
+}
 
-    // Are we deleting ourself?
-    if (thread == g_ar.currentThread)
+static ar_status_t ar_thread_resume_internal(ar_thread_t * thread)
+{
+    KernelLock guard;
+
+    switch (thread->m_state)
     {
-        // Switch to the scheduler to let another thread take over
-        ar_kernel_enter_scheduler();
+        case kArThreadReady:
+        case kArThreadRunning:
+            return kArSuccess;
+
+        case kArThreadSuspended:
+            g_ar.suspendedList.remove(thread);
+            break;
+
+        case kArThreadSleeping:
+            g_ar.sleepingList.remove(thread);
+            break;
+
+        case kArThreadBlocked:
+        case kArThreadUnknown:
+        case kArThreadDone:
+            return kArInvalidStateError;
+    }
+
+    // Put the thread back on the ready list.
+    thread->m_state = kArThreadReady;
+    g_ar.readyList.add(thread);
+
+    // yield to scheduler if there is not a running thread or if this thread
+    // has a higher priority that the running one
+    if (thread->m_priority > g_ar.currentThread->m_priority)
+    {
+        g_ar.needsReschedule = true;
     }
 
     return kArSuccess;
+}
+
+static void ar_thread_deferred_resume(void * object, void * object2)
+{
+    ar_thread_resume_internal(reinterpret_cast<ar_thread_t *>(object));
 }
 
 // See ar_kernel.h for documentation of this function.
@@ -169,40 +224,82 @@ ar_status_t ar_thread_resume(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
+    // Check thread state.
+    switch (thread->m_state)
     {
-        KernelLock guard;
+        // Nothing to do if the thread is already ready.
+        case kArThreadReady:
+        case kArThreadRunning:
+            return kArSuccess;
 
-        switch (thread->m_state)
-        {
-            case kArThreadReady:
-            case kArThreadRunning:
-                return kArSuccess;
+        // These are states from which we can resume the thread.
+        case kArThreadSuspended:
+        case kArThreadSleeping:
+            break;
 
-            case kArThreadSuspended:
-                g_ar.suspendedList.remove(thread);
-                break;
+        // Erroneous states.
+        case kArThreadBlocked:
+        case kArThreadUnknown:
+        case kArThreadDone:
+            return kArInvalidStateError;
+    }
 
-            case kArThreadSleeping:
-                g_ar.sleepingList.remove(thread);
-                break;
+    if (ar_port_get_irq_state())
+    {
+        // Handle irq state by deferring the resume.
+        return g_ar.deferredActions.post(ar_thread_deferred_resume, thread);
+    }
+    else
+    {
+        return ar_thread_resume_internal(thread);
+    }
+}
 
-            default:
-                return kArInvalidStateError;
-        }
+static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread)
+{
+    KernelLock guard;
 
-        // Put the thread back on the read list.
-        thread->m_state = kArThreadReady;
-        g_ar.readyList.add(thread);
+    // TODO handle all states properly
+    switch (thread->m_state)
+    {
+        // Move ready threads to suspended list.
+        case kArThreadReady:
+        case kArThreadRunning:
+            g_ar.readyList.remove(thread);
+            thread->m_state = kArThreadSuspended;
+            g_ar.suspendedList.add(thread);
+            break;
 
-        // yield to scheduler if there is not a running thread or if this thread
-        // has a higher priority that the running one
-        if (thread->m_priority > g_ar.currentThread->m_priority)
-        {
-            g_ar.needsReschedule = true;
-        }
+        // Move sleeping threads to suspended list.
+        case kArThreadSleeping:
+            g_ar.sleepingList.remove(thread);
+            thread->m_state = kArThreadSuspended;
+            g_ar.suspendedList.add(thread);
+            break;
+
+        // Nothing needs doing if the thread is already suspended.
+        case kArThreadSuspended:
+            return kArSuccess;
+
+        // Erroneous states.
+        case kArThreadBlocked:
+        case kArThreadUnknown:
+        case kArThreadDone:
+            return kArInvalidStateError;
+    }
+
+    // are we suspending the current thread?
+    if (thread == g_ar.currentThread)
+    {
+        g_ar.needsReschedule = true;
     }
 
     return kArSuccess;
+}
+
+static void ar_thread_deferred_suspend(void * object, void * object2)
+{
+    ar_thread_suspend_internal(reinterpret_cast<ar_thread_t *>(object));
 }
 
 // See ar_kernel.h for documentation of this function.
@@ -213,30 +310,35 @@ ar_status_t ar_thread_suspend(ar_thread_t * thread)
         return kArInvalidParameterError;
     }
 
+    // Check thread state.
+    switch (thread->m_state)
     {
-        KernelLock guard;
-
-        // TODO handle all states properly
-        if (thread->m_state == kArThreadSuspended)
-        {
-            // Nothing needs doing if the thread is already suspended.
+        // Nothing to do if the thread is already ready.
+        case kArThreadSuspended:
             return kArSuccess;
-        }
-        else
-        {
-            g_ar.readyList.remove(thread);
-            thread->m_state = kArThreadSuspended;
-            g_ar.suspendedList.add(thread);
-        }
 
-        // are we suspending the current thread?
-        if (thread == g_ar.currentThread)
-        {
-            g_ar.needsReschedule = true;
-        }
+        // These are states from which we can suspend the thread.
+        case kArThreadReady:
+        case kArThreadRunning:
+        case kArThreadSleeping:
+            break;
+
+        // Erroneous states.
+        case kArThreadBlocked: // Would have to remove thread from the blocked list of the kernel object.
+        case kArThreadUnknown:
+        case kArThreadDone:
+            return kArInvalidStateError;
     }
 
-    return kArSuccess;
+    if (ar_port_get_irq_state())
+    {
+        // Handle irq state by deferring the resume.
+        return g_ar.deferredActions.post(ar_thread_deferred_suspend, thread);
+    }
+    else
+    {
+        return ar_thread_suspend_internal(thread);
+    }
 }
 
 // See ar_kernel.h for documentation of this function.
