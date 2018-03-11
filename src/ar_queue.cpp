@@ -50,6 +50,7 @@ using namespace Ar;
 // Prototypes
 //------------------------------------------------------------------------------
 
+static ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout);
 static void ar_queue_deferred_send(void * object, void * object2);
 
 //------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ ar_status_t ar_queue_delete(ar_queue_t * queue)
     return kArSuccess;
 }
 
-ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout)
+static ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout)
 {
     KernelLock guard;
 

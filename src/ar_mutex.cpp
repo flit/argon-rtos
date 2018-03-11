@@ -41,7 +41,9 @@ using namespace Ar;
 // Prototypes
 //------------------------------------------------------------------------------
 
+static ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout);
 static void ar_mutex_deferred_get(void * object, void * object2);
+static ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex);
 static void ar_mutex_deferred_put(void * object, void * object2);
 
 //------------------------------------------------------------------------------
@@ -94,7 +96,7 @@ ar_status_t ar_mutex_delete(ar_mutex_t * mutex)
     return kArSuccess;
 }
 
-ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
+static ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout)
 {
     KernelLock guard;
 
@@ -175,7 +177,7 @@ ar_status_t ar_mutex_get(ar_mutex_t * mutex, uint32_t timeout)
     return ar_mutex_get_internal(mutex, timeout);
 }
 
-ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex)
+static ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex)
 {
     KernelLock guard;
 

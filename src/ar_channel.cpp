@@ -43,6 +43,7 @@ using namespace Ar;
 
 static ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void * value, uint32_t timeout);
 static ar_status_t ar_channel_send_receive(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
+static ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
 static void ar_channel_deferred_send(void * object, void * object2);
 
 //------------------------------------------------------------------------------
@@ -133,7 +134,7 @@ ar_status_t ar_channel_block(ar_channel_t * channel, ar_list_t & myDirList, void
     return kArSuccess;
 }
 
-ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
+static ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout)
 {
     KernelLock guard;
 

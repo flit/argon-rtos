@@ -186,18 +186,6 @@ int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCo
 void ar_runloop_wake(ar_runloop_t * runloop);
 //@}
 
-//! @name Internal routines
-//@{
-ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout);
-ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem);
-ar_status_t ar_mutex_get_internal(ar_mutex_t * mutex, uint32_t timeout);
-ar_status_t ar_mutex_put_internal(ar_mutex_t * mutex);
-ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime);
-ar_status_t ar_timer_stop_internal(ar_timer_t * timer);
-ar_status_t ar_queue_send_internal(ar_queue_t * queue, const void * element, uint32_t timeout);
-ar_status_t ar_channel_send_receive_internal(ar_channel_t * channel, bool isSending, ar_list_t & myDirList, ar_list_t & otherDirList, void * value, uint32_t timeout);
-//@}
-
 //! @name Thread entry point wrapper
 //@{
 //! @brief Thread entry point.

@@ -41,7 +41,9 @@ using namespace Ar;
 // Prototypes
 //------------------------------------------------------------------------------
 
+static ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout);
 static void ar_semaphore_deferred_get(void * object, void * object2);
+static ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem);
 static void ar_semaphore_deferred_put(void * object, void * object2);
 
 //------------------------------------------------------------------------------
@@ -97,7 +99,7 @@ ar_status_t ar_semaphore_delete(ar_semaphore_t * sem)
     return kArSuccess;
 }
 
-ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
+static ar_status_t ar_semaphore_get_internal(ar_semaphore_t * sem, uint32_t timeout)
 {
     KernelLock guard;
 
@@ -161,7 +163,7 @@ ar_status_t ar_semaphore_get(ar_semaphore_t * sem, uint32_t timeout)
     return ar_semaphore_get_internal(sem, timeout);
 }
 
-ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem)
+static ar_status_t ar_semaphore_put_internal(ar_semaphore_t * sem)
 {
     KernelLock guard;
 

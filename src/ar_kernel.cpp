@@ -67,53 +67,6 @@ static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 // Code
 //------------------------------------------------------------------------------
 
-bool ar_kernel_run_timers(ar_list_t & timersList)
-{
-    bool handledTimer = false;
-
-    // Check if we need to handle a timer.
-    if (timersList.m_head)
-    {
-        ar_list_node_t * timerNode = timersList.m_head;
-        while (timerNode)
-        {
-            ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
-            assert(timer);
-
-            if (timer->m_wakeupTime > g_ar.tickCount)
-            {
-                break;
-            }
-
-            // Invoke the timer callback.
-            assert(timer->m_callback);
-            timer->m_callback(timer, timer->m_param);
-
-            // Check that the timer wasn't stopped in its callback.
-            if (timer->m_isActive)
-            {
-                switch (timer->m_mode)
-                {
-                    case kArOneShotTimer:
-                        // Stop a one shot timer after it has fired.
-                        ar_timer_stop(timer);
-                        break;
-
-                    case kArPeriodicTimer:
-                        // Restart a periodic timer without introducing jitter.
-                        ar_timer_internal_start(timer, timer->m_wakeupTime + timer->m_delay);
-                        break;
-                }
-            }
-
-            handledTimer = true;
-            timerNode = timerNode->m_next;
-        }
-    }
-
-    return handledTimer;
-}
-
 //! @brief System idle thread entry point.
 //!
 //! This thread just spins forever.

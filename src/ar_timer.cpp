@@ -41,7 +41,9 @@ using namespace Ar;
 // Code
 //------------------------------------------------------------------------------
 
+static ar_status_t ar_timer_start_internal(ar_timer_t * timer, uint32_t wakeupTime);
 static void ar_timer_deferred_start(void * object, void * object2);
+static ar_status_t ar_timer_stop_internal(ar_timer_t * timer);
 static void ar_timer_deferred_stop(void * object, void * object2);
 static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t delay);
 static void ar_timer_deferred_set_delay(void * object, void * object2);
@@ -101,7 +103,7 @@ ar_status_t ar_timer_delete(ar_timer_t * timer)
 }
 
 //! @brief Handles starting or restarting a timer.
-ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime)
+static ar_status_t ar_timer_start_internal(ar_timer_t * timer, uint32_t wakeupTime)
 {
     KernelLock guard;
 
@@ -126,7 +128,7 @@ ar_status_t ar_timer_internal_start(ar_timer_t * timer, uint32_t wakeupTime)
 
 static void ar_timer_deferred_start(void * object, void * object2)
 {
-    ar_timer_internal_start(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(object2));
+    ar_timer_start_internal(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(object2));
 }
 
 // See ar_kernel.h for documentation of this function.
@@ -152,10 +154,10 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
         return g_ar.deferredActions.post(ar_timer_deferred_start, timer, reinterpret_cast<void *>(wakeupTime));
     }
 
-    return ar_timer_internal_start(timer, wakeupTime);
+    return ar_timer_start_internal(timer, wakeupTime);
 }
 
-ar_status_t ar_timer_stop_internal(ar_timer_t * timer)
+static ar_status_t ar_timer_stop_internal(ar_timer_t * timer)
 {
     KernelLock guard;
 
@@ -216,7 +218,7 @@ static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t dela
         assert(timer->m_runLoop);
 
         uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
-        ar_timer_internal_start(timer, wakeupTime);
+        ar_timer_start_internal(timer, wakeupTime);
     }
 
     return kArSuccess;
@@ -241,6 +243,53 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
     }
 
     return ar_timer_set_delay_internal(timer, delay);
+}
+
+bool ar_kernel_run_timers(ar_list_t & timersList)
+{
+    bool handledTimer = false;
+
+    // Check if we need to handle a timer.
+    if (timersList.m_head)
+    {
+        ar_list_node_t * timerNode = timersList.m_head;
+        while (timerNode)
+        {
+            ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
+            assert(timer);
+
+            if (timer->m_wakeupTime > g_ar.tickCount)
+            {
+                break;
+            }
+
+            // Invoke the timer callback.
+            assert(timer->m_callback);
+            timer->m_callback(timer, timer->m_param);
+
+            // Check that the timer wasn't stopped in its callback.
+            if (timer->m_isActive)
+            {
+                switch (timer->m_mode)
+                {
+                    case kArOneShotTimer:
+                        // Stop a one shot timer after it has fired.
+                        ar_timer_stop(timer);
+                        break;
+
+                    case kArPeriodicTimer:
+                        // Restart a periodic timer without introducing jitter.
+                        ar_timer_start_internal(timer, timer->m_wakeupTime + timer->m_delay);
+                        break;
+                }
+            }
+
+            handledTimer = true;
+            timerNode = timerNode->m_next;
+        }
+    }
+
+    return handledTimer;
 }
 
 //! @brief Sort timers ascending by wakeup time.
