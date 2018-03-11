@@ -43,6 +43,8 @@ using namespace Ar;
 
 static void ar_timer_deferred_start(void * object, void * object2);
 static void ar_timer_deferred_stop(void * object, void * object2);
+static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t delay);
+static void ar_timer_deferred_set_delay(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -193,6 +195,30 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     return ar_timer_stop_internal(timer);
 }
 
+static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t delay)
+{
+    KernelLock guard;
+
+    timer->m_delay = ar_milliseconds_to_ticks(delay);
+
+    // If the timer is running, we need to update the wakeup time and resort the list.
+    if (timer->m_isActive)
+    {
+        // If the timer is active, it should already have a runloop set.
+        assert(timer->m_runLoop);
+
+        uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
+        ar_timer_internal_start(timer, wakeupTime);
+    }
+
+    return kArSuccess;
+}
+
+static void ar_timer_deferred_set_delay(void * object, void * object2)
+{
+    ar_timer_set_delay_internal(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(object2));
+}
+
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
 {
@@ -201,23 +227,12 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         return kArInvalidParameterError;
     }
 
+    if (ar_port_get_irq_state())
     {
-        KernelLock guard;
-
-        timer->m_delay = ar_milliseconds_to_ticks(delay);
-
-        // If the timer is running, we need to update the wakeup time and resort the list.
-        if (timer->m_isActive)
-        {
-            // If the timer is active, it should already have a runloop set.
-            assert(timer->m_runLoop);
-
-            uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
-            ar_timer_internal_start(timer, wakeupTime);
-        }
+        return g_ar.deferredActions.post(ar_timer_deferred_set_delay, timer, reinterpret_cast<void *>(delay));
     }
 
-    return kArSuccess;
+    return ar_timer_set_delay_internal(timer, delay);
 }
 
 //! @brief Sort timers ascending by wakeup time.
