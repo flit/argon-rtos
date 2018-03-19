@@ -202,7 +202,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
         }
 
         // Make sure we don't sleep past the next scheduled timer.
-        if (runloop->m_timers.m_head)
+        if (!runloop->m_timers.isEmpty())
         {
             ar_timer_t * timer = runloop->m_timers.getHead<ar_timer_t>();
             uint32_t wakeupDeltaTicks = timer->m_wakeupTime - g_ar.tickCount;
