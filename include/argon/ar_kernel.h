@@ -343,6 +343,7 @@ struct _ar_timer {
     void * m_param;                 //!< Arbitrary parameter for the callback.
     ar_timer_mode_t m_mode;         //!< One-shot or periodic mode.
     bool m_isActive;            //!< Whether the timer is running and on the active timers list.
+    bool m_isRunning;           //!< Whether the timer callback is executing.
     uint32_t m_delay;           //!< Delay in ticks.
     uint32_t m_wakeupTime;      //!< Expiration time in ticks.
     ar_runloop_t * m_runLoop;

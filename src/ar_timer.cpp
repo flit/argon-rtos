@@ -45,8 +45,6 @@ static ar_status_t ar_timer_start_internal(ar_timer_t * timer, uint32_t wakeupTi
 static void ar_timer_deferred_start(void * object, void * object2);
 static ar_status_t ar_timer_stop_internal(ar_timer_t * timer);
 static void ar_timer_deferred_stop(void * object, void * object2);
-static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t delay);
-static void ar_timer_deferred_set_delay(void * object, void * object2);
 
 //------------------------------------------------------------------------------
 // Code
@@ -205,30 +203,6 @@ ar_status_t ar_timer_stop(ar_timer_t * timer)
     return ar_timer_stop_internal(timer);
 }
 
-static ar_status_t ar_timer_set_delay_internal(ar_timer_t * timer, uint32_t delay)
-{
-    KernelLock guard;
-
-    timer->m_delay = ar_milliseconds_to_ticks(delay);
-
-    // If the timer is running, we need to update the wakeup time and resort the list.
-    if (timer->m_isActive)
-    {
-        // If the timer is active, it should already have a runloop set.
-        assert(timer->m_runLoop);
-
-        uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
-        ar_timer_start_internal(timer, wakeupTime);
-    }
-
-    return kArSuccess;
-}
-
-static void ar_timer_deferred_set_delay(void * object, void * object2)
-{
-    ar_timer_set_delay_internal(reinterpret_cast<ar_timer_t *>(object), reinterpret_cast<uint32_t>(object2));
-}
-
 // See ar_kernel.h for documentation of this function.
 ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
 {
@@ -237,27 +211,36 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
         return kArInvalidParameterError;
     }
 
-    if (ar_port_get_irq_state())
+    timer->m_delay = ar_milliseconds_to_ticks(delay);
+
+    // If the timer is running, we need to restart it, unless it is a periodic
+    // timer whose callback is currently executing. In that case, the timer will
+    // automatically be rescheduled for us, so if we did it here then it would be
+    // rescheduled twice causing a double delay.
+    if (timer->m_isActive && !(timer->m_isRunning && timer->m_mode == kArPeriodicTimer))
     {
-        return g_ar.deferredActions.post(ar_timer_deferred_set_delay, timer, reinterpret_cast<void *>(delay));
+        ar_timer_start(timer);
     }
 
-    return ar_timer_set_delay_internal(timer, delay);
+    return kArSuccess;
 }
 
-bool ar_kernel_run_timers(ar_list_t & timersList)
+//! @brief Execute callbacks for all expired timers.
+//!
+//! While a timer callback is running, the m_isRunning flag on the timer is set to true.
+//! When the callback returns, a one shot timer is stopped while a periodic timer is
+//! rescheduled based on its delay.
+void ar_kernel_run_timers(ar_list_t & timersList)
 {
-    bool handledTimer = false;
-
     // Check if we need to handle a timer.
     if (timersList.m_head)
     {
         ar_list_node_t * timerNode = timersList.m_head;
-        while (timerNode)
-        {
+        do {
             ar_timer_t * timer = timerNode->getObject<ar_timer_t>();
             assert(timer);
 
+            // Exit loop if all remaining timers on the list wake up in the future.
             if (timer->m_wakeupTime > g_ar.tickCount)
             {
                 break;
@@ -265,7 +248,9 @@ bool ar_kernel_run_timers(ar_list_t & timersList)
 
             // Invoke the timer callback.
             assert(timer->m_callback);
+            timer->m_isRunning = true;
             timer->m_callback(timer, timer->m_param);
+            timer->m_isRunning = false;
 
             // Check that the timer wasn't stopped in its callback.
             if (timer->m_isActive)
@@ -284,12 +269,9 @@ bool ar_kernel_run_timers(ar_list_t & timersList)
                 }
             }
 
-            handledTimer = true;
             timerNode = timerNode->m_next;
-        }
+        } while (timerNode != timersList.m_head);
     }
-
-    return handledTimer;
 }
 
 //! @brief Sort timers ascending by wakeup time.

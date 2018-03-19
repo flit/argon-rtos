@@ -181,7 +181,7 @@ void ar_kernel_enter_scheduler(void);
 void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler(void);
 uint32_t ar_kernel_get_next_wakeup_time();
-bool ar_kernel_run_timers(ar_list_t & timersList);
+void ar_kernel_run_timers(ar_list_t & timersList);
 int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCount, volatile int32_t & qTail, int32_t qSize);
 void ar_runloop_wake(ar_runloop_t * runloop);
 //@}
