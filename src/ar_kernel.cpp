@@ -44,6 +44,8 @@ using namespace Ar;
 static void THREAD_STACK_OVERFLOW_DETECTED();
 static void DEFERRED_ACTION_QUEUE_OVERFLOW_DETECTED();
 
+static void idle_entry(void * param);
+
 #if AR_ENABLE_SYSTEM_LOAD
 static void ar_kernel_update_thread_loads();
 #endif // AR_ENABLE_SYSTEM_LOAD
@@ -72,7 +74,10 @@ static uint8_t s_idleThreadStack[AR_IDLE_THREAD_STACK_SIZE];
 //! This thread just spins forever.
 //!
 //! @param param Ignored.
-void idle_entry(void * param)
+#if !defined(__ICCARM__)
+__attribute__((noreturn))
+#endif
+static void idle_entry(void * param)
 {
     while (1)
     {
