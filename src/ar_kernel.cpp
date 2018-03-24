@@ -99,7 +99,7 @@ static void idle_entry(void * param)
 //! If this function is called when the kernel is locked, a flag is set that
 //! will cause the scheduler to be entered immediately upon the kernel being
 //! unlocked.
-void ar_kernel_enter_scheduler(void)
+void ar_kernel_enter_scheduler()
 {
     // Do nothing if kernel isn't running yet.
     if (!g_ar.isRunning)

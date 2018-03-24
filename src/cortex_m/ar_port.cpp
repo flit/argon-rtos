@@ -70,7 +70,7 @@ bool g_ar_hasExtendedFrame = false;
 // Code
 //------------------------------------------------------------------------------
 
-void ar_port_init_system(void)
+void ar_port_init_system()
 {
     // Enable FPU on Cortex-M4F.
 #if __FPU_USED
@@ -91,7 +91,7 @@ void ar_port_init_system(void)
     NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
 }
 
-void ar_port_init_tick_timer(void)
+void ar_port_init_tick_timer()
 {
     // Set SysTick clock source to processor clock.
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;

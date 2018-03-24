@@ -122,7 +122,7 @@ static inline void ar_port_service_call()
 #endif // DEBUG
 
 //! @brief Returns true if in IRQ state.
-static inline bool ar_port_get_irq_state(void)
+static inline bool ar_port_get_irq_state()
 {
     return __get_IPSR() != 0;
 }

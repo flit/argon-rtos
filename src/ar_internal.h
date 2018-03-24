@@ -165,21 +165,21 @@ extern ar_kernel_t g_ar;
 
 //! @name Porting
 //@{
-void ar_port_init_system(void);
-void ar_port_init_tick_timer(void);
+void ar_port_init_system();
+void ar_port_init_tick_timer();
 void ar_port_set_timer_delay(bool enable, uint32_t delay_us);
 uint32_t ar_port_get_timer_elapsed_us();
 void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param);
-void ar_port_service_call(void);
-bool ar_port_get_irq_state(void);
+void ar_port_service_call();
+bool ar_port_get_irq_state();
 //@}
 
 //! @name Kernel internals
 //@{
 bool ar_kernel_increment_tick_count(unsigned ticks);
-void ar_kernel_enter_scheduler(void);
+void ar_kernel_enter_scheduler();
 void ar_kernel_run_deferred_actions();
-void ar_kernel_scheduler(void);
+void ar_kernel_scheduler();
 uint32_t ar_kernel_get_next_wakeup_time();
 void ar_kernel_run_timers(ar_list_t & timersList);
 int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCount, volatile int32_t & qTail, int32_t qSize);
