@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Immo Software
+ * Copyright (c) 2013-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -45,9 +45,14 @@
 //! @page Configuration
 //! @ingroup ar_config
 //!
-//! These configuration macros are used to control features of Argon. This file can be modified
-//! to change the configuration. Or compiler command line options can be used to override the
-//! default values of these macros.
+//! These configuration macros are used to control features of Argon. There are several ways
+//! to modify the configuration. The recommended method is to copy the `ar_config.h` file to
+//! your application's source code tree and modify it. Be sure to place the new config file's
+//! directory earlier in the include paths than the Argon source directory.
+//! <br/><br/>
+//! Another option for adjusting configuration settings is to specify the configuration macro
+//! values directly on the compiler's command line, in order to override the default values of
+//! these macros.
 //! <br/><br/>
 //! Some configuration macros have defaults based on the debug or release build type. For these,
 //! the value of the DEBUG macro is used to determine the build type.

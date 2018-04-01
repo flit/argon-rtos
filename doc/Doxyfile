@@ -44,7 +44,7 @@ PROJECT_NUMBER         = 1.2.0
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "Tiny embedded kernel"
+PROJECT_BRIEF          = "Tiny embedded real-time kernel"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
@@ -353,7 +353,7 @@ SIP_SUPPORT            = NO
 # should set this option to NO.
 # The default value is: YES.
 
-IDL_PROPERTY_SUPPORT   = YES
+IDL_PROPERTY_SUPPORT   = NO
 
 # If member grouping is used in the documentation and the DISTRIBUTE_GROUP_DOC
 # tag is set to YES then doxygen will reuse the documentation of the first
@@ -795,7 +795,8 @@ INPUT                  = ../include/argon \
                          ../README.md \
                          argon.md \
                          argon_threads.md \
-                         ../src/ar_config.h
+                         ../src/ar_config.h \
+                         argon.dox
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -3,21 +3,21 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="pages" visible="yes" title="" intro=""/>
-<!-- 
+    <tab type="pages" visible="yes" title="Documentation" intro=""/>
+<!--
     <tab type="usergroup" visible="yes" url="@ref ar" title="Kernel Documentation">
         <tab type="user" url="@ref ar_thread" title="Threads"/>
         <tab type="user" url="@ref ar_sem" title="Threads"/>
     </tab>
  -->
-    <tab type="modules" visible="yes" title="Documentation" intro=""/>
+    <tab type="modules" visible="yes" title="Modules" intro=""/>
     <tab type="namespaces" visible="yes" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>
       <tab type="namespacemembers" visible="yes" title="" intro=""/>
     </tab>
     <tab type="classes" visible="yes" title="">
       <tab type="classlist" visible="yes" title="" intro=""/>
-      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/> 
+      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
       <tab type="hierarchy" visible="yes" title="" intro=""/>
       <tab type="classmembers" visible="yes" title="" intro=""/>
     </tab>
@@ -25,7 +25,7 @@
       <tab type="filelist" visible="yes" title="" intro=""/>
       <tab type="globals" visible="yes" title="" intro=""/>
     </tab>
-    <tab type="examples" visible="yes" title="" intro=""/>  
+    <tab type="examples" visible="yes" title="" intro=""/>
   </navindex>
 
   <!-- Layout definition for a class page -->

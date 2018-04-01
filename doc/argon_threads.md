@@ -20,27 +20,27 @@ set them in your subclass' init() method.
 
 Here's an example subclass that uses a member function as the entry point:
 ~~~~~{.cpp}
-     class MySubclassThread : public Ar::Thread
+ class MySubclassThread : public Ar::Thread
+ {
+ public:
+     ar_status_t init()
      {
-     public:
-         ar_status_t init()
-         {
-             // Pass NULL for the entry point. It's not needed because you are
-             // overriding threadEntry() below.
-             return Thread::init("my thread", NULL, this, m_stack, sizeof(m_stack), 32);
-         }
+         // Pass NULL for the entry point. It's not needed because you are
+         // overriding threadEntry() below.
+         return Thread::init("my thread", NULL, this, m_stack, sizeof(m_stack), 32);
+     }
 
-     protected:
-         // Static memory for the stack.
-         uint8_t m_stack[4096];
+ protected:
+     // Static memory for the stack.
+     uint8_t m_stack[4096];
 
-         // Override the default Thread implementation.
-         virtual void threadEntry()
-         {
-             // Implement your thread here.
-         }
+     // Override the default Thread implementation.
+     virtual void threadEntry()
+     {
+         // Implement your thread here.
+     }
 
-     };
+ };
 ~~~~~
 
 

@@ -1,37 +1,47 @@
 /*!
 
 @defgroup ar Argon RTOS
-@brief Tiny embedded kernel.
+@brief Common definitions and kernel APIs.
 
 @defgroup ar_thread Threads
 @ingroup ar
+@brief Thread API.
 
 @defgroup ar_sem Semaphores
 @ingroup ar
+@brief Semaphore API.
 
 @defgroup ar_mutex Mutexes
 @ingroup ar
+@brief Mutex API.
 
 @defgroup ar_chan Channels
 @ingroup ar
+@brief Channel API.
 
 @defgroup ar_queue Queues
 @ingroup ar
+@brief Queue API.
 
 @defgroup ar_timer Timers
 @ingroup ar
+@brief Timer API.
 
 @defgroup ar_runloop Run Loops
 @ingroup ar
+@brief Run loop API.
 
 @defgroup ar_time Time Utilities
 @ingroup ar
+@brief Various time related utility functions.
 
 @defgroup ar_atomic Atomic Operations
 @ingroup ar
+@brief Atomic operation functions.
 
 @defgroup ar_config Configuration
 @ingroup ar
+@brief Documentation of the configuration macros.
 
  */
 

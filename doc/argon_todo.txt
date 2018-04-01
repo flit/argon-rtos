@@ -11,7 +11,7 @@ Ideas
 √ Implement priority inheritence for mutexes.
 √ Finish user interrupt support.
 √ Clean up member function support for threads.
-- Add Thread::join()?
+x Add Thread::join()?
 x More thorough testing using cppunit. [Massive effort to get cppunit compiling under IAR.]
 - Unprivileged support?
 x Event flags?
@@ -86,7 +86,7 @@ x Change function pointer types to not be pointers, then make params etc pointer
 - Replace tick counter with 64-bit microsecond time.
 √ Move g_ar.allObjects to its own global variable.
 √ Add a sleep until API.
-- Share a common timeout list for timers and blocked threads?
+x Share a common timeout list for timers and blocked threads?
 - Main thread needs to be able to stop by returning from main()
 √ Use a function pointer table for deferred kernel actions to solve issue with bringing in lots of code into link.
 - Replace main thread support with API to turn main() into a thread and start scheduler.
@@ -96,9 +96,9 @@ x Change function pointer types to not be pointers, then make params etc pointer
 √ Handle needsReschedule from within a deferred action in the same PendSV invocation, so PendSV is not immediately re-entered.
 - Need a kernel object that can broadcast to wake up multiple threads.
 - Add thread stack usage to ar_thread_status_t and compute in ar_thread_get_report().
-- Calling ar_timer_set_delay() from within periodic timer callback will result in double delay, since ar_kernel_run_timers() will reschedule it again; use flag in timer to solve.
+√ Calling ar_timer_set_delay() from within periodic timer callback will result in double delay, since ar_kernel_run_timers() will reschedule it again; use flag in timer to solve.
 - Let user allocate runloop function call queue.
-- Either implement runloop channel support or remove related APIs.
+√ Either implement runloop channel support or remove related APIs.
 - Provide option to coalesce function calls added to runloop queue.
 - Add config option to compute thread stack usage and provide via ar_thread_get_report().
 - Free dynamically allocated stack when thread is deleted.
@@ -108,15 +108,17 @@ x Track time spent in scheduler.
 √ Allow timers to be stopped from timer callback.
 - Consider replacing special member function callback support with member function thunk class.
 * Only defer irq operations if the kernel is locked, otherwise execute immediately.
-- Change ar_runloop_run() to return ar_status_t instead of its own type.
+√ Change ar_runloop_run() to return ar_status_t instead of its own type.
 - Remove queue and channel handler function support from runloops?
-- Only run the scheduler when we know we need to switch threads.
+- Only run the scheduler when we know we need to switch threads. (maybe already the case)
 - Only handle round-robin in the tick timer (except for tickless).
 - Make thread load computation work for tickless idle.
-- Return error from all APIs that cannot be called from IRQ when invoked from IRQ.
-- Support 16- and 8-bit atomic operations.
-- Use 16-bit atomic operations to reduce deferred action and runloop perform queue struct sizes.
+√ Return error from all APIs that cannot be called from IRQ when invoked from IRQ.
+√ Support 16- and 8-bit atomic operations.
+- Use 16-bit atomic operations to reduce deferred action and runloop perform queue struct sizes (indexes).
 - Move to a solely tickless architecture.
+- Change kernel flags to bool so writes are atomic.
+- Switch to using C11 or C++11 atomics? (increases code size noticeably)
 
 
 Issues
