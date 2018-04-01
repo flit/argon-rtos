@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Immo Software
+ * Copyright (c) 2013-2018 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -44,8 +44,7 @@ _EQU(EXC_RETURN, 0xfffffffd)
 
         _FN_BEGIN(PendSV_Handler)
         _FN_DECL(PendSV_Handler)
-_FN_LABEL(SVC_Handler)
-_LABEL(PendSV_Handler)
+_FN_LABEL(PendSV_Handler)
         _FN_BEGIN_POST
         _FN_CANT_UNWIND
 
@@ -95,6 +94,18 @@ _LABEL(PendSV_Handler)
 
         _FN_END(PendSV_Handler)
         _FN_SIZE(PendSV_Handler)
+
+        _FN_BEGIN(SVC_Handler)
+        _FN_DECL(SVC_Handler)
+_FN_LABEL(SVC_Handler)
+        _FN_BEGIN_POST
+        _FN_CANT_UNWIND
+
+        // Exit handler.
+        bx      lr
+
+        _FN_END(SVC_Handler)
+        _FN_SIZE(SVC_Handler)
 
         _ALIGN(4)
 
