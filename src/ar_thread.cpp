@@ -625,10 +625,44 @@ uint32_t ar_thread_get_load(ar_thread_t * thread)
 #endif // AR_ENABLE_SYSTEM_LOAD
 }
 
-uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries)
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_thread_get_stack_used(ar_thread_t * thread)
+{
+    // Check canary.
+    if (*thread->m_stackBottom != kStackCheckValue)
+    {
+        return 0;
+    }
+    uint32_t * stack = thread->m_stackBottom + 1; // Skip canary.
+    uint32_t unusedWords = 1; // Count canary.
+    // Handle part of stack being used to hold member function thread entry points.
+    if (*(stack + 2) == kStackFillValue)
+    {
+        unusedWords += 2;
+        stack += 2;
+    }
+    for (; stack < thread->m_stackTop; ++stack, ++unusedWords)
+    {
+        if (*stack != kStackFillValue)
+        {
+            break;
+        }
+    }
+    uint32_t stackSize = reinterpret_cast<uint32_t>(thread->m_stackTop) - reinterpret_cast<uint32_t>(thread->m_stackBottom);
+    return stackSize - (unusedWords * sizeof(uint32_t));
+}
+
+// See ar_kernel.h for documentation of this function.
+uint32_t ar_thread_get_report(ar_thread_status_t report[], uint32_t maxEntries)
 {
     uint32_t threadCount = 0;
-    ar_list_t * const threadLists[] = { &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList };
+    ar_list_t * const threadLists[] = {
+#if AR_GLOBAL_OBJECT_LISTS
+        &g_ar_objects.threads
+#else
+        &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList
+#endif // AR_GLOBAL_OBJECT_LISTS
+    };
     uint32_t i = 0;
     for (; i < ARRAY_SIZE(threadLists) && threadCount < maxEntries; ++i)
     {
@@ -643,12 +677,15 @@ uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries)
                 {
                     report->m_thread = thread;
                     report->m_name = thread->m_name;
+                    report->m_uniqueId = thread->m_uniqueId;
 #if AR_ENABLE_SYSTEM_LOAD
                     report->m_cpu = thread->m_permilleCpu;
 #else // AR_ENABLE_SYSTEM_LOAD
                     report->m_cpu = 0;
 #endif // AR_ENABLE_SYSTEM_LOAD
                     report->m_state = thread->m_state;
+                    report->m_maxStackUsed = ar_thread_get_stack_used(thread);
+                    report->m_stackSize = reinterpret_cast<uint32_t>(thread->m_stackTop) - reinterpret_cast<uint32_t>(thread->m_stackBottom);
 
                     ++report;
                 }

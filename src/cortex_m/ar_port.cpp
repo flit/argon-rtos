@@ -184,8 +184,9 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
     thread->m_stackBottom = reinterpret_cast<uint32_t *>(sp - stackSize);
 
 #if AR_THREAD_STACK_PATTERN_FILL
-    // Fill the stack with a pattern.
-    memset(thread->m_stackBottom, 0xba, stackSize);
+    // Fill the stack with a pattern. We just take the low byte of the fill pattern since
+    // memset() is a byte fill. This assumes each byte of the fill pattern is the same.
+    memset(thread->m_stackBottom, kStackFillValue & 0xff, stackSize);
 #endif // AR_THREAD_STACK_PATTERN_FILL
 
     // Save new top of stack. Also, make sure stack is 8-byte aligned.

@@ -378,7 +378,13 @@ void THREAD_STACK_OVERFLOW_DETECTED()
 void ar_kernel_update_thread_loads()
 {
     // Scan threads in all states in a way that doesn't depend on g_ar_objects.
-    ar_list_t * const threadLists[] = { &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList };
+    ar_list_t * const threadLists[] = {
+#if AR_GLOBAL_OBJECT_LISTS
+        &g_ar_objects.threads
+#else
+        &g_ar.readyList, &g_ar.suspendedList, &g_ar.sleepingList
+#endif // AR_GLOBAL_OBJECT_LISTS
+    };
     uint32_t i = 0;
     for (; i < ARRAY_SIZE(threadLists); ++i)
     {

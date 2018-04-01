@@ -60,7 +60,11 @@ enum
 {
     //! Signature value written to the top of each thread's the stack. The scheduler looks
     //! for this value every time it activates a thread and halts if it is missing.
-    kStackCheckValue = 0xdeadbeef
+    kStackCheckValue = 0xdeadbeef,
+
+    //! Value to fill the stack with for detection of max stack usage. All bytes of this
+    //! fill pattern must be the same.
+    kStackFillValue = 0xbabababa,
 };
 
 //! All events start with a 32-bit message on ITM port 31, composed of an event ID in the

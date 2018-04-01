@@ -283,6 +283,15 @@ public:
     ar_status_t setPriority(uint8_t priority) { return ar_thread_set_priority(this, priority); }
     //@}
 
+    //! @name Info
+    //@{
+    //! @brief Get the thread's system load.
+    uint32_t getLoad() { return ar_thread_get_load(this); }
+
+    //! @brief Get the thread's maximum stack usage.
+    uint32_t getStackUsed() { return ar_thread_get_stack_used(this); }
+    //@}
+
     //! @name Accessors
     //!
     //! Static members to get system-wide information.

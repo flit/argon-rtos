@@ -246,8 +246,11 @@ struct _ar_thread {
 typedef struct _ar_thread_status {
     ar_thread_t * m_thread;     //!< Pointer to the thread's structure.
     const char * m_name;        //!< Thread's name.
+    uint32_t m_uniqueId;        //!< Unique ID for this thread.
     uint32_t m_cpu;             //!< Per mille CPU usage of the thread over the last sampling period, with a range of 1-1000.
     ar_thread_state_t m_state;  //!< Current thread state.
+    uint32_t m_maxStackUsed;    //!< Maximum number of bytes used in the thread's stack.
+    uint32_t m_stackSize;       //!< Total bytes allocated to the thread's stack.
 } ar_thread_status_t;
 
 /*!
@@ -574,9 +577,22 @@ const char * ar_thread_get_name(ar_thread_t * thread);
 uint32_t ar_thread_get_load(ar_thread_t * thread);
 
 /*!
- * @brief Get a report of all thread's status.
+ * @brief Get the maximum stack usage of the specified thread.
+ *
+ * @param thread The thread to inspect.
+ * @return Maximum number of bytes used in the thread's stack, rounded down to the nearest word.
+ *      If the thread has overflowed its stack, then 0 will be returned.
  */
-uint32_t ar_thread_get_report(ar_thread_status_t * report, uint32_t maxEntries);
+uint32_t ar_thread_get_stack_used(ar_thread_t * thread);
+
+/*!
+ * @brief Get a report of all thread's status.
+ *
+ * @param[out] Report array to be filled in.
+ * @param maxEntries Maximum number of thread status that can be placed into _report_.
+ * @return Actual number of threads filled in to _report_.
+ */
+uint32_t ar_thread_get_report(ar_thread_status_t report[], uint32_t maxEntries);
 //@}
 
 //! @}
