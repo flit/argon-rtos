@@ -42,7 +42,7 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 // See ar_kernel.h for documentation of this function.
-ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thread_t * thread)
+ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name)
 {
     if (!runloop)
     {
@@ -56,7 +56,6 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
     memset(runloop, 0, sizeof(ar_runloop_t));
 
     runloop->m_name = name ? name : AR_ANONYMOUS_OBJECT_NAME;
-    runloop->m_thread = thread ? thread : ar_thread_get_current();
     runloop->m_timers.m_predicate = ar_timer_sort_by_wakeup;
 
 #if AR_GLOBAL_OBJECT_LISTS

@@ -1011,7 +1011,7 @@ const char * ar_timer_get_name(ar_timer_t * timer);
 //! @name Runloop
 //@{
 
-ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thread_t * thread);
+ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name);
 
 ar_status_t ar_runloop_delete(ar_runloop_t * runloop);
 

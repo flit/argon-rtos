@@ -967,14 +967,14 @@ class RunLoop : public _ar_runloop
 public:
     RunLoop() {}
 
-    RunLoop(const char * name, ar_thread_t * thread)
+    RunLoop(const char * name)
     {
-        init(name, thread);
+        init(name);
     }
 
     ~RunLoop() { ar_runloop_delete(this); }
 
-    ar_status_t init(const char * name, ar_thread_t * thread) { return ar_runloop_create(this, name, thread); }
+    ar_status_t init(const char * name) { return ar_runloop_create(this, name); }
 
     //! @brief Get the run loop's name.
     const char * getName() const { return m_name; }
