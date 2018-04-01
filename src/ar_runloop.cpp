@@ -88,26 +88,26 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     return kArSuccess;
 }
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object)
+ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object)
 {
     if (!runloop)
     {
-        return kArRunLoopError;
+        return kArInvalidParameterError;
     }
     // It's ok to nest runs of the runloop, but only on a single thread.
     if (runloop->m_isRunning && runloop->m_thread != g_ar.currentThread)
     {
-        return kArRunLoopError;
+        return kArRunLoopAlreadyRunningError;
     }
     // Another check to make sure no other runloop is already running on the current thread.
     if (g_ar.currentThread->m_runLoop && g_ar.currentThread->m_runLoop != runloop)
     {
-        return kArRunLoopError;
+        return kArRunLoopAlreadyRunningError;
     }
     // Disallow running from interrupt context.
     if (ar_port_get_irq_state())
     {
-        return kArRunLoopError;
+        return kArNotFromInterruptError;
     }
 
     // Clear returned object.
@@ -134,7 +134,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
         timeoutTicks = ar_milliseconds_to_ticks(timeout);
     }
 
-    ar_runloop_status_t returnStatus = kArRunLoopStopped;
+    ar_status_t returnStatus = kArRunLoopStopped;
 
     // Run it.
     do {

@@ -74,6 +74,9 @@ typedef enum _ar_status {
     kArOutOfMemoryError,        //!< Allocation failed.
     kArInvalidStateError,       //!< The thread is an invalid state for the given operation.
     kArAlreadyAttachedError,    //!< The object is already attached to a runloop.
+    kArRunLoopAlreadyRunningError, //!< The runloop is already running on another thread.
+    kArRunLoopStopped,          //!< The runloop was stopped.
+    kArRunLoopQueueReceived,    //!< The runloop exited due to a value received on an associated queue.
 } ar_status_t;
 
 //! @brief Options for creating a new thread.
@@ -114,14 +117,6 @@ typedef enum _ar_timer_modes {
     kArOneShotTimer,      //!< Timer fires a single time.
     kArPeriodicTimer      //!< Timer repeatedly fires every time the interval elapses.
 } ar_timer_mode_t;
-
-//! @brief Runloop actions.
-typedef enum _ar_runloop_status {
-    kArRunLoopError,
-    kArRunLoopStopped,
-    kArRunLoopQueueReceived,
-    kArRunLoopChannelReceived
-} ar_runloop_status_t;
 
 //------------------------------------------------------------------------------
 // Types
@@ -1020,7 +1015,37 @@ ar_status_t ar_runloop_create(ar_runloop_t * runloop, const char * name, ar_thre
 
 ar_status_t ar_runloop_delete(ar_runloop_t * runloop);
 
-ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object);
+/*!
+ * @brief Run a runloop for a period of time.
+ *
+ * Starts the runloop running for a specified amount of time. It will sleep the thread until an
+ * associated timer or source is pending. If the timeout expires, the API will return. To force the
+ * runloop to exit, call ar_runloop_stop().
+ *
+ * It's ok to nest runs of the runloop, but only on a single thread.
+ *
+ * If a queue is associated with the runloop (via ar_runloop_add_queue()) and the queue receives
+ * an item, then the runloop will either invoke the queue handler callback or exit. If it exits,
+ * it will return #kArRunLoopQueueReceived and the @a object parameter will be filled in with the
+ * queue object that received the item. If @a object is NULL, then the runloop will still exit but
+ * you cannot tell which queue received. This is acceptable if only one queue is associated with
+ * the runloop.
+ *
+ * @param runloop The runloop object.
+ * @param timeout The maximum number of milliseconds to run the runloop. If this value is 0, or
+ *      #kArNoTimeout, then the call will exit after handling pending sources. Setting the timeout to
+ *      #kArInfiniteTimeout will cause the runloop to run until stopped or a queue receives an item.
+ * @param[out] object Optional structure that will be filled in when the return value is #kArRunLoopQueueReceived.
+ *      May be NULL, in which case the receiving queue cannot be indicated.
+ *
+ * @retval kArInvalidParameterError Invalid parameter was provided.
+ * @retval kArRunLoopAlreadyRunningError The runloop is already running on another thread, or another
+ *      runloop is already running on the current thread.
+ * @retval kArNotFromInterruptError Cannot run a runloop from interrupt context.
+ * @retval kArRunLoopStopped The runloop exited due to a timeout or explict call to ar_runloop_stop().
+ * @retval kArRunLoopQueueReceived A queue associated with the runloop received an item.
+ */
+ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_result_t * object);
 
 ar_status_t ar_runloop_stop(ar_runloop_t * runloop);
 
