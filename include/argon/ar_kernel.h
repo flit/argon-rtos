@@ -190,12 +190,10 @@ typedef struct _ar_list {
     inline void add(ar_thread_t * item);        //!< @brief Add a thread to the list.
     inline void add(ar_timer_t * item);         //!< @brief Add a timer to the list.
     inline void add(ar_queue_t * item);         //!< @brief Add a queue to the list.
-    inline void add(ar_channel_t * item);         //!< @brief Add a channel to the list.
     void remove(ar_list_node_t * item);         //!< @brief Remove an item from the list.
     inline void remove(ar_thread_t * item);     //!< @brief Remove a thread from the list.
     inline void remove(ar_timer_t * item);      //!< @brief Remove a timer from the list.
     inline void remove(ar_queue_t * item);      //!< @brief Remove a queue from the list.
-    inline void remove(ar_channel_t * item);      //!< @brief Remove a channel from the list.
     void check();
 #endif // __cplusplus
 } ar_list_t;
@@ -292,8 +290,6 @@ struct _ar_channel {
     uint32_t m_width;               //!< Size in bytes of the channel's data.
     ar_list_t m_blockedSenders;     //!< List of blocked sender threads.
     ar_list_t m_blockedReceivers;   //!< List of blocked receiver threads.
-    ar_runloop_t * m_runLoop;
-    ar_list_node_t m_runLoopNode;
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Node on the created channels list.
 #endif // AR_GLOBAL_OBJECT_LISTS
