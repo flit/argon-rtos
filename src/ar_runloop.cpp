@@ -77,8 +77,10 @@ ar_status_t ar_runloop_delete(ar_runloop_t * runloop)
     {
         return kArNotFromInterruptError;
     }
-
-    // TODO stop running runloop
+    if (runloop->m_isRunning)
+    {
+        return kArInvalidStateError;
+    }
 
 #if AR_GLOBAL_OBJECT_LISTS
     g_ar_objects.runloops.remove(&runloop->m_createdNode);
@@ -195,6 +197,7 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
             if (deltaTicks >= timeoutTicks)
             {
                 // Timed out, exit runloop.
+                returnStatus = kArTimeoutError;
                 break;
             }
             blockTimeoutTicks -= deltaTicks;
@@ -314,21 +317,6 @@ ar_status_t ar_runloop_add_queue(ar_runloop_t * runloop, ar_queue_t * queue, ar_
     queue->m_runLoopHandler = callback;
     queue->m_runLoopHandlerParam = param;
     queue->m_runLoop = runloop;
-
-    return kArSuccess;
-}
-
-ar_status_t ar_runloop_add_channel(ar_runloop_t * runloop, ar_channel_t * channel, ar_runloop_channel_handler_t callback, void * param)
-{
-    if (!runloop || !channel)
-    {
-        return kArInvalidParameterError;
-    }
-
-    runloop->m_channels.add(channel);
-
-    // Wake the runloop in case it is blocked.
-    ar_runloop_wake(runloop);
 
     return kArSuccess;
 }

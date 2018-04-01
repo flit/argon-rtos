@@ -965,32 +965,130 @@ private:
 class RunLoop : public _ar_runloop
 {
 public:
+    //! @brief Default constructor.
     RunLoop() {}
 
+    //! @brief Constructor to init the runloop.
+    //! @param The runloop's name. May be NULL.
     RunLoop(const char * name)
     {
         init(name);
     }
 
+    //! @brief Runloop destructor.
     ~RunLoop() { ar_runloop_delete(this); }
 
+    /*!
+     * @brief Create a new runloop.
+     *
+     * A new runloop is not associated with any thread. This association will happen when the runloop
+     * is run.
+     *
+     * @param name The name of the runloop. May be NULL.
+     *
+     * @retval #kArSuccess The runloop was created successfully.
+     * @retval #kArNotFromInterruptError Cannot call this API from interrupt context.
+     */
     ar_status_t init(const char * name) { return ar_runloop_create(this, name); }
 
     //! @brief Get the run loop's name.
     const char * getName() const { return m_name; }
 
+    /*!
+     * @brief Run a runloop for a period of time.
+     *
+     * Starts the runloop running for a specified amount of time. It will sleep the thread until an
+     * associated timer or source is pending. If the timeout expires, the API will return. To force the
+     * runloop to exit, call ar_runloop_stop().
+     *
+     * It's ok to nest runs of the runloop, but only on a single thread.
+     *
+     * If a queue is associated with the runloop (via ar_runloop_add_queue()) and the queue receives
+     * an item, then the runloop will either invoke the queue handler callback or exit. If it exits,
+     * it will return #kArRunLoopQueueReceived and the @a object parameter will be filled in with the
+     * queue object that received the item. If @a object is NULL, then the runloop will still exit but
+     * you cannot tell which queue received. This is acceptable if only one queue is associated with
+     * the runloop.
+     *
+     * @param timeout The maximum number of milliseconds to run the runloop. If this value is 0, or
+     *      #kArNoTimeout, then the call will exit after handling pending sources. Setting the timeout to
+     *      #kArInfiniteTimeout will cause the runloop to run until stopped or a queue receives an item.
+     * @param[out] object Optional structure that will be filled in when the return value is #kArRunLoopQueueReceived.
+     *      May be NULL, in which case the receiving queue cannot be indicated.
+     *
+     * @retval #kArRunLoopStopped The runloop exited due to a timeout or explict call to ar_runloop_stop().
+     * @retval #kArRunLoopQueueReceived A queue associated with the runloop received an item.
+     * @retval #kArTimeoutError The runloop timed out.
+     * @retval #kArRunLoopAlreadyRunningError The runloop is already running on another thread, or another
+     *      runloop is already running on the current thread.
+     * @retval #kArNotFromInterruptError Cannot run a runloop from interrupt context.
+     */
     ar_status_t run(uint32_t timeout=kArInfiniteTimeout, ar_runloop_result_t * object=0) { return ar_runloop_run(this, timeout, object); }
 
+    /*!
+     * @brief Stop a runloop.
+     *
+     * Use this function to stop a running runloop. It may be called from any execution context, including
+     * from within the runloop itself, another thread, or interrupt context. When the runloop stops, it
+     * will return #kArRunLoopStopped from the run() API. If multiple runs of the runloop
+     * are nested, only the innermost will be stopped. If the runloop is calling out to a perform function
+     * or a handler callback, it will only be stopped when the callback returns.
+     *
+     * @retval #kArSuccess The runloop was stopped, or was already stopped.
+     */
     ar_status_t stop() { return ar_runloop_stop(this); }
 
+    /*!
+     * @brief Invoke a function on a runloop.
+     *
+     * The function will be called in FIFO order the next time the runloop runs. If the runloop is
+     * asleep, it will be woken and run immediately.
+     *
+     * This API can be called from any execution context.
+     *
+     * @param function The function to invoke on the runloop.
+     * @param param Arbitrary parameter passed to the function when it is called.
+     *
+     * @retval #kArSuccess The runloop was stopped, or was already stopped.
+     * @retval #kArInvalidParameterError The _function_ parameter was NULL.
+     * @retval #kArQueueFullError No room to enqueue the function.
+     */
     ar_status_t perform(ar_runloop_function_t function, void * param=0) { return ar_runloop_perform(this, function, param); }
 
+    /*!
+     * @brief Associate a timer with a runloop.
+     *
+     * If the timer is already associated with another runloop, its association will be changed.
+     *
+     * @param timer The timer to associate with the runloop.
+     *
+     * @retval #kArSuccess The timer was added to the runloop.
+     * @retval #kArInvalidParameterError The _timer_ parameter was NULL.
+     */
     ar_status_t addTimer(ar_timer_t * timer) { return ar_runloop_add_timer(this, timer); }
 
+    /*!
+     * @brief Add a queue to a runloop.
+     *
+     * If the queue is already associated with another runloop, the #kArAlreadyAttachedError error
+     * is returned.
+     *
+     * @param queue The queue to associate with the runloop.
+     * @param callback Optional callback to handler an item received on the queue. May be NULL.
+     * @param param Arbitrary parameter passed to the _callback_ when it is called.
+     *
+     * @retval #kArSuccess The timer was added to the runloop.
+     * @retval #kArAlreadyAttachedError A queue can only be added to one runloop at a time.
+     * @retval #kArInvalidParameterError The _queue_ parameter was NULL.
+     */
     ar_status_t addQueue(ar_queue_t * queue, ar_runloop_queue_handler_t callback=NULL, void * param=NULL) { return ar_runloop_add_queue(this, queue, callback, param); }
 
-    ar_status_t addChannel(ar_channel_t * channel, ar_runloop_channel_handler_t callback=NULL, void * param=NULL) { return ar_runloop_add_channel(this, channel, callback, param); }
-
+    /*!
+     * @brief Return the current runloop.
+     *
+     * @return The runloop currently running on the active thread. If no runloop is running, then NULL
+     *      will be returned.
+     */
     static ar_runloop_t * getCurrent(void) { return ar_runloop_get_current(); }
 };
 
