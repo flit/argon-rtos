@@ -310,10 +310,10 @@ struct _ar_queue {
     unsigned m_count;       //!< Current number of elements in the queue.
     ar_list_t m_sendBlockedList;    //!< List of threads blocked waiting to send.
     ar_list_t m_receiveBlockedList; //!< List of threads blocked waiting to receive data.
-    ar_runloop_t * m_runLoop;
-    ar_list_node_t m_runLoopNode;
-    ar_runloop_queue_handler_t m_runLoopHandler;
-    void * m_runLoopHandlerParam;
+    ar_runloop_t * m_runLoop;       //!< Runloop the queue is bound to.
+    ar_list_node_t m_runLoopNode;   //!< List node for the runloop's queue list.
+    ar_runloop_queue_handler_t m_runLoopHandler;    //!< Handler function.
+    void * m_runLoopHandlerParam;   //!< User parameter for handler function.
 #if AR_GLOBAL_OBJECT_LISTS
     ar_list_node_t m_createdNode;   //!< Created list node.
 #endif // AR_GLOBAL_OBJECT_LISTS
@@ -337,7 +337,7 @@ struct _ar_timer {
     bool m_isRunning;           //!< Whether the timer callback is executing.
     uint32_t m_delay;           //!< Delay in ticks.
     uint32_t m_wakeupTime;      //!< Expiration time in ticks.
-    ar_runloop_t * m_runLoop;
+    ar_runloop_t * m_runLoop;   //!< Runloop to which the timer is bound.
 };
 
 /*!
@@ -1097,6 +1097,7 @@ ar_status_t ar_runloop_stop(ar_runloop_t * runloop);
  *
  * @retval #kArSuccess The runloop was stopped, or was already stopped.
  * @retval #kArInvalidParameterError The _runloop_ or _function_ parameter was NULL.
+ * @retval #kArQueueFullError No room to enqueue the function.
  */
 ar_status_t ar_runloop_perform(ar_runloop_t * runloop, ar_runloop_function_t function, void * param);
 
