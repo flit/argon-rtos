@@ -1086,7 +1086,7 @@ static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return 
 //! @name Atomic operations
 //@{
 /*!
- * @brief Atomic add operation.
+ * @brief Atomic 8-bit add operation.
  *
  * A memory barrier is performed prior to the add operation.
  *
@@ -1094,30 +1094,32 @@ static inline uint32_t ar_milliseconds_to_ticks(uint32_t milliseconds) { return 
  * @param delta Signed value to atomically add to *value.
  * @return The original value is returned.
  */
-int32_t ar_atomic_add(volatile int32_t * value, int32_t delta);
+int8_t ar_atomic_add8(volatile int8_t * value, int8_t delta);
 
 /*!
- * @brief Atomically increment a value by 1.
+ * @brief Atomic 16-bit add operation.
  *
  * A memory barrier is performed prior to the add operation.
  *
- * @param value Pointer to the word to increment.
+ * @param value Pointer to the word to add to.
+ * @param delta Signed value to atomically add to *value.
  * @return The original value is returned.
  */
-static inline int32_t ar_atomic_inc(volatile int32_t * value) { return ar_atomic_add(value, 1); }
+int16_t ar_atomic_add16(volatile int16_t * value, int16_t delta);
 
 /*!
- * @brief Atomically decrement a value by 1.
+ * @brief Atomic 32-bit add operation.
  *
  * A memory barrier is performed prior to the add operation.
  *
- * @param value Pointer to the word to decrement.
+ * @param value Pointer to the word to add to.
+ * @param delta Signed value to atomically add to *value.
  * @return The original value is returned.
  */
-static inline int32_t ar_atomic_dec(volatile int32_t * value) { return ar_atomic_add(value, -1); }
+int32_t ar_atomic_add32(volatile int32_t * value, int32_t delta);
 
 /*!
- * @brief Atomic compare and swap operation.
+ * @brief Atomic 8-bit compare and swap operation.
  *
  * Tests the word pointed to by @a value for equality with @a expectedValue. If they are
  * equal, the word pointed to by @a value is set to @a newValue. If *value is not
@@ -1133,7 +1135,45 @@ static inline int32_t ar_atomic_dec(volatile int32_t * value) { return ar_atomic
  * @retval false No change was made to *value.
  * @retval true The swap was performed, and *value is now equal to newValue.
  */
-bool ar_atomic_cas(volatile int32_t * value, int32_t expectedValue, int32_t newValue);
+bool ar_atomic_cas8(volatile int8_t * value, int8_t expectedValue, int8_t newValue);
+
+/*!
+ * @brief Atomic 16-bit compare and swap operation.
+ *
+ * Tests the word pointed to by @a value for equality with @a expectedValue. If they are
+ * equal, the word pointed to by @a value is set to @a newValue. If *value is not
+ * equal to @a expectedValue, then no change is made. The return value indicates whether
+ * the swap was performed. Of course, this entire operation is guaranteed to be
+ * atomic even on multiprocessor platforms.
+ *
+ * A memory barrier is performed prior to the compare and swap operation.
+ *
+ * @param value Pointer to the word to compare and swap.
+ * @param expectedValue Value to compare against.
+ * @param newValue Value to value to swap in if *value is equal to expectedValue.
+ * @retval false No change was made to *value.
+ * @retval true The swap was performed, and *value is now equal to newValue.
+ */
+bool ar_atomic_cas16(volatile int16_t * value, int16_t expectedValue, int16_t newValue);
+
+/*!
+ * @brief Atomic 32-bit compare and swap operation.
+ *
+ * Tests the word pointed to by @a value for equality with @a expectedValue. If they are
+ * equal, the word pointed to by @a value is set to @a newValue. If *value is not
+ * equal to @a expectedValue, then no change is made. The return value indicates whether
+ * the swap was performed. Of course, this entire operation is guaranteed to be
+ * atomic even on multiprocessor platforms.
+ *
+ * A memory barrier is performed prior to the compare and swap operation.
+ *
+ * @param value Pointer to the word to compare and swap.
+ * @param expectedValue Value to compare against.
+ * @param newValue Value to value to swap in if *value is equal to expectedValue.
+ * @retval false No change was made to *value.
+ * @retval true The swap was performed, and *value is now equal to newValue.
+ */
+bool ar_atomic_cas32(volatile int32_t * value, int32_t expectedValue, int32_t newValue);
 //@}
 
 //! @}

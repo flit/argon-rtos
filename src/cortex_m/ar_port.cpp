@@ -219,8 +219,32 @@ void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * para
     *thread->m_stackBottom = kStackCheckValue;
 }
 
+// Provide atomic operations for Cortex-M0+ that doesn't have load/store exclusive
+// instructions. We just have to disable interrupts.
 #if (__CORTEX_M < 3)
-int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
+int8_t ar_atomic_add8(volatile int8_t * value, int8_t delta)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    __DSB();
+    int8_t originalValue = *value;
+    *value += delta;
+    __set_PRIMASK(primask);
+    return originalValue;
+}
+
+int16_t ar_atomic_add16(volatile int16_t * value, int16_t delta)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    __DSB();
+    int16_t originalValue = *value;
+    *value += delta;
+    __set_PRIMASK(primask);
+    return originalValue;
+}
+
+int32_t ar_atomic_add32(volatile int32_t * value, int32_t delta)
 {
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
@@ -231,7 +255,39 @@ int32_t ar_atomic_add(volatile int32_t * value, int32_t delta)
     return originalValue;
 }
 
-bool ar_atomic_cas(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
+bool ar_atomic_cas8(volatile int8_t * value, int8_t expectedValue, int8_t newValue)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    __DSB();
+    int8_t oldValue = *value;
+    if (oldValue == expectedValue)
+    {
+        *value = newValue;
+        __set_PRIMASK(primask);
+        return true;
+    }
+    __set_PRIMASK(primask);
+    return false;
+}
+
+bool ar_atomic_cas16(volatile int16_t * value, int16_t expectedValue, int16_t newValue)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    __DSB();
+    int16_t oldValue = *value;
+    if (oldValue == expectedValue)
+    {
+        *value = newValue;
+        __set_PRIMASK(primask);
+        return true;
+    }
+    __set_PRIMASK(primask);
+    return false;
+}
+
+bool ar_atomic_cas32(volatile int32_t * value, int32_t expectedValue, int32_t newValue)
 {
     uint32_t primask = __get_PRIMASK();
     __disable_irq();

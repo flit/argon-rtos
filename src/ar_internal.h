@@ -253,12 +253,12 @@ public:
     {
         if (E)
         {
-            ar_atomic_inc(&g_ar.lockCount);
+            ar_atomic_add32(&g_ar.lockCount, 1);
         }
         else
         {
             assert(g_ar.lockCount != 0);
-            ar_atomic_dec(&g_ar.lockCount);
+            ar_atomic_add32(&g_ar.lockCount, -1);
         }
     }
 
@@ -268,7 +268,7 @@ public:
         if (E)
         {
             assert(g_ar.lockCount != 0);
-            ar_atomic_dec(&g_ar.lockCount);
+            ar_atomic_add32(&g_ar.lockCount, -1);
             if (g_ar.lockCount == 0 && g_ar.needsReschedule && !g_ar.isRunningDeferred)
             {
                 ar_kernel_enter_scheduler();
@@ -276,7 +276,7 @@ public:
         }
         else
         {
-            ar_atomic_inc(&g_ar.lockCount);
+            ar_atomic_add32(&g_ar.lockCount, 1);
         }
     }
 };

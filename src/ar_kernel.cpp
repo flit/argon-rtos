@@ -224,7 +224,7 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
     // Handle any missed ticks.
     {
         uint32_t missedTicks = g_ar.missedTickCount;
-        while (!ar_atomic_cas(&g_ar.missedTickCount, missedTicks, 0))
+        while (!ar_atomic_cas32(&g_ar.missedTickCount, missedTicks, 0))
         {
             missedTicks = g_ar.missedTickCount;
         }
@@ -359,7 +359,7 @@ void ar_kernel_run_deferred_actions()
         // Atomically remove the entry we just processed from the queue.
         // This is the only code that modifies the m_first member of the queue.
         i = iPlusOne;
-        ar_atomic_dec(&queue.m_count);
+        ar_atomic_add32(&queue.m_count, -1);
         queue.m_first = i;
     }
 
@@ -803,7 +803,7 @@ int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCo
         {
             return -1;
         }
-    } while (!ar_atomic_cas(&qCount, count, count + entryCount));
+    } while (!ar_atomic_cas32(&qCount, count, count + entryCount));
 
     // Increment last entry index.
     int32_t last;
@@ -811,7 +811,7 @@ int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCo
     do {
         last = qTail;
         newLast = (last + entryCount) % qSize;
-    } while (!ar_atomic_cas(&qTail, last, newLast));
+    } while (!ar_atomic_cas32(&qTail, last, newLast));
 
     return last;
 }

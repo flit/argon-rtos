@@ -149,7 +149,7 @@ ar_runloop_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_
 
             ar_runloop_t::_ar_runloop_function_info fn = runloop->m_functions[i];
 
-            ar_atomic_dec(&runloop->m_functionCount);
+            ar_atomic_add32(&runloop->m_functionCount, -1);
             // This is the only line that modifies m_functionHead.
             runloop->m_functionHead = iPlusOne;
 
