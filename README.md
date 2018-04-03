@@ -18,11 +18,15 @@ Supported toolchains:
 - Keil MDK (armcc)
 - GNU Tools for ARM Embedded Processors (gcc)
 
+Language requirements:
+- C99
+- C++98
+
 ### Overview
 
 Argon is designed to be a very clean RTOS kernel with a C++ API. It also has a C API upon which the C++ API is built. The code is quite readable and maintainable, and is well commented and documented.
 
-The core resources provided by Argon are:
+The kernel objects provided by Argon are:
 
 - Thread
 - Semaphore
@@ -40,13 +44,59 @@ There are no limits on the number of kernel objects. You may create as many thre
 
 Argon takes advantage of Cortex-M features to provide a kernel that never disables IRQs. (M0+ cores are an exception since they don't have the required ldrex/strex instructions. Even so, IRQs are disabled for only a few cycles at a time.)
 
+### Example
+
+Here's a simple example of the C++ API.
+
+~~~cpp
+Ar::ThreadWithStack<2048> myThread("my", thread_fn, 0, 100, kArSuspendThread);
+Ar::Semaphore theSem("s");
+
+void thread_fn(void * param)
+{
+    while (theSem.get() == kArSuccess)
+    {
+        // do something
+    }
+}
+
+void main()
+{
+    myThread.resume();
+}
+~~~
+
+And the same example using the plain C API:
+
+~~~c
+uint8_t stack[2048];
+ar_thread_t myThread;
+ar_semaphore_t theSem;
+
+void thread_fn(void * param)
+{
+    while (ar_semaphore_get(theSem, kArInfiniteTimeout) == kArSuccess)
+    {
+        // do something
+    }
+}
+
+void main()
+{
+    ar_thread_create(&myThread, "my", thread_fn, 0, stack, sizeof(stack), 100, kArSuspendThread);
+    ar_semaphore_create(&theSem, "s", 1);
+    ar_thread_resume(&myThread);
+}
+~~~
+
+
 ### Portability
 
 Argon is primarily targeted at ARM Cortex-M processors.
 
 The Cortex-M porting layer only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB). It should work without modification on any Cortex-M-based MCU.
 
-The kernel itself is fairly core agnostic, and should be relatively easily portable to other architectures. All architecture-specific code is isolated into a separate directory.
+The kernel itself is fairly architecture-agnostic, and should be relatively easily portable to other architectures. All architecture-specific code is isolated into a separate directory.
 
 ### Source code
 
