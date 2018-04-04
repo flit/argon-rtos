@@ -1,30 +1,14 @@
 Argon RTOS
 ==========
 
-Small embedded RTOS with C and C++ APIs.
+Small embedded RTOS with clean C and C++ APIs for Arm Cortex-M-based microcontrollers.
 
 *Version*: 1.3.0<br/>
 *Status*: Actively under development. Mostly stable API. Well tested in several real applications.
 
-Tested cores:
-
-- ARM Cortex-M0+
-- ARM Cortex-M4
-- ARM Cortex-M4F
-
-Supported toolchains:
-
-- IAR EWARM
-- Keil MDK (armcc)
-- GNU Tools for ARM Embedded Processors (gcc)
-
-Language requirements:
-- C99
-- C++98
-
 ### Overview
 
-Argon is designed to be a very clean RTOS kernel with a C++ API. It also has a C API upon which the C++ API is built. The code is quite readable and maintainable, and is well commented and documented.
+Argon is designed to be a very clean preemptive RTOS kernel with a C++ API. A plain C API upon which the C++ API is built is also available. It is primarily targeted at microcontrollers with Arm Cortex-M processors. A primary goal is for the source code to be highly readable, maintainable, and well commented.
 
 The kernel objects provided by Argon are:
 
@@ -32,17 +16,19 @@ The kernel objects provided by Argon are:
 - Semaphore
 - Mutex
 - Queue
-- Timer
 - Channel
+- Timer
 - Run Loop
 
-A memory allocator is not provided, as every Standard C Library includes malloc. (Even though it may not be the smallest code, and doesn't support block allocation.)
+Argon takes advantage of Cortex-M features to provide a kernel that never disables IRQs (except for CM0+<a href="#fn1"><sup>1</sup></a>).
 
-Dynamic memory is not required under any circumstance. All kernel objects can be allocated statically. This lets you determine application memory requirements at link time. However, you can still use `new` or `malloc()` to allocate objects if you prefer.
+Timers run on runloops, which lets you control the thread and priority of timers. Runloops enable very efficient use of threads, including waiting on multiple queues.
 
-There are no limits on the number of kernel objects. You may create as many threads, channels, etc., as you like at runtime via dynamic allocation.
+Mutexes are recursive and have priority inheritance.
 
-Argon takes advantage of Cortex-M features to provide a kernel that never disables IRQs. (M0+ cores are an exception since they don't have the required ldrex/strex instructions. Even so, IRQs are disabled for only a few cycles at a time.)
+A memory allocator is not provided, as every Standard C Library includes malloc.<a href="#fn2"><sup>2</sup></a>
+
+There are no limits on the number of kernel objects. You may create as many objects as you need during runtime via dynamic allocation using `new` or `malloc()`. However, dynamic memory is not required under any circumstance. All kernel objects can be allocated statically, which is often important for determining application memory requirements at link time.
 
 ### Example
 
@@ -89,14 +75,34 @@ void main()
 }
 ~~~
 
+### Requirements
+
+Requires a Cortex-M based microcontroller.
+
+- ARMv6-M
+- ARMv7-M
+
+Tested cores:
+
+- Arm Cortex-M0+
+- Arm Cortex-M4
+- Arm Cortex-M4F
+
+Supported toolchains:
+
+- IAR EWARM
+- Keil MDK (armcc)
+- GNU Tools for Arm Embedded Processors (gcc)
+
+Language requirements:
+- C99
+- C++98
 
 ### Portability
 
-Argon is primarily targeted at ARM Cortex-M processors.
+The Cortex-M porting layer only accesses standard Cortex-M resources (i.e., SysTick, NVIC, and SCB). It should work without modification on any Cortex-M-based MCU.
 
-The Cortex-M porting layer only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB). It should work without modification on any Cortex-M-based MCU.
-
-The kernel itself is fairly architecture-agnostic, and should be relatively easily portable to other architectures. All architecture-specific code is isolated into a separate directory.
+The kernel itself is fairly architecture-agnostic, and should be easily portable to other architectures. All architecture-specific code is isolated into a separate directory.
 
 ### Source code
 
@@ -119,3 +125,6 @@ The repository also includes code with other copyrights and licenses. See the so
 Copyright © 2007-2018 Immo Software.<br/>
 Portions Copyright © 2014-2018 NXP
 
+<hr width="30%" align="left" size="1"/>
+<div id="fn1"><sup>1</sup> Cortex-M0+ cores are an exception since they don't have the required ldrex/strex instructions. Even so, IRQs are disabled for only a few cycles at a time.</div>
+<div id="fn2"><sup>2</sup> Even though it may not be the smallest code, and doesn't support block allocation.</div>
