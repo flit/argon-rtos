@@ -1,88 +1,130 @@
 Argon RTOS
 ==========
 
-Small embedded RTOS written almost entirely in C++.
+Small embedded RTOS with clean C and C++ APIs for Arm Cortex-M-based microcontrollers.
 
-*Version*: 1.0a2<br/>
-*Status*: Actively under development. Not all features are fully implemented. The API is likely to change some more.
+*Version*: 1.3.0<br/>
+*Status*: Actively under development. Mostly stable API. Well tested in several real applications.
 
-Supported cores:
+### Overview
 
-- ARM Cortex-M0+
-- ARM Cortex-M4
-- ARM Cortex-M4F
+Argon is designed to be a very clean preemptive RTOS kernel with a C++ API. A plain C API upon which the C++ API is built is also available. It is primarily targeted at microcontrollers with Arm Cortex-M processors. A primary goal is for the source code to be highly readable, maintainable, and well commented.
+
+The kernel objects provided by Argon are:
+
+- Thread
+- Semaphore
+- Mutex
+- Queue
+- Channel
+- Timer
+- Run Loop
+
+Argon takes advantage of Cortex-M features to provide a kernel that never disables IRQs (except for CM0+<a href="#fn1"><sup>1</sup></a>).
+
+Timers run on runloops, which lets you control the thread and priority of timers. Runloops enable very efficient use of threads, including waiting on multiple queues.
+
+Mutexes are recursive and have priority inheritance.
+
+A memory allocator is not provided, as every Standard C Library includes malloc.<a href="#fn2"><sup>2</sup></a>
+
+There are no limits on the number of kernel objects. You may create as many objects as you need during runtime via dynamic allocation using `new` or `malloc()`. However, dynamic memory is not required under any circumstance. All kernel objects can be allocated statically, which is often important for determining application memory requirements at link time.
+
+### Example
+
+Here's a simple example of the C++ API.
+
+~~~cpp
+Ar::ThreadWithStack<2048> myThread("my", thread_fn, 0, 100, kArSuspendThread);
+Ar::Semaphore theSem("s");
+
+void thread_fn(void * param)
+{
+    while (theSem.get() == kArSuccess)
+    {
+        // do something
+    }
+}
+
+void main()
+{
+    myThread.resume();
+}
+~~~
+
+And the same example using the plain C API:
+
+~~~c
+uint8_t stack[2048];
+ar_thread_t myThread;
+ar_semaphore_t theSem;
+
+void thread_fn(void * param)
+{
+    while (ar_semaphore_get(theSem, kArInfiniteTimeout) == kArSuccess)
+    {
+        // do something
+    }
+}
+
+void main()
+{
+    ar_thread_create(&myThread, "my", thread_fn, 0, stack, sizeof(stack), 100, kArSuspendThread);
+    ar_semaphore_create(&theSem, "s", 1);
+    ar_thread_resume(&myThread);
+}
+~~~
+
+### Requirements
+
+Requires a Cortex-M based microcontroller.
+
+- ARMv6-M
+- ARMv7-M
+
+Tested cores:
+
+- Arm Cortex-M0+
+- Arm Cortex-M4
+- Arm Cortex-M4F
 
 Supported toolchains:
 
 - IAR EWARM
 - Keil MDK (armcc)
-- GNU Tools for ARM Embedded Processors (gcc)
+- GNU Tools for Arm Embedded Processors (gcc)
 
-### Overview
+Language requirements:
+- C99
+- C++98
 
-Argon is designed to be a very clean RTOS kernel with a C++ API. Currently it also has a C API upon which the C++ API is built, but that may go away. The code is exceptionally readable and maintainable, and is well commented.
+### Portability
 
-The resources provided by Argon are those most important for building a threaded application:
+The Cortex-M porting layer only accesses standard Cortex-M resources (i.e., SysTick, NVIC, and SCB). It should work without modification on any Cortex-M-based MCU.
 
-- Thread
-- Semaphore
-- Mutex
-- Channel
-- Queue
-- Timer
-
-A memory allocator is not provided, as every Standard C Library includes malloc.
-
-Dynamic memory is not required under any circumstance. All kernel objects can be allocated statically. This lets you determine application memory requirements at link time. However, you can still use `new` or `malloc()` to allocate objects if you prefer.
-
-There are no limits on the number of kernel objects. You may create as many threads, channels, etc., as you like at runtime via dynamic allocation.
-
-Argon is primarily targeted at ARM Cortex-M processors, though it should be fairly easily portable to other architectures. The kernel itself is core agnostic. All core-specific code is isolated into a separate directory. The Cortex-M port only accesses common Cortex-M resources (i.e., SysTick, NVIC, and SCB), so it should work on any other Cortex-M platform.
-
-### Memory requirements
-
-Total code size with all features enabled is approximately 4 kB. Kernel objects are not explicitly disable-able, but the linker will exclude any unused code.
-
-RAM requirements are quite small. The kernel itself consumes 128 bytes plus the idle thread stack. Timers share the idle thread stack, so you don't need an extra stack to use timers.
-
-Kernel object sizes:
-
-- Thread = 92 bytes + stack
-- Channel = 36 bytes
-- Semaphore = 32 bytes
-- Mutex = 44 bytes
-- Queue = 60 bytes + element storage
-- Timer = 60 bytes
-
-These sizes are as of 21 Dec 2014, and will probably change in the future. All above sizes were obtained using IAR EWARM 7.30 with full optimization enabled.
-
-### Supported chips and boards
-
-These are the devices that have demo projects included in the repository. The kernel itself will build for any Cortex-M device.
-
-<table>
-<tr><th>Family</th><th>Part Number</th><th>Board</th></tr>
-<tr><td>Freescale Kinetis</td><td>KL25Z128xxx4</td><td>FRDM-KL25Z</td></tr>
-<tr><td></td><td>KL43Z256xxx4</td><td>FRDM-KL43Z</td></tr>
-<tr><td></td><td>K20DX128xxx5</td><td>FRDM-K20D50M</td></tr>
-<tr><td></td><td>K22FN512xxx12</td><td>FRDM-K22F</td></tr>
-<tr><td></td><td>K60DZ128xxx10</td><td>TWR-K60N512</td></tr>
-<tr><td></td><td>K64F1M0xxx12</td><td>FRDM-K64F</td></tr>
-</table>
+The kernel itself is fairly architecture-agnostic, and should be easily portable to other architectures. All architecture-specific code is isolated into a separate directory.
 
 ### Source code
 
-The code for the Argon kernel is in the `src/argon` directory in the repository.
+The code for the Argon kernel is in the `src/` directory in the repository. Public headers are in the `include/` directory.
 
-The [mbed](http://mbed.org) libraries are included under `src/mbed`, to provide a simple C++ driver API for demo applications. mbed device HALs are located in `src/mbed/targets`.
+The argon-rtos repository is intended to be usable as a submodule in other git repositories.
+
+The kernel code is written in C++, but mostly uses a C-like style to implement the C API directly. The emphasis is on as little overhead as possible for both C and C++ APIs.
+
+### Contributions
+
+Contributions are welcome! Please create a pull request in GitHub.
 
 ### Licensing
 
 The Argon RTOS is open source software released with a BSD three-clause license. See the included LICENSE.txt file for details.
 
-Copyright © 2007-2015 Immo Software.
+The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.
 
-The repository also includes code with other copyrights and licenses. See the source file headers for licensing information of this code.<br/>
-Portions Copyright © 2014 Freescale Semiconductor, Inc.<br/>
-Portions Copyright © 2006-2014 ARM Limited
+Copyright © 2007-2018 Immo Software.<br/>
+Portions Copyright © 2014-2018 NXP
 
+<hr width="30%" align="left" size="1"/>
+<div id="fn1"><sup>1</sup> Cortex-M0+ cores are an exception since they don't have the required ldrex/strex instructions. Even so, IRQs are disabled for only a few cycles at a time.</div>
+<div id="fn2"><sup>2</sup> Even though it may not be the smallest code, and doesn't support block allocation.</div>
