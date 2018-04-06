@@ -1,7 +1,3 @@
-Argon RTOS
-==========
-
-Small embedded RTOS with clean C and C++ APIs for Arm Cortex-M-based microcontrollers.
 
 *Version*: 1.3.0<br/>
 *Status*: Actively under development. Mostly stable API. Well tested in several real applications.
