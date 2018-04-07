@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['receive',['receive',['../class_ar_1_1_channel.html#ab000fa3bb341af2efc746aa335ddb7ce',1,'Ar::Channel::receive()'],['../class_ar_1_1_typed_channel.html#a7ba83bc71a1c2c358ee7862d2b1b8d0d',1,'Ar::TypedChannel::receive()'],['../class_ar_1_1_typed_channel.html#a64facaf18ff5d3ab385a1d5a086ead38',1,'Ar::TypedChannel::receive(T &amp;value, uint32_t timeout=kArInfiniteTimeout)'],['../class_ar_1_1_queue.html#a41aeb85a1dea2b86365ada58ad29c202',1,'Ar::Queue::receive()'],['../class_ar_1_1_static_queue.html#a9efb0f6cc774b8502c50f3e1f0e20390',1,'Ar::StaticQueue::receive(T *element, uint32_t timeout=kArInfiniteTimeout)'],['../class_ar_1_1_static_queue.html#a2b89604d0dcceac53355485daa5c8f1b',1,'Ar::StaticQueue::receive(uint32_t timeout=kArInfiniteTimeout, ar_status_t *resultStatus=NULL)']]],
-  ['remove',['remove',['../structar__list__t.html#aeace517e810beac5ec20d6aa911f741f',1,'ar_list_t::remove(ar_list_node_t *item)'],['../structar__list__t.html#ac87ba9446999794f13fe142454312697',1,'ar_list_t::remove(ar_thread_t *item)'],['../structar__list__t.html#aa4e1d0e59b9e0025d9c14aafbabbacd9',1,'ar_list_t::remove(ar_timer_t *item)']]],
-  ['resume',['resume',['../class_ar_1_1_thread.html#a83520b6fe067f7fa57addca8b6943716',1,'Ar::Thread']]]
+  ['queues',['Queues',['../group__ar__queue.html',1,'']]],
+  ['queue',['Queue',['../class_ar_1_1_queue.html',1,'Ar::Queue'],['../class_ar_1_1_queue.html#a4178a0cea64b758df5bdf3519bbda943',1,'Ar::Queue::Queue()'],['../class_ar_1_1_queue.html#a165bd629337fb3f48b5f4d4de53c2ac6',1,'Ar::Queue::Queue(const char *name, void *storage, unsigned elementSize, unsigned capacity)']]]
 ];

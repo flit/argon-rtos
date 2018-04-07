@@ -1,7 +1,9 @@
 var group__ar__atomic =
 [
-    [ "ar_atomic_add", "group__ar__atomic.html#ga34991cf755ac93b51370ede02fbc5726", null ],
-    [ "ar_atomic_compare_and_swap", "group__ar__atomic.html#ga6fa8a4dfbaa886eb1deb5f6368760cca", null ],
-    [ "ar_atomic_decrement", "group__ar__atomic.html#ga600c84587dd9c5044cdf6d17e5947470", null ],
-    [ "ar_atomic_increment", "group__ar__atomic.html#gaff6c3faa3b0cfe36ec3f4c3078b1da07", null ]
+    [ "ar_atomic_add16", "group__ar__atomic.html#ga1f76768b140ecdb2d03757907255ef1f", null ],
+    [ "ar_atomic_add32", "group__ar__atomic.html#ga36910cb70b3ceed32880342ae5527060", null ],
+    [ "ar_atomic_add8", "group__ar__atomic.html#ga7c65b65946444e389de7ec2b883e7e02", null ],
+    [ "ar_atomic_cas16", "group__ar__atomic.html#gafd211459cf0354f1b06e3b9cf76c19b9", null ],
+    [ "ar_atomic_cas32", "group__ar__atomic.html#gafcb95ea079bd8a73e28632d9b354adbf", null ],
+    [ "ar_atomic_cas8", "group__ar__atomic.html#gaa41c1069af27dd973739a94d5e7cc54b", null ]
 ];

@@ -1,4 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$class_ar_1_1_queue.html" title="A blocking queue for inter&#45;thread messaging. " alt="" coords="138,5,221,31"/>
-<area shape="rect" id="node3" href="$class_ar_1_1_static_queue.html" title="Template class to help statically allocate a Queue. " alt="" coords="269,5,430,31"/>
+<area shape="rect" id="node1" href="$struct__ar__channel.html" title="Channel. " alt="" coords="5,5,104,31"/>
+<area shape="rect" id="node2" href="$class_ar_1_1_channel.html" title="Channel. " alt="" coords="152,5,244,31"/>
+<area shape="rect" id="node3" href="$class_ar_1_1_typed_channel.html" title="Typed channel. " alt="" coords="292,5,450,31"/>
 </map>

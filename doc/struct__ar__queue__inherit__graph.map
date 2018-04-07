@@ -1,0 +1,4 @@
+<map id="ar_queue_t" name="ar_queue_t">
+<area shape="rect" id="node2" href="$class_ar_1_1_queue.html" title="A blocking queue for inter&#45;thread messaging. " alt="" coords="45,79,127,104"/>
+<area shape="rect" id="node3" href="$class_ar_1_1_static_queue.html" title="Template class to help statically allocate a Queue. " alt="" coords="5,152,167,177"/>
+</map>

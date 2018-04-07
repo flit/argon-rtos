@@ -1,11 +1,10 @@
 var searchData=
 [
-  ['ar_5fchannel_5ft',['ar_channel_t',['../group__ar__chan.html#structar__channel__t',1,'']]],
-  ['ar_5flist_5fnode_5ft',['ar_list_node_t',['../structar__list__node__t.html',1,'']]],
-  ['ar_5flist_5ft',['ar_list_t',['../structar__list__t.html',1,'']]],
-  ['ar_5fmutex_5ft',['ar_mutex_t',['../group__ar__mutex.html#structar__mutex__t',1,'']]],
-  ['ar_5fqueue_5ft',['ar_queue_t',['../group__ar__queue.html#structar__queue__t',1,'']]],
-  ['ar_5fsemaphore_5ft',['ar_semaphore_t',['../group__ar__sem.html#structar__semaphore__t',1,'']]],
-  ['ar_5fthread_5ft',['ar_thread_t',['../structar__thread__t.html',1,'']]],
-  ['ar_5ftimer_5ft',['ar_timer_t',['../group__ar__timer.html#structar__timer__t',1,'']]]
+  ['_5far_5fchannel',['_ar_channel',['../struct__ar__channel.html',1,'']]],
+  ['_5far_5flist_5fnode',['_ar_list_node',['../struct__ar__list__node.html',1,'']]],
+  ['_5far_5fqueue',['_ar_queue',['../struct__ar__queue.html',1,'']]],
+  ['_5far_5frunloop',['_ar_runloop',['../struct__ar__runloop.html',1,'']]],
+  ['_5far_5frunloop_5ffunction_5finfo',['_ar_runloop_function_info',['../struct__ar__runloop.html#struct__ar__runloop_1_1__ar__runloop__function__info',1,'_ar_runloop']]],
+  ['_5far_5fthread',['_ar_thread',['../struct__ar__thread.html',1,'']]],
+  ['_5far_5ftimer',['_ar_timer',['../struct__ar__timer.html',1,'']]]
 ];

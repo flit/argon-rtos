@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structar__thread__t.html" title="Thread. " alt="" coords="5,5,95,31"/>
+<area shape="rect" id="node1" href="$struct__ar__timer.html" title="Timer. " alt="" coords="5,5,87,31"/>
+<area shape="rect" id="node2" href="$class_ar_1_1_timer.html" title="Timer object. " alt="" coords="135,5,210,31"/>
+<area shape="rect" id="node3" href="$class_ar_1_1_timer_with_member_callback.html" title="Timer object taking a member function callback. " alt="" coords="258,5,491,31"/>
 </map>

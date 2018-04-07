@@ -6,9 +6,14 @@ var group__ar =
     [ "Channels", "group__ar__chan.html", "group__ar__chan" ],
     [ "Queues", "group__ar__queue.html", "group__ar__queue" ],
     [ "Timers", "group__ar__timer.html", "group__ar__timer" ],
+    [ "Run Loops", "group__ar__runloop.html", "group__ar__runloop" ],
     [ "Time Utilities", "group__ar__time.html", "group__ar__time" ],
     [ "Atomic Operations", "group__ar__atomic.html", "group__ar__atomic" ],
-    [ "argon", "group__ar.html#md__Users_creed_projects_argon-rtos_src_argon_doc_argon", "group__ar_md__Users_creed_projects_argon-rtos_src_argon_doc_argon_dup" ],
+    [ "Configuration", "group__ar__config.html", "group__ar__config" ],
+    [ "ar_classes.h", "ar__classes_8h.html", null ],
+    [ "ar_config.h", "ar__config_8h.html", null ],
+    [ "ar_kernel.h", "ar__kernel_8h.html", null ],
+    [ "argon.h", "argon_8h.html", null ],
     [ "_ar_timeouts", "group__ar.html#ga7d3f0ad0bcc755713601ba6edb75dd0f", [
       [ "kArNoTimeout", "group__ar.html#gga7d3f0ad0bcc755713601ba6edb75dd0faebad57d4b63a3223bf2391cb51433c4e", null ],
       [ "kArInfiniteTimeout", "group__ar.html#gga7d3f0ad0bcc755713601ba6edb75dd0faef3a89f97ff0d9f673394d645f9baf43", null ]
@@ -26,7 +31,13 @@ var group__ar =
       [ "kArAlreadyUnlockedError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a8ab91a94b5fe1f8eec131e4423df1493", null ],
       [ "kArInvalidParameterError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a03da12c74ef697a8e542e284c4fed656", null ],
       [ "kArTimerNotRunningError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a6a5fe806da0d8fafcb6c3d26f341a2a9", null ],
-      [ "kArOutOfMemoryError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a7910582dabf4bae4a35c182e77b2ce9d", null ]
+      [ "kArTimerNoRunLoop", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a4974d22c1b7a27b3736a35cd6c2d0d30", null ],
+      [ "kArOutOfMemoryError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a7910582dabf4bae4a35c182e77b2ce9d", null ],
+      [ "kArInvalidStateError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16af6795c44841c323501ba59cb3acd9f77", null ],
+      [ "kArAlreadyAttachedError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a6c65cb44ce4e0532eae8164914c2e263", null ],
+      [ "kArRunLoopAlreadyRunningError", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16ae4f617c21ca1e3f78d91aa12d7ad0138", null ],
+      [ "kArRunLoopStopped", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a1a90eb8b6e79707885c0bc76e3498b7d", null ],
+      [ "kArRunLoopQueueReceived", "group__ar.html#ggac7fd2dafb7c0b2dfd03e84537ebb3b16a5a0fc032f252e6937ae8114c1fa8c87b", null ]
     ] ],
     [ "ar_get_system_load", "group__ar.html#ga55f1e38ff5eb16ad9486378ca43749ee", null ],
     [ "ar_kernel_is_running", "group__ar.html#ga1cd605bc65eefe69d8e9fea8013531b1", null ],

@@ -1,15 +1,9 @@
 var searchData=
 [
-  ['semaphores',['Semaphores',['../group__ar__sem.html',1,'']]],
-  ['semaphore',['Semaphore',['../class_ar_1_1_semaphore.html',1,'Ar']]],
-  ['semaphore',['Semaphore',['../class_ar_1_1_semaphore.html#a57abaf9f6ba62397a937db15e1e7a8d1',1,'Ar::Semaphore::Semaphore()'],['../class_ar_1_1_semaphore.html#a5bed419f3c2b61da408f2bd9485587e4',1,'Ar::Semaphore::Semaphore(const char *name, unsigned count=1)']]],
-  ['send',['send',['../class_ar_1_1_channel.html#aec6c6809eb5badd34e997ce0027c7d07',1,'Ar::Channel::send()'],['../class_ar_1_1_typed_channel.html#af14a5301ec54c5274242571b744d6740',1,'Ar::TypedChannel::send()'],['../class_ar_1_1_queue.html#abec433dac3d7ead1efde3a6fc00d5533',1,'Ar::Queue::send()'],['../class_ar_1_1_static_queue.html#aad61a06c79e4d6b03c746b41b11520f1',1,'Ar::StaticQueue::send()']]],
-  ['setdelay',['setDelay',['../class_ar_1_1_timer.html#a789e96adf0f737e61bfa59ebe4ec266d',1,'Ar::Timer']]],
-  ['setpriority',['setPriority',['../class_ar_1_1_thread.html#a305a4155b282edbc7c995b956770d277',1,'Ar::Thread']]],
-  ['sleep',['sleep',['../class_ar_1_1_thread.html#aa0014db107847869b311cf4deaac5585',1,'Ar::Thread']]],
-  ['start',['start',['../class_ar_1_1_timer.html#aa1c87121035d812482acbd199c17a5d1',1,'Ar::Timer']]],
-  ['staticqueue',['StaticQueue',['../class_ar_1_1_static_queue.html#ad597edfd1dd7d117c73031c0b44b3d79',1,'Ar::StaticQueue::StaticQueue()'],['../class_ar_1_1_static_queue.html#a2a73714e3169d2fbfebd18af6e38999c',1,'Ar::StaticQueue::StaticQueue(const char *name)']]],
-  ['staticqueue',['StaticQueue',['../class_ar_1_1_static_queue.html',1,'Ar']]],
-  ['stop',['stop',['../class_ar_1_1_timer.html#a245a667b291a6f117f8be62bb1e20f90',1,'Ar::Timer']]],
-  ['suspend',['suspend',['../class_ar_1_1_thread.html#a691d68343e01bae8e3b60d35efd4f1bf',1,'Ar::Thread']]]
+  ['run_20loops',['Run Loops',['../group__ar__runloop.html',1,'']]],
+  ['receive',['receive',['../class_ar_1_1_channel.html#ab000fa3bb341af2efc746aa335ddb7ce',1,'Ar::Channel::receive()'],['../class_ar_1_1_typed_channel.html#a1884bbb1cc78d30f8d30c3dab804de29',1,'Ar::TypedChannel::receive(uint32_t timeout=kArInfiniteTimeout)'],['../class_ar_1_1_typed_channel.html#a64facaf18ff5d3ab385a1d5a086ead38',1,'Ar::TypedChannel::receive(T &amp;value, uint32_t timeout=kArInfiniteTimeout)'],['../class_ar_1_1_queue.html#a41aeb85a1dea2b86365ada58ad29c202',1,'Ar::Queue::receive()'],['../class_ar_1_1_static_queue.html#a9efb0f6cc774b8502c50f3e1f0e20390',1,'Ar::StaticQueue::receive(T *element, uint32_t timeout=kArInfiniteTimeout)'],['../class_ar_1_1_static_queue.html#a2b89604d0dcceac53355485daa5c8f1b',1,'Ar::StaticQueue::receive(uint32_t timeout=kArInfiniteTimeout, ar_status_t *resultStatus=NULL)']]],
+  ['remove',['remove',['../structar__list__t.html#aeace517e810beac5ec20d6aa911f741f',1,'ar_list_t::remove(ar_list_node_t *item)'],['../structar__list__t.html#ac87ba9446999794f13fe142454312697',1,'ar_list_t::remove(ar_thread_t *item)'],['../structar__list__t.html#aa4e1d0e59b9e0025d9c14aafbabbacd9',1,'ar_list_t::remove(ar_timer_t *item)'],['../structar__list__t.html#ac38cd5961b1f81636fb7bb38256c5c35',1,'ar_list_t::remove(ar_queue_t *item)']]],
+  ['resume',['resume',['../class_ar_1_1_thread.html#a83520b6fe067f7fa57addca8b6943716',1,'Ar::Thread']]],
+  ['run',['run',['../class_ar_1_1_run_loop.html#ab7058dac46a4aa04da8dbcc59636fbcd',1,'Ar::RunLoop']]],
+  ['runloop',['RunLoop',['../class_ar_1_1_run_loop.html',1,'Ar::RunLoop'],['../class_ar_1_1_run_loop.html#afeb40f4284ca721ac4a3297e9a4ec6c1',1,'Ar::RunLoop::RunLoop()'],['../class_ar_1_1_run_loop.html#aa5d22083474d0f03ed6a6e9ee3cd10c5',1,'Ar::RunLoop::RunLoop(const char *name)']]]
 ];

@@ -1,15 +1,15 @@
 var group__ar__chan =
 [
-    [ "ar_channel_t", "group__ar__chan.html#structar__channel__t", [
-      [ "m_blockedReceivers", "group__ar__chan.html#a7a7903c029a71d5be83edcfb302e2a50", null ],
-      [ "m_blockedSenders", "group__ar__chan.html#ac9cc9388db60d3128883366ce46d8ae8", null ],
-      [ "m_createdNode", "group__ar__chan.html#a3f07981bce10720e1c68e00b056983f6", null ],
-      [ "m_name", "group__ar__chan.html#a4d5e99102c8850bc901a2c649a87f48d", null ],
-      [ "m_width", "group__ar__chan.html#aa6acd8c38f0a40280d79c403d6888f54", null ]
+    [ "ar_channel_t", "struct__ar__channel.html", [
+      [ "m_blockedReceivers", "struct__ar__channel.html#a7a7903c029a71d5be83edcfb302e2a50", null ],
+      [ "m_blockedSenders", "struct__ar__channel.html#ac9cc9388db60d3128883366ce46d8ae8", null ],
+      [ "m_name", "struct__ar__channel.html#a4d5e99102c8850bc901a2c649a87f48d", null ],
+      [ "m_width", "struct__ar__channel.html#aa6acd8c38f0a40280d79c403d6888f54", null ]
     ] ],
     [ "Channel", "class_ar_1_1_channel.html", [
       [ "Channel", "class_ar_1_1_channel.html#ac1298743ad67d6339da3a48afd24e57a", null ],
       [ "Channel", "class_ar_1_1_channel.html#a4261895f81f00c882863db1c31795f24", null ],
+      [ "~Channel", "class_ar_1_1_channel.html#a95037e6aa8845e234766e720b7adb748", null ],
       [ "init", "class_ar_1_1_channel.html#a5b4b868bf75a3d17fb9b18bcfe1bd6d4", null ],
       [ "receive", "class_ar_1_1_channel.html#ab000fa3bb341af2efc746aa335ddb7ce", null ],
       [ "send", "class_ar_1_1_channel.html#aec6c6809eb5badd34e997ce0027c7d07", null ]
@@ -18,7 +18,7 @@ var group__ar__chan =
       [ "TypedChannel", "class_ar_1_1_typed_channel.html#af38b8b2130d268085f50bfe62845b2e3", null ],
       [ "TypedChannel", "class_ar_1_1_typed_channel.html#a2c218a7ca7ccafae09c82510275319a2", null ],
       [ "init", "class_ar_1_1_typed_channel.html#a059225ac20461e9345e05d2d96ab7842", null ],
-      [ "receive", "class_ar_1_1_typed_channel.html#a7ba83bc71a1c2c358ee7862d2b1b8d0d", null ],
+      [ "receive", "class_ar_1_1_typed_channel.html#a1884bbb1cc78d30f8d30c3dab804de29", null ],
       [ "receive", "class_ar_1_1_typed_channel.html#a64facaf18ff5d3ab385a1d5a086ead38", null ],
       [ "send", "class_ar_1_1_typed_channel.html#af14a5301ec54c5274242571b744d6740", null ],
       [ "operator<<=", "class_ar_1_1_typed_channel.html#a290758fb438c9873850add47776ffdeb", null ],

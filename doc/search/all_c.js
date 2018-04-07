@@ -1,18 +1,15 @@
 var searchData=
 [
-  ['threads',['Threads',['../group__ar__thread.html',1,'']]],
-  ['time_20utilities',['Time Utilities',['../group__ar__time.html',1,'']]],
-  ['timers',['Timers',['../group__ar__timer.html',1,'']]],
-  ['thread',['Thread',['../class_ar_1_1_thread.html#a27d5015db1c02a1b1d31f2fe9f78d6dc',1,'Ar::Thread::Thread()'],['../class_ar_1_1_thread.html#ab8074a9ac574f9b0d517bd4f9837b552',1,'Ar::Thread::Thread(const char *name, ar_thread_entry_t entry, void *param, void *stack, unsigned stackSize, uint8_t priority)'],['../class_ar_1_1_thread.html#aa4e486ef72d3db045a7a39c142ae79ee',1,'Ar::Thread::Thread(const char *name, T *object, void(T::*entry)(), void *stack, unsigned stackSize, uint8_t priority)'],['../class_ar_1_1_thread.html#aee51d426d8410b06d612c8097897ea0b',1,'Ar::Thread::Thread(const char *name, ar_thread_entry_t entry, void *param, unsigned stackSize, uint8_t priority)'],['../class_ar_1_1_thread.html#aacb3b195bb8bf7e68e5111bc52546d62',1,'Ar::Thread::Thread(const char *name, T *object, void(T::*entry)(), unsigned stackSize, uint8_t priority)']]],
-  ['thread',['Thread',['../class_ar_1_1_thread.html',1,'Ar']]],
-  ['thread_5fentry',['thread_entry',['../class_ar_1_1_thread.html#adf1ba678da55a07a5aeeda2890efeebf',1,'Ar::Thread']]],
-  ['threadentry',['threadEntry',['../class_ar_1_1_thread.html#a99112d3407395ff4bd1384039f6d90c3',1,'Ar::Thread']]],
-  ['threadwithstack',['ThreadWithStack',['../class_ar_1_1_thread_with_stack.html#a59d6079493e9ed9a4892700aad971fe7',1,'Ar::ThreadWithStack']]],
-  ['threadwithstack',['ThreadWithStack',['../class_ar_1_1_thread_with_stack.html',1,'Ar']]],
-  ['timer',['Timer',['../class_ar_1_1_timer.html#a16c620a650c444a77c0b55f1342d38ff',1,'Ar::Timer::Timer()'],['../class_ar_1_1_timer.html#adc00dc66dcaebebac63ef650b55a5ab7',1,'Ar::Timer::Timer(const char *name, entry_t callback, void *param, ar_timer_mode_t timerMode, uint32_t delay)']]],
-  ['timer',['Timer',['../class_ar_1_1_timer.html',1,'Ar']]],
-  ['timer_5fwrapper',['timer_wrapper',['../class_ar_1_1_timer.html#a42a317c1b619e99efcbfa132062a915f',1,'Ar::Timer']]],
-  ['todo_20list',['Todo List',['../todo.html',1,'']]],
-  ['typedchannel',['TypedChannel',['../class_ar_1_1_typed_channel.html#af38b8b2130d268085f50bfe62845b2e3',1,'Ar::TypedChannel::TypedChannel()'],['../class_ar_1_1_typed_channel.html#a2c218a7ca7ccafae09c82510275319a2',1,'Ar::TypedChannel::TypedChannel(const char *name)']]],
-  ['typedchannel',['TypedChannel',['../class_ar_1_1_typed_channel.html',1,'Ar']]]
+  ['semaphores',['Semaphores',['../group__ar__sem.html',1,'']]],
+  ['semaphore',['Semaphore',['../class_ar_1_1_semaphore.html',1,'Ar::Semaphore'],['../class_ar_1_1_semaphore.html#a57abaf9f6ba62397a937db15e1e7a8d1',1,'Ar::Semaphore::Semaphore()'],['../class_ar_1_1_semaphore.html#a5bed419f3c2b61da408f2bd9485587e4',1,'Ar::Semaphore::Semaphore(const char *name, unsigned count=1)']]],
+  ['send',['send',['../class_ar_1_1_channel.html#aec6c6809eb5badd34e997ce0027c7d07',1,'Ar::Channel::send()'],['../class_ar_1_1_typed_channel.html#af14a5301ec54c5274242571b744d6740',1,'Ar::TypedChannel::send()'],['../class_ar_1_1_queue.html#abec433dac3d7ead1efde3a6fc00d5533',1,'Ar::Queue::send()'],['../class_ar_1_1_static_queue.html#aad61a06c79e4d6b03c746b41b11520f1',1,'Ar::StaticQueue::send()']]],
+  ['setdelay',['setDelay',['../class_ar_1_1_timer.html#a789e96adf0f737e61bfa59ebe4ec266d',1,'Ar::Timer']]],
+  ['setpriority',['setPriority',['../class_ar_1_1_thread.html#a305a4155b282edbc7c995b956770d277',1,'Ar::Thread']]],
+  ['signal',['signal',['../class_ar_1_1_run_loop.html#a7a91fe299fe8f6d5ecd76779a63b2bde',1,'Ar::RunLoop']]],
+  ['sleep',['sleep',['../class_ar_1_1_thread.html#aa0014db107847869b311cf4deaac5585',1,'Ar::Thread']]],
+  ['sleepuntil',['sleepUntil',['../class_ar_1_1_thread.html#a9cf437dfe1fce2f17ca5223e611352ba',1,'Ar::Thread']]],
+  ['start',['start',['../class_ar_1_1_timer.html#aa1c87121035d812482acbd199c17a5d1',1,'Ar::Timer']]],
+  ['staticqueue',['StaticQueue',['../class_ar_1_1_static_queue.html',1,'Ar::StaticQueue&lt; T, N &gt;'],['../class_ar_1_1_static_queue.html#ad597edfd1dd7d117c73031c0b44b3d79',1,'Ar::StaticQueue::StaticQueue()'],['../class_ar_1_1_static_queue.html#a2a73714e3169d2fbfebd18af6e38999c',1,'Ar::StaticQueue::StaticQueue(const char *name)']]],
+  ['stop',['stop',['../class_ar_1_1_timer.html#a245a667b291a6f117f8be62bb1e20f90',1,'Ar::Timer::stop()'],['../class_ar_1_1_run_loop.html#a4e5ecd01e565f809bd5d8e99cb10eac4',1,'Ar::RunLoop::stop()']]],
+  ['suspend',['suspend',['../class_ar_1_1_thread.html#a691d68343e01bae8e3b60d35efd4f1bf',1,'Ar::Thread']]]
 ];

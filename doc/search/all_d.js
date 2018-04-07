@@ -1,9 +1,15 @@
 var searchData=
 [
-  ['_7eguard',['~Guard',['../class_ar_1_1_semaphore_1_1_guard.html#ae1769c7edd73ec02eb1ad7d1937f4ffb',1,'Ar::Semaphore::Guard::~Guard()'],['../class_ar_1_1_mutex_1_1_guard.html#ab3f8b83f3ee8bca35c4c3a4201cb47b6',1,'Ar::Mutex::Guard::~Guard()']]],
-  ['_7emutex',['~Mutex',['../class_ar_1_1_mutex.html#a41f6ae04a6f1817b4391cdc992c2aace',1,'Ar::Mutex']]],
-  ['_7equeue',['~Queue',['../class_ar_1_1_queue.html#aa6ed7c2fb59f1dbdf7453945e6211b3d',1,'Ar::Queue']]],
-  ['_7esemaphore',['~Semaphore',['../class_ar_1_1_semaphore.html#a897b0c9312dcba4d07088c2f9afcc4a8',1,'Ar::Semaphore']]],
-  ['_7ethread',['~Thread',['../class_ar_1_1_thread.html#a2a3c41095aa633bda03b9923e15f9bcd',1,'Ar::Thread']]],
-  ['_7etimer',['~Timer',['../class_ar_1_1_timer.html#a9e48817814095a77aef8de8c045c5620',1,'Ar::Timer']]]
+  ['threads',['Threads',['../group__ar__thread.html',1,'']]],
+  ['time_20utilities',['Time Utilities',['../group__ar__time.html',1,'']]],
+  ['timers',['Timers',['../group__ar__timer.html',1,'']]],
+  ['thread',['Thread',['../class_ar_1_1_thread.html',1,'Ar::Thread'],['../class_ar_1_1_thread.html#a27d5015db1c02a1b1d31f2fe9f78d6dc',1,'Ar::Thread::Thread()'],['../class_ar_1_1_thread.html#a1d5d2547ef3ae17806dbb7ad297cee1c',1,'Ar::Thread::Thread(const char *name, ar_thread_entry_t entry, void *param, void *stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)'],['../class_ar_1_1_thread.html#a260f10aaea4b22be8e5ce1e7ddb13b91',1,'Ar::Thread::Thread(const char *name, T *object, void(T::*entry)(), void *stack, unsigned stackSize, uint8_t priority, bool startImmediately=true)'],['../class_ar_1_1_thread.html#a06cd21981509c9ca4d90256902d0b9f1',1,'Ar::Thread::Thread(const char *name, ar_thread_entry_t entry, void *param, unsigned stackSize, uint8_t priority, bool startImmediately=true)'],['../class_ar_1_1_thread.html#a95424304953391ff7aceb969a6d31fc5',1,'Ar::Thread::Thread(const char *name, T *object, void(T::*entry)(), unsigned stackSize, uint8_t priority, bool startImmediately=true)']]],
+  ['thread_5fentry',['thread_entry',['../class_ar_1_1_thread.html#adf1ba678da55a07a5aeeda2890efeebf',1,'Ar::Thread']]],
+  ['threadentry',['threadEntry',['../class_ar_1_1_thread.html#a99112d3407395ff4bd1384039f6d90c3',1,'Ar::Thread']]],
+  ['threadwithstack',['ThreadWithStack',['../class_ar_1_1_thread_with_stack.html',1,'Ar::ThreadWithStack&lt; S &gt;'],['../class_ar_1_1_thread_with_stack.html#aaf4913d4ef2c52c0de692a2f6bed3c7e',1,'Ar::ThreadWithStack::ThreadWithStack()'],['../class_ar_1_1_thread_with_stack.html#ae99ce5ce1b79731e702d65fb10f2efe4',1,'Ar::ThreadWithStack::ThreadWithStack(const char *name, ar_thread_entry_t entry, void *param, uint8_t priority, bool startImmediately=true)'],['../class_ar_1_1_thread_with_stack.html#a80339c4a6a4dce2a1303e8649311834c',1,'Ar::ThreadWithStack::ThreadWithStack(const char *name, T *object, void(T::*entry)(), uint8_t priority, bool startImmediately=true)']]],
+  ['timer',['Timer',['../class_ar_1_1_timer.html',1,'Ar::Timer'],['../class_ar_1_1_timer.html#a16c620a650c444a77c0b55f1342d38ff',1,'Ar::Timer::Timer()'],['../class_ar_1_1_timer.html#aa36cfa2d3d40a266fdce3cc789d5a75e',1,'Ar::Timer::Timer(const char *name, callback_t callback, void *param, ar_timer_mode_t timerMode, uint32_t delay)']]],
+  ['timer_5fwrapper',['timer_wrapper',['../class_ar_1_1_timer.html#a42a317c1b619e99efcbfa132062a915f',1,'Ar::Timer']]],
+  ['timerwithmembercallback',['TimerWithMemberCallback',['../class_ar_1_1_timer_with_member_callback.html',1,'Ar::TimerWithMemberCallback&lt; T &gt;'],['../class_ar_1_1_timer_with_member_callback.html#af825557db749300acf751987759cd7f2',1,'Ar::TimerWithMemberCallback::TimerWithMemberCallback()'],['../class_ar_1_1_timer_with_member_callback.html#a20cd205577bf71345aac0a8dcf6c6c45',1,'Ar::TimerWithMemberCallback::TimerWithMemberCallback(const char *name, T *object, callback_t callback, ar_timer_mode_t timerMode, uint32_t delay)']]],
+  ['todo_20list',['Todo List',['../todo.html',1,'']]],
+  ['typedchannel',['TypedChannel',['../class_ar_1_1_typed_channel.html',1,'Ar::TypedChannel&lt; T &gt;'],['../class_ar_1_1_typed_channel.html#af38b8b2130d268085f50bfe62845b2e3',1,'Ar::TypedChannel::TypedChannel()'],['../class_ar_1_1_typed_channel.html#a2c218a7ca7ccafae09c82510275319a2',1,'Ar::TypedChannel::TypedChannel(const char *name)']]]
 ];
