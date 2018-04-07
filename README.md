@@ -30,6 +30,12 @@ A memory allocator is not provided, as every Standard C Library includes malloc.
 
 There are no limits on the number of kernel objects. You may create as many objects as you need during runtime via dynamic allocation using `new` or `malloc()`. However, dynamic memory is not required under any circumstance. All kernel objects can be allocated statically, which is often important for determining application memory requirements at link time.
 
+### Documentation
+
+The Argon documentation is [available online](https://flit.github.io/argon-rtos/doc/).
+
+You can also generate it locally with Doxygen. The config file is doc/Doxyfile.
+
 ### Example
 
 Here's a simple example of the C++ API.
