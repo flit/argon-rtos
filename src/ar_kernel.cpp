@@ -186,7 +186,7 @@ void ar_kernel_periodic_timer_isr()
     // as the kernel gets unlocked.
     if (g_ar.lockCount)
     {
-        ++g_ar.missedTickCount;
+        ar_atomic_add32(&g_ar.missedTickCount, 1);
         g_ar.needsReschedule = true;
         return;
     }
