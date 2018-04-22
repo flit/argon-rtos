@@ -199,8 +199,9 @@ void ar_kernel_periodic_timer_isr()
     uint32_t elapsed_ticks = 1;
 #endif // AR_ENABLE_TICKLESS_IDLE
 
-    // Process elapsed time. Invoke the scheduler if any threads were woken.
-    if (ar_kernel_increment_tick_count(elapsed_ticks))
+    // Process elapsed time. Invoke the scheduler if any threads were woken or if
+    // round robin scheduling is in effect.
+    if (ar_kernel_increment_tick_count(elapsed_ticks) || ar_kernel_check_round_robin())
     {
         ar_port_service_call();
     }
@@ -511,6 +512,27 @@ void ar_kernel_scheduler()
 #endif // AR_ENABLE_TICKLESS_IDLE
 }
 
+//! @brief Test if round-robin needs to be used.
+//!
+//! Round-robin is required if there are multiple ready threads with the same priority. Since the
+//! ready list is sorted by priority, we can just check the first two nodes to see if they are the
+//! same priority.
+bool ar_kernel_check_round_robin()
+{
+    ar_list_node_t * node = g_ar.readyList.m_head;
+    assert(node);
+    uint8_t pri1 = node->getObject<ar_thread_t>()->m_priority;
+    if (node->m_next != node)
+    {
+        node = node->m_next;
+        uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
+
+        return (pri1 == pri2);
+    }
+
+    return false;
+}
+
 //! @brief Determine the delay to the next wakeup event.
 //!
 //! Wakeup events are either sleeping threads that are scheduled to wake, or a timer that is
@@ -521,33 +543,19 @@ void ar_kernel_scheduler()
 uint32_t ar_kernel_get_next_wakeup_time()
 {
     uint32_t wakeup = 0;
-    ar_list_node_t * node;
-    ar_thread_t * thread;
 
-    // See if round-robin needs to be used. Round-robin is required if there are multiple ready
-    // threads with the same priority. Since the ready list is sorted by priority, we can just
-    // check the first two nodes to see if they are the same priority.
-    node = g_ar.readyList.m_head;
-    assert(node);
-    uint8_t pri1 = node->getObject<ar_thread_t>()->m_priority;
-    if (node->m_next != node)
+    // See if round-robin needs to be used.
+    if (ar_kernel_check_round_robin())
     {
-        node = node->m_next;
-        uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
-
-        // Check
-        if (pri1 == pri2)
-        {
-            wakeup = g_ar.tickCount + 1;
-        }
+        wakeup = g_ar.tickCount + 1;
     }
 
     // Check for a sleeping thread. The sleeping list is sorted by wakeup time, so we only
     // need to look at the list head.
-    node = g_ar.sleepingList.m_head;
+    ar_list_node_t * node = g_ar.sleepingList.m_head;
     if (node)
     {
-        thread = node->getObject<ar_thread_t>();
+        ar_thread_t * thread = node->getObject<ar_thread_t>();
         uint32_t sleepWakeup = thread->m_wakeupTime;
         if (wakeup == 0 || sleepWakeup < wakeup)
         {

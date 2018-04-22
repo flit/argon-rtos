@@ -184,6 +184,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler();
 void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler();
+bool ar_kernel_check_round_robin();
 uint32_t ar_kernel_get_next_wakeup_time();
 void ar_kernel_run_timers(ar_list_t & timersList);
 int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCount, volatile int32_t & qTail, int32_t qSize);
