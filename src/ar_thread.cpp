@@ -150,6 +150,7 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
             case kArThreadReady:
             case kArThreadRunning:
                 g_ar.readyList.remove(thread);
+                ar_kernel_update_round_robin();
                 break;
 
             case kArThreadSuspended:
@@ -208,6 +209,7 @@ static ar_status_t ar_thread_resume_internal(ar_thread_t * thread)
     // Put the thread back on the ready list.
     thread->m_state = kArThreadReady;
     g_ar.readyList.add(thread);
+    ar_kernel_update_round_robin();
 
     // yield to scheduler if there is not a running thread or if this thread
     // has a higher priority that the running one
@@ -273,15 +275,12 @@ static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread)
         case kArThreadReady:
         case kArThreadRunning:
             g_ar.readyList.remove(thread);
-            thread->m_state = kArThreadSuspended;
-            g_ar.suspendedList.add(thread);
+            ar_kernel_update_round_robin();
             break;
 
         // Move sleeping threads to suspended list.
         case kArThreadSleeping:
             g_ar.sleepingList.remove(thread);
-            thread->m_state = kArThreadSuspended;
-            g_ar.suspendedList.add(thread);
             break;
 
         // Nothing needs doing if the thread is already suspended.
@@ -294,6 +293,10 @@ static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread)
         case kArThreadDone:
             return kArInvalidStateError;
     }
+
+    // Move the thread to the suspended list.
+    thread->m_state = kArThreadSuspended;
+    g_ar.suspendedList.add(thread);
 
     // are we suspending the current thread?
     if (thread == g_ar.currentThread)
@@ -377,6 +380,7 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
         {
             g_ar.readyList.remove(thread);
             g_ar.readyList.add(thread);
+            ar_kernel_update_round_robin();
         }
         else if (thread->m_state == kArThreadBlocked)
         {
@@ -439,6 +443,7 @@ void ar_thread_sleep_until(uint32_t wakeup)
         g_ar.readyList.remove(g_ar.currentThread);
         g_ar.currentThread->m_state = kArThreadSleeping;
         g_ar.sleepingList.add(g_ar.currentThread);
+        ar_kernel_update_round_robin();
 
         // run scheduler and switch to another thread
         g_ar.needsReschedule = true;
@@ -475,6 +480,7 @@ void ar_thread_wrapper(ar_thread_t * thread, void * param)
         // This thread must be in the running state for this code to execute,
         // so we know it is on the ready list.
         g_ar.readyList.remove(thread);
+        ar_kernel_update_round_robin();
 
         // Mark this thread as finished
         thread->m_state = kArThreadDone;
@@ -523,6 +529,7 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
 
     // Remove this thread from the ready list.
     g_ar.readyList.remove(this);
+    ar_kernel_update_round_robin();
 
     // Update its state.
     m_state = kArThreadBlocked;
@@ -579,6 +586,7 @@ void _ar_thread::unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockS
     m_state = kArThreadReady;
     m_unblockStatus = unblockStatus;
     g_ar.readyList.add(this);
+    ar_kernel_update_round_robin();
 
     // Invoke the scheduler if the unblocked thread is higher priority than the current one.
     if (m_priority > g_ar.currentThread->m_priority)

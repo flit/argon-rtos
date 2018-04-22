@@ -131,7 +131,8 @@ typedef struct _ar_kernel {
     uint32_t isRunning:1;           //!< True if the kernel has been started.
     uint32_t needsReschedule:1;     //!< True if we need to reschedule once the kernel is unlocked.
     uint32_t isRunningDeferred:1;   //!< True if the kernel is executing deferred actions.
-    uint32_t _reservedFlags:29;
+    uint32_t needsRoundRobin:1;     //!< True if round-robin scheduling must be used.
+    uint32_t _reservedFlags:28;
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
     volatile int32_t lockCount;     //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
@@ -184,7 +185,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks);
 void ar_kernel_enter_scheduler();
 void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler();
-bool ar_kernel_check_round_robin();
+void ar_kernel_update_round_robin();
 uint32_t ar_kernel_get_next_wakeup_time();
 void ar_kernel_run_timers(ar_list_t & timersList);
 int32_t ar_kernel_atomic_queue_insert(int32_t entryCount, volatile int32_t & qCount, volatile int32_t & qTail, int32_t qSize);

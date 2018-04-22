@@ -131,6 +131,8 @@ void ar_kernel_run(void)
     // Note that we do _not_ init threadIdCounter since it will already have been incremented
     // some for any statically-initialized threads.
     g_ar.needsReschedule = false;
+    g_ar.isRunningDeferred = false;
+    g_ar.needsRoundRobin = false;
     g_ar.nextWakeup = 0;
     g_ar.deferredActions.m_count = 0;
     g_ar.deferredActions.m_first = 0;
@@ -201,7 +203,7 @@ void ar_kernel_periodic_timer_isr()
 
     // Process elapsed time. Invoke the scheduler if any threads were woken or if
     // round robin scheduling is in effect.
-    if (ar_kernel_increment_tick_count(elapsed_ticks) || ar_kernel_check_round_robin())
+    if (ar_kernel_increment_tick_count(elapsed_ticks) || g_ar.needsRoundRobin)
     {
         ar_port_service_call();
     }
@@ -313,6 +315,7 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
                 g_ar.sleepingList.remove(thread);
                 thread->m_state = kArThreadReady;
                 g_ar.readyList.add(thread);
+                ar_kernel_update_round_robin();
             }
             // Exit loop if we hit a thread with a wakeup time in the future. The sleeping list
             // is sorted, so there will be no further threads to handle in the list.
@@ -512,12 +515,12 @@ void ar_kernel_scheduler()
 #endif // AR_ENABLE_TICKLESS_IDLE
 }
 
-//! @brief Test if round-robin needs to be used.
+//! @brief Cache whether round-robin scheduling needs to be used.
 //!
 //! Round-robin is required if there are multiple ready threads with the same priority. Since the
 //! ready list is sorted by priority, we can just check the first two nodes to see if they are the
 //! same priority.
-bool ar_kernel_check_round_robin()
+void ar_kernel_update_round_robin()
 {
     ar_list_node_t * node = g_ar.readyList.m_head;
     assert(node);
@@ -527,10 +530,10 @@ bool ar_kernel_check_round_robin()
         node = node->m_next;
         uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
 
-        return (pri1 == pri2);
+        g_ar.needsRoundRobin = (pri1 == pri2);
     }
 
-    return false;
+    g_ar.needsRoundRobin = false;
 }
 
 //! @brief Determine the delay to the next wakeup event.
@@ -545,7 +548,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
     uint32_t wakeup = 0;
 
     // See if round-robin needs to be used.
-    if (ar_kernel_check_round_robin())
+    if (g_ar.needsRoundRobin)
     {
         wakeup = g_ar.tickCount + 1;
     }
