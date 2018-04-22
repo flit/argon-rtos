@@ -194,7 +194,7 @@ void ar_kernel_periodic_timer_isr()
 #if AR_ENABLE_TICKLESS_IDLE
     // Get the elapsed time since the last timer tick.
     uint32_t us = ar_port_get_timer_elapsed_us();
-    uint32_t elapsed_ticks = us / 10000;
+    uint32_t elapsed_ticks = us / (kSchedulerQuanta_ms * 1000);
 #else // AR_ENABLE_TICKLESS_IDLE
     uint32_t elapsed_ticks = 1;
 #endif // AR_ENABLE_TICKLESS_IDLE
@@ -241,8 +241,8 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 
 #if AR_ENABLE_TICKLESS_IDLE
     // Process elapsed time to keep tick count up to date.
-    uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 10000;
-    ar_kernel_increment_tick_count(elapsed_ms);
+    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / (kSchedulerQuanta_ms * 1000);
+    ar_kernel_increment_tick_count(elapsed_ticks);
 #endif // AR_ENABLE_TICKLESS_IDLE
 
     // Run the scheduler. It will modify g_ar.currentThread if switching threads.
