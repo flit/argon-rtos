@@ -55,11 +55,11 @@ static void ar_kernel_update_thread_loads();
 //------------------------------------------------------------------------------
 
 //! Global kernel state.
-ar_kernel_t g_ar = {};
+ar_kernel_t g_ar = {0};
 
 #if AR_GLOBAL_OBJECT_LISTS
 //! Global list of kernel objects.
-ar_all_objects_t g_ar_objects = {};
+ar_all_objects_t g_ar_objects = {0};
 #endif // AR_GLOBAL_OBJECT_LISTS
 
 //! The stack for the idle thread.
