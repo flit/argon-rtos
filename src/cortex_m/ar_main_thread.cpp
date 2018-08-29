@@ -28,7 +28,7 @@
  */
 
 #include "argon/ar_classes.h"
-#include "argon/src/ar_config.h"
+#include "ar_config.h"
 
 #if defined(__CC_ARM)
 #include <rt_misc.h>
