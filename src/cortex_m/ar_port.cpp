@@ -127,7 +127,7 @@ void ar_port_set_timer_delay(bool enable, uint32_t delay_us)
 
         // Calculate SysTick reload value. If the desired delay overflows the SysTick counter,
         // we just use the max delay (24 bits for SysTick).
-        uint32_t ticks = SystemCoreClock / 1000000 * delay_us; // TODO: need - 1 ?
+        uint32_t ticks = SystemCoreClock / 1000000 * delay_us - 1;
         if (ticks > SysTick_LOAD_RELOAD_Msk)
         {
             ticks = SysTick_LOAD_RELOAD_Msk;

@@ -507,7 +507,7 @@ void ar_kernel_scheduler()
         uint32_t delay = 0;
         if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
         {
-            delay = (g_ar.nextWakeup - g_ar.tickCount) * 10000;
+            delay = (g_ar.nextWakeup - g_ar.tickCount) * kSchedulerQuanta_ms * 1000;
         }
         bool enable = (g_ar.nextWakeup != 0);
         ar_port_set_timer_delay(enable, delay);
@@ -589,7 +589,7 @@ uint32_t ar_get_system_load(void)
 uint32_t ar_get_tick_count(void)
 {
 #if AR_ENABLE_TICKLESS_IDLE
-    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / 10000;
+    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / (kSchedulerQuanta_ms * 1000);
     return g_ar.tickCount + elapsed_ticks;
 #else
     return g_ar.tickCount;
