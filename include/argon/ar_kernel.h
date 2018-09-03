@@ -1187,7 +1187,7 @@ uint32_t ar_get_millisecond_count(void);
  * @brief Get a microsecond timestamp.
  * @return Elapsed time in microseconds since the system was started.
  */
-uint64_t ar_get_microseconds();
+uint64_t ar_get_microseconds(void);
 
 /*!
  * @brief Get the number of milliseconds per tick.
