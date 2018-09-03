@@ -127,7 +127,7 @@ static inline bool ar_port_get_irq_state(void)
     return __get_IPSR() != 0;
 }
 
-#if __cplusplus
+#if defined(__cplusplus)
 extern "C" inline uint32_t ar_get_milliseconds_per_tick();
 #else
 static inline uint32_t ar_get_milliseconds_per_tick(void);
