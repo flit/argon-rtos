@@ -111,7 +111,7 @@ static inline void _halt()
 
 #if DEBUG
 //! @brief Make the PendSV exception pending.
-void ar_port_service_call();
+void ar_port_service_call(void);
 #else // DEBUG
 static inline void ar_port_service_call()
 {
@@ -122,12 +122,12 @@ static inline void ar_port_service_call()
 #endif // DEBUG
 
 //! @brief Returns true if in IRQ state.
-static inline bool ar_port_get_irq_state()
+static inline bool ar_port_get_irq_state(void)
 {
     return __get_IPSR() != 0;
 }
 
-#if __cplusplus
+#if defined(__cplusplus)
 extern "C" inline uint32_t ar_get_milliseconds_per_tick();
 #else
 static inline uint32_t ar_get_milliseconds_per_tick(void);
