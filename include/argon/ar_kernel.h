@@ -542,7 +542,8 @@ ar_runloop_t * ar_thread_get_runloop(ar_thread_t * thread);
  * A sleeping thread can be woken early by calling ar_thread_resume().
  *
  * @param milliseconds The number of milliseconds to sleep the calling thread. A sleep time
- *     of 0 is ignored. If #kArInfiniteTimeout is passed for the sleep time, the thread will
+ *     of 0 is ignored. If the sleep time is shorter than the scheduler quanta, then the thread
+ *     will not actually sleep. If #kArInfiniteTimeout is passed for the sleep time, the thread will
  *     simply be suspended.
  */
 void ar_thread_sleep(uint32_t milliseconds);

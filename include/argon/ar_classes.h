@@ -245,13 +245,19 @@ public:
     //!
     //! Does nothing if Ar is not running.
     //!
+    //! A sleeping thread can be woken early by calling ar_thread_resume().
+    //!
     //! @param milliseconds The number of milliseconds to sleep the calling thread. A sleep time
-    //!     of 0 is ignored.
+    //!     of 0 is ignored. If the sleep time is shorter than the scheduler quanta, then the thread
+    //!     will not actually sleep. If #kArInfiniteTimeout is passed for the sleep time, the thread
+    //!     will simply be suspended.
     static void sleep(unsigned milliseconds) { ar_thread_sleep(milliseconds); }
 
     //! @brief Put the current thread to sleep until a specific time.
     //!
     //! Does nothing if Ar is not running.
+    //!
+    //! A sleeping thread can be woken early by calling ar_thread_resume().
     //!
     //! @param wakeup The wakeup time in milliseconds. If the time is not in the future, i.e., less than
     //!  or equal to the current value returned by ar_get_millisecond_count(), then the sleep request is
