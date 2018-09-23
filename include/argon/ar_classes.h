@@ -605,7 +605,7 @@ public:
     Channel() {}
 
     //! @brief Constructor.
-    Channel(const char * name, uint32_t width=0) { init(name); }
+    Channel(const char * name, uint32_t width=0) { init(name, width); }
 
     //! @brief Destructor.
     ~Channel() { ar_channel_delete(this); }
