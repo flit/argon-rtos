@@ -532,8 +532,10 @@ void ar_kernel_update_round_robin()
 
         g_ar.needsRoundRobin = (pri1 == pri2);
     }
-
-    g_ar.needsRoundRobin = false;
+    else
+    {
+        g_ar.needsRoundRobin = false;
+    }
 }
 
 //! @brief Determine the delay to the next wakeup event.
