@@ -117,15 +117,19 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
         object->m_queue = NULL;
     }
 
-    // Associate this runloop with the current thread.
-    g_ar.currentThread->m_runLoop = runloop;
-    runloop->m_thread = g_ar.currentThread;
+    bool isNested = runloop->m_isRunning;
+    if (!isNested)
+    {
+        // Associate this runloop with the current thread.
+        g_ar.currentThread->m_runLoop = runloop;
+        runloop->m_thread = g_ar.currentThread;
 
-    // Clear stop flag.
-    runloop->m_stop = false;
+        // Clear stop flag.
+        runloop->m_stop = false;
 
-    // Set running flag.
-    runloop->m_isRunning = true;
+        // Set running flag.
+        runloop->m_isRunning = true;
+    }
 
     // Prepare timeout.
     uint32_t startTime = g_ar.tickCount;
@@ -229,12 +233,15 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
         }
     } while (!runloop->m_stop);
 
-    // Clear associated thread.
-    g_ar.currentThread->m_runLoop = NULL;
-    runloop->m_thread = NULL;
+    if (!isNested)
+    {
+        // Clear associated thread.
+        g_ar.currentThread->m_runLoop = NULL;
+        runloop->m_thread = NULL;
 
-    // Clear running flag.
-    runloop->m_isRunning = false;
+        // Clear running flag.
+        runloop->m_isRunning = false;
+    }
 
     // TODO return different status for timed out versus stopped?
     return returnStatus;
