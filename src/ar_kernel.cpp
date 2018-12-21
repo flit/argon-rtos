@@ -552,7 +552,8 @@ uint32_t ar_kernel_get_next_wakeup_time()
     // See if round-robin needs to be used.
     if (g_ar.flags.needsRoundRobin)
     {
-        wakeup = g_ar.tickCount + 1;
+        // No need to check sleeping threads!
+        return g_ar.tickCount + 1;
     }
 
     // Check for a sleeping thread. The sleeping list is sorted by wakeup time, so we only
