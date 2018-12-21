@@ -128,11 +128,14 @@ typedef struct _ar_kernel {
     ar_list_t readyList;            //!< List of threads ready to run.
     ar_list_t suspendedList;        //!< List of suspended threads.
     ar_list_t sleepingList;         //!< List of sleeping threads.
-    uint32_t isRunning:1;           //!< True if the kernel has been started.
-    uint32_t needsReschedule:1;     //!< True if we need to reschedule once the kernel is unlocked.
-    uint32_t isRunningDeferred:1;   //!< True if the kernel is executing deferred actions.
-    uint32_t needsRoundRobin:1;     //!< True if round-robin scheduling must be used.
-    uint32_t _reservedFlags:28;
+    struct _ar_kernel_flags {
+        uint32_t isRunning:1;           //!< True if the kernel has been started.
+        uint32_t needsReschedule:1;     //!< True if we need to reschedule once the kernel is unlocked.
+        uint32_t isRunningDeferred:1;   //!< True if the kernel is executing deferred actions.
+        uint32_t needsRoundRobin:1;     //!< True if round-robin scheduling must be used.
+        uint32_t _reservedFlags:28;
+    } flags;                        //!< Kernel flags.
+    uint32_t version;               //!< Argon version in BCD, same as #AR_VERSION.
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
     volatile int32_t lockCount;     //!< Whether the kernel is locked.
     volatile uint32_t tickCount;    //!< Current tick count.
@@ -273,7 +276,7 @@ public:
         {
             assert(g_ar.lockCount != 0);
             ar_atomic_add32(&g_ar.lockCount, -1);
-            if (g_ar.lockCount == 0 && g_ar.needsReschedule && !g_ar.isRunningDeferred)
+            if (g_ar.lockCount == 0 && g_ar.flags.needsReschedule && !g_ar.flags.isRunningDeferred)
             {
                 ar_kernel_enter_scheduler();
             }

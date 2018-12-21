@@ -102,7 +102,7 @@ static void idle_entry(void * param)
 void ar_kernel_enter_scheduler()
 {
     // Do nothing if kernel isn't running yet.
-    if (!g_ar.isRunning)
+    if (!g_ar.flags.isRunning)
     {
         return;
     }
@@ -110,14 +110,14 @@ void ar_kernel_enter_scheduler()
     if (!g_ar.lockCount)
     {
         // Clear rescheduler.
-        g_ar.needsReschedule = false;
+        g_ar.flags.needsReschedule = false;
 
         // Call port-specific function to invoke the scheduler.
         ar_port_service_call();
     }
     else
     {
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 }
 
@@ -130,9 +130,9 @@ void ar_kernel_run(void)
     // Init some misc fields.
     // Note that we do _not_ init threadIdCounter since it will already have been incremented
     // some for any statically-initialized threads.
-    g_ar.needsReschedule = false;
-    g_ar.isRunningDeferred = false;
-    g_ar.needsRoundRobin = false;
+    g_ar.flags.needsReschedule = false;
+    g_ar.flags.isRunningDeferred = false;
+    g_ar.flags.needsRoundRobin = false;
     g_ar.nextWakeup = 0;
     g_ar.deferredActions.m_count = 0;
     g_ar.deferredActions.m_first = 0;
@@ -165,7 +165,7 @@ void ar_kernel_run(void)
     ar_trace_init();
 
     // We're now ready to run
-    g_ar.isRunning = true;
+    g_ar.flags.isRunning = true;
 
     // Enter into the scheduler. The yieldIsr() will see that s_currentThread
     // is NULL and ignore the stack pointer it was given. After the scheduler
@@ -179,7 +179,7 @@ void ar_kernel_run(void)
 void ar_kernel_periodic_timer_isr()
 {
     // Exit immediately if the kernel isn't running.
-    if (!g_ar.isRunning)
+    if (!g_ar.flags.isRunning)
     {
         return;
     }
@@ -189,7 +189,7 @@ void ar_kernel_periodic_timer_isr()
     if (g_ar.lockCount)
     {
         ar_atomic_add32(&g_ar.missedTickCount, 1);
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
         return;
     }
 
@@ -203,7 +203,7 @@ void ar_kernel_periodic_timer_isr()
 
     // Process elapsed time. Invoke the scheduler if any threads were woken or if
     // round robin scheduling is in effect.
-    if (ar_kernel_increment_tick_count(elapsed_ticks) || g_ar.needsRoundRobin)
+    if (ar_kernel_increment_tick_count(elapsed_ticks) || g_ar.flags.needsRoundRobin)
     {
         ar_port_service_call();
     }
@@ -249,7 +249,7 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 
     // Run the scheduler. It will modify g_ar.currentThread if switching threads.
     ar_kernel_scheduler();
-    g_ar.needsReschedule = 0;
+    g_ar.flags.needsReschedule = 0;
 
     // The idle thread prevents this condition.
     assert(g_ar.currentThread);
@@ -338,7 +338,7 @@ void ar_kernel_run_deferred_actions()
     // lock the kernel below.
     assert(g_ar.lockCount == 0);
 
-    g_ar.isRunningDeferred = 1;
+    g_ar.flags.isRunningDeferred = 1;
 
     // Pull actions from the head of the queue and execute them.
     ar_deferred_action_queue_t & queue = g_ar.deferredActions;
@@ -367,7 +367,7 @@ void ar_kernel_run_deferred_actions()
         queue.m_first = i;
     }
 
-    g_ar.isRunningDeferred = 0;
+    g_ar.flags.isRunningDeferred = 0;
 }
 
 //! @brief Function to make it clear what happened.
@@ -530,11 +530,11 @@ void ar_kernel_update_round_robin()
         node = node->m_next;
         uint8_t pri2 = node->getObject<ar_thread_t>()->m_priority;
 
-        g_ar.needsRoundRobin = (pri1 == pri2);
+        g_ar.flags.needsRoundRobin = (pri1 == pri2);
     }
     else
     {
-        g_ar.needsRoundRobin = false;
+        g_ar.flags.needsRoundRobin = false;
     }
 }
 
@@ -550,7 +550,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
     uint32_t wakeup = 0;
 
     // See if round-robin needs to be used.
-    if (g_ar.needsRoundRobin)
+    if (g_ar.flags.needsRoundRobin)
     {
         wakeup = g_ar.tickCount + 1;
     }
@@ -574,7 +574,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
 // See ar_kernel.h for documentation of this function.
 bool ar_kernel_is_running(void)
 {
-    return g_ar.isRunning;
+    return g_ar.flags.isRunning;
 }
 
 // See ar_kernel.h for documentation of this function.

@@ -175,7 +175,7 @@ ar_status_t ar_thread_delete(ar_thread_t * thread)
         // Are we deleting ourself?
         if (thread == g_ar.currentThread)
         {
-            g_ar.needsReschedule = true;
+            g_ar.flags.needsReschedule = true;
         }
     }
 
@@ -215,7 +215,7 @@ static ar_status_t ar_thread_resume_internal(ar_thread_t * thread)
     // has a higher priority that the running one
     if (thread->m_priority > g_ar.currentThread->m_priority)
     {
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 
     return kArSuccess;
@@ -301,7 +301,7 @@ static ar_status_t ar_thread_suspend_internal(ar_thread_t * thread)
     // are we suspending the current thread?
     if (thread == g_ar.currentThread)
     {
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 
     return kArSuccess;
@@ -387,7 +387,7 @@ ar_status_t ar_thread_set_priority(ar_thread_t * thread, uint8_t priority)
             //! @todo Resort blocked list and handle priority inheritence.
         }
 
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 
     return kArSuccess;
@@ -446,7 +446,7 @@ void ar_thread_sleep_until(uint32_t wakeup)
         ar_kernel_update_round_robin();
 
         // run scheduler and switch to another thread
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 }
 
@@ -591,7 +591,7 @@ void _ar_thread::unblockWithStatus(ar_list_t & blockedList, ar_status_t unblockS
     // Invoke the scheduler if the unblocked thread is higher priority than the current one.
     if (m_priority > g_ar.currentThread->m_priority)
     {
-        g_ar.needsReschedule = true;
+        g_ar.flags.needsReschedule = true;
     }
 }
 
