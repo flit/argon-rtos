@@ -211,6 +211,10 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
         if (!runloop->m_timers.isEmpty())
         {
             ar_timer_t * timer = runloop->m_timers.getHead<ar_timer_t>();
+
+            // Timers should always have a wakeup time in the future.
+            assert (timer->m_wakeupTime >= g_ar.tickCount);
+
             uint32_t wakeupDeltaTicks = timer->m_wakeupTime - g_ar.tickCount;
             // kArInfiniteTimeout is the max 32-bit value, so wakeupDeltaTicks will always be <=
             if (wakeupDeltaTicks < blockTimeoutTicks)

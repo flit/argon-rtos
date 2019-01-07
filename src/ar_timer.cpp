@@ -229,7 +229,9 @@ ar_status_t ar_timer_set_delay(ar_timer_t * timer, uint32_t delay)
 //!
 //! While a timer callback is running, the m_isRunning flag on the timer is set to true.
 //! When the callback returns, a one shot timer is stopped while a periodic timer is
-//! rescheduled based on its delay.
+//! rescheduled based on its delay. If a periodic timer's callback runs so long that the next
+//! wakeup time is in the past, it will be rescheduled to a time in the future that is aligned
+//! with the period.
 void ar_kernel_run_timers(ar_list_t & timersList)
 {
     // Check if we need to handle a timer.
@@ -263,9 +265,26 @@ void ar_kernel_run_timers(ar_list_t & timersList)
                         break;
 
                     case kArPeriodicTimer:
-                        // Restart a periodic timer without introducing jitter.
-                        ar_timer_start_internal(timer, timer->m_wakeupTime + timer->m_delay);
+                    {
+                        // Restart a periodic timer without introducing (much) jitter. Also handle
+                        // the cases where the timer callback ran longer than the next wakeup.
+                        uint32_t wakeupTime = timer->m_wakeupTime + timer->m_delay;
+                        if (wakeupTime == g_ar.tickCount)
+                        {
+                            // Push the wakeup out another period into the future.
+                            wakeupTime += timer->m_delay;
+                        }
+                        else if (wakeupTime < g_ar.tickCount)
+                        {
+                            // Compute the delay to the next wakeup in the future that is aligned
+                            // to the timer's period.
+                            uint32_t delta = (g_ar.tickCount - timer->m_wakeupTime + timer->m_delay - 1)
+                                                / timer->m_delay * timer->m_delay;
+                            wakeupTime = timer->m_wakeupTime + delta;
+                        }
+                        ar_timer_start_internal(timer, wakeupTime);
                         break;
+                    }
                 }
             }
 

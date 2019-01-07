@@ -102,7 +102,7 @@ x Share a common timeout list for timers and blocked threads?
 - Provide option to coalesce function calls added to runloop queue.
 - Add config option to compute thread stack usage and provide via ar_thread_get_report().
 - Free dynamically allocated stack when thread is deleted.
-- Handle case where a timer would fire again while it is executing.
+√ Handle case where a timer would fire again while it is executing.
 x Track time spent in scheduler.
 - Protect thread stacks with MPU.
 √ Allow timers to be stopped from timer callback.
