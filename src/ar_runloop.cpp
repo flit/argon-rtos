@@ -132,7 +132,7 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
     }
 
     // Prepare timeout.
-    uint32_t startTime = g_ar.tickCount;
+    uint32_t startTime = ar_get_tick_count();
     uint32_t timeoutTicks = timeout;
     if (timeout != kArInfiniteTimeout)
     {
@@ -197,7 +197,7 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
         uint32_t blockTimeoutTicks = timeoutTicks;
         if (blockTimeoutTicks != kArInfiniteTimeout)
         {
-            uint32_t deltaTicks = g_ar.tickCount - startTime;
+            uint32_t deltaTicks = ar_get_tick_count() - startTime;
             if (deltaTicks >= timeoutTicks)
             {
                 // Timed out, exit runloop.
@@ -213,9 +213,9 @@ ar_status_t ar_runloop_run(ar_runloop_t * runloop, uint32_t timeout, ar_runloop_
             ar_timer_t * timer = runloop->m_timers.getHead<ar_timer_t>();
 
             // Timers should always have a wakeup time in the future.
-            assert (timer->m_wakeupTime >= g_ar.tickCount);
+            assert (timer->m_wakeupTime >= ar_get_tick_count());
 
-            uint32_t wakeupDeltaTicks = timer->m_wakeupTime - g_ar.tickCount;
+            uint32_t wakeupDeltaTicks = timer->m_wakeupTime - ar_get_tick_count();
             // kArInfiniteTimeout is the max 32-bit value, so wakeupDeltaTicks will always be <=
             if (wakeupDeltaTicks < blockTimeoutTicks)
             {

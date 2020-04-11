@@ -104,7 +104,7 @@ static void idle_entry(void * param)
 {
     while (1)
     {
-        while (g_ar.tickCount < g_ar.nextWakeup)
+        while (ar_get_tick_count() < g_ar.nextWakeup)
         {
         }
 
@@ -207,22 +207,12 @@ void ar_kernel_periodic_timer_isr()
     // as the kernel gets unlocked.
     if (g_ar.lockCount)
     {
-        ar_atomic_add32(&g_ar.missedTickCount, 1);
-        g_ar.flags.needsReschedule = true;
         return;
     }
 
-#if AR_ENABLE_TICKLESS_IDLE
-    // Get the elapsed time since the last timer tick.
-    uint32_t us = ar_port_get_timer_elapsed_us();
-    uint32_t elapsed_ticks = us / (kSchedulerQuanta_ms * 1000);
-#else // AR_ENABLE_TICKLESS_IDLE
-    uint32_t elapsed_ticks = 1;
-#endif // AR_ENABLE_TICKLESS_IDLE
-
     // Process elapsed time. Invoke the scheduler if any threads were woken or if
     // round robin scheduling is in effect.
-    if (ar_kernel_increment_tick_count(elapsed_ticks) || g_ar.flags.needsRoundRobin)
+    if (ar_kernel_process_ticks() || g_ar.flags.needsRoundRobin)
     {
         ar_port_service_call();
     }
@@ -243,28 +233,10 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
         g_ar.currentThread->m_stackPointer = reinterpret_cast<uint8_t *>(topOfStack);
     }
 
-    // Handle any missed ticks.
-    {
-        uint32_t missedTicks = g_ar.missedTickCount;
-        while (!ar_atomic_cas32(&g_ar.missedTickCount, missedTicks, 0))
-        {
-            missedTicks = g_ar.missedTickCount;
-        }
-
-        if (missedTicks)
-        {
-            ar_kernel_increment_tick_count(missedTicks);
-        }
-    }
-
     // Process any deferred actions.
     ar_kernel_run_deferred_actions();
 
-#if AR_ENABLE_TICKLESS_IDLE
-    // Process elapsed time to keep tick count up to date.
-    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / (kSchedulerQuanta_ms * 1000);
-    ar_kernel_increment_tick_count(elapsed_ticks);
-#endif // AR_ENABLE_TICKLESS_IDLE
+    ar_kernel_process_ticks();
 
     // Run the scheduler. It will modify g_ar.currentThread if switching threads.
     ar_kernel_scheduler();
@@ -285,15 +257,12 @@ uint32_t ar_kernel_yield_isr(uint32_t topOfStack)
 //!     and must be at least 1, but may be higher if interrupts are disabled for a
 //!     long time.
 //! @return Flag indicating whether any threads were modified.
-bool ar_kernel_increment_tick_count(unsigned ticks)
+bool ar_kernel_process_ticks()
 {
 //     assert(ticks > 0);
 
-    // Increment tick count.
-    g_ar.tickCount += ticks;
-
     // Compare against next wakeup time we previously computed.
-    if (g_ar.tickCount < g_ar.nextWakeup)
+    if (ar_get_tick_count() < g_ar.nextWakeup)
     {
         return false;
     }
@@ -309,7 +278,8 @@ bool ar_kernel_increment_tick_count(unsigned ticks)
             ar_list_node_t * next = node->m_next;
 
             // Is it time to wake this thread?
-            if (g_ar.tickCount >= thread->m_wakeupTime)
+            //TODO: would it be safe to cache tick_count?
+            if (ar_get_tick_count() >= thread->m_wakeupTime)
             {
                 wasThreadWoken = true;
 
@@ -524,12 +494,12 @@ void ar_kernel_scheduler()
     {
         g_ar.nextWakeup = wakeup;
         uint32_t delay = 0;
-        if (g_ar.nextWakeup && g_ar.nextWakeup > g_ar.tickCount)
+        if (g_ar.nextWakeup && g_ar.nextWakeup > ar_get_tick_count())
         {
-            delay = (g_ar.nextWakeup - g_ar.tickCount) * kSchedulerQuanta_ms * 1000;
+            delay = (g_ar.nextWakeup - ar_get_tick_count()) * kSchedulerQuanta_ms * 1000;
         }
         bool enable = (g_ar.nextWakeup != 0);
-        ar_port_set_timer_delay(enable, delay);
+        ar_port_set_time_delay(enable, delay);
     }
 #endif // AR_ENABLE_TICKLESS_IDLE
 }
@@ -572,7 +542,7 @@ uint32_t ar_kernel_get_next_wakeup_time()
     if (g_ar.flags.needsRoundRobin)
     {
         // No need to check sleeping threads!
-        return g_ar.tickCount + 1;
+        return ar_get_tick_count() + 1;
     }
 
     // Check for a sleeping thread. The sleeping list is sorted by wakeup time, so we only
@@ -610,23 +580,14 @@ uint32_t ar_get_system_load(void)
 // See ar_kernel.h for documentation of this function.
 uint32_t ar_get_tick_count(void)
 {
-#if AR_ENABLE_TICKLESS_IDLE
-    uint32_t elapsed_ticks = ar_port_get_timer_elapsed_us() / (kSchedulerQuanta_ms * 1000);
-    return g_ar.tickCount + elapsed_ticks;
-#else
-    return g_ar.tickCount;
-#endif // AR_ENABLE_TICKLESS_IDLE
+    return ar_port_get_time_absolute_ticks();
 }
 
 // See ar_kernel.h for documentation of this function.
 uint32_t ar_get_millisecond_count(void)
 {
-#if AR_ENABLE_TICKLESS_IDLE
-    uint32_t elapsed_ms = ar_port_get_timer_elapsed_us() / 1000;
-    return g_ar.tickCount * ar_get_milliseconds_per_tick() + elapsed_ms;
-#else
-    return g_ar.tickCount * ar_get_milliseconds_per_tick();
-#endif // AR_ENABLE_TICKLESS_IDLE
+    return ar_port_get_time_absolute_ms();
+    // return ar_port_get_time_absolute_ticks() * kSchedulerQuanta_ms; //do we have to limit resolution?
 }
 
 //! Updates the list node's links and those of @a node so that the object is inserted before
