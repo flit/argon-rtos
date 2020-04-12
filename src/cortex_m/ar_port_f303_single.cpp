@@ -60,16 +60,16 @@ enum _exception_priorities
 #define sTIM TIM3
 #define sTIM_IRQn TIM3_IRQn
 #define sTIM_IRQHandler TIM3_IRQHandler
-#define sTIM_MAX UINT16_MAX
+#define sTIM_MAX (UINT16_MAX)
 #define sTIM_MAX_QUANTAS (sTIM_MAX/(kSchedulerQuanta_ms * 1000))
 #define sTIM_MAX_ALIGNED_us (sTIM_MAX_QUANTAS*(kSchedulerQuanta_ms * 1000))
+#define sTIM_CLK_EN() do{RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; (void)RCC->APB1ENR;}while(0)
 
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-extern "C" void SysTick_Handler(void);
 extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
 
 //------------------------------------------------------------------------------
@@ -105,7 +105,6 @@ void ar_port_init_system()
     // Set priorities for the exceptions we use in the kernel.
     NVIC_SetPriority(SVCall_IRQn, kHandlerPriority);
     NVIC_SetPriority(PendSV_IRQn, kHandlerPriority);
-    //TODO: config timers priority irq
     //TODO: use uTIM overflow irq in tick mode
     NVIC_EnableIRQ(sTIM_IRQn);
     NVIC_SetPriority(sTIM_IRQn, kHandlerPriority);
@@ -115,9 +114,8 @@ void ar_port_init_system()
 
 void ar_port_init_tick_timer()
 {
-    //DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM3_STOP; //stop timer in debug, useful for stepping
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-    (void)RCC->APB1ENR;//force on tick before accessing timer
+    //se corresponding bits in DBGMCU->APBxFZ to stop timer in debug, useful for stepping
+    sTIM_CLK_EN();
     sTIM->CR1 = TIM_CR1_URS;// | TIM_CR1_ARPE; //only ovf generated Update IRQ, enable preload on ARR
     sTIM->CR2 = 0;
     sTIM->PSC = (F_sTIM / 1000000UL)-1;//psc to have 1Mhz (1us) ticking
@@ -143,14 +141,13 @@ void ar_port_init_tick_timer()
 //! @return real value of delay, because clamping may occur
 //!     returns 0 when timer does not run or is delay:_us is 0
 //!     and interrupt is fired up immediately
-uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us)
+void ar_port_set_time_delay(bool enable, uint32_t delay_us)
 {
     //self preemption never happen here (called only from scheduler[IRQ] or tick[IRQ] which share same priority)
     propagateTicksToArgon = enable;
 
     if (enable)
     {
-        // sTIM->CR1 &= ~TIM_CR1_CEN;//temporary timer stop, just for debug
         if (delay_us == 100000U) {
             asm("NOP");
         }
@@ -158,14 +155,12 @@ uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us)
         // If the delay is 0, just make the SysTick interrupt pending.
         if (delay_ticks == 0)
         {
-            _halt();//this really should not happen, this will trigger unaligned tick and that is BAD
-            return 0;
-        }
-        if (delay_ticks == 9) {
-            asm("NOP");
-        } else {
-            asm("NOP");
-            asm("NOP");
+            if (sTIM->SR & TIM_SR_UIF)
+            {
+                return; // already pending interrupt, that is fine
+            }
+            assert(1);
+            return;
         }
 
         //never alter CNT
@@ -177,19 +172,11 @@ uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us)
             delay_ticks = sTIM_MAX_QUANTAS - alignmentsSinceTimerStart;
         }
         nextWakeup_tick = lastTick + ovfTicks + alignmentsSinceTimerStart + delay_ticks;
-        // sTIM->CR1 &= ~TIM_CR1_ARPE;//disable shadowing, to get access to active register
         sTIM->ARR = (alignmentsSinceTimerStart + delay_ticks) * (kSchedulerQuanta_ms * 1000) - 1;
-        // sTIM->CR1 |= TIM_CR1_ARPE;//reenable shadowing, to prepare backup value to load after ovf (in case system can't handle ovf soon)
-        // sTIM->ARR = sTIM_MAX_ALIGNED_us - 1; //after overflow, timer reconfigures to maximal value (allows for quite late handling of overflow)
-        // sTIM->CR1 |= TIM_CR1_CEN;//temporary timer stop, just for debug
-        return delay_ticks * (kSchedulerQuanta_ms * 1000);
     }
     else
     {
-        // sTIM->CR1 &= ~TIM_CR1_ARPE;//disable shadowing, to get access to active register
         sTIM->ARR = sTIM_MAX_ALIGNED_us - 1; //maximum length ticking
-        // sTIM->CR1 |= TIM_CR1_ARPE;//TODO: not necessary?
-        return 0;
     }
 }
 
@@ -204,32 +191,32 @@ uint32_t ar_port_get_time_absolute_ticks()
     return ar_port_get_time_absolute_ms()/kSchedulerQuanta_ms;
 }
 
-// uint64_t ar_port_get_time_absolute_us()
-// {
-//     auto cnt = sTIM->CNT;
-//     auto ticks = lastTick;
-//     auto ovf = sTIM->SR & TIM_SR_UIF;
-//     auto nextTick = nextWakeup_tick;
+uint64_t ar_port_get_time_absolute_us()
+{
+    auto cnt = sTIM->CNT;
+    auto ticks = lastTick;
+    auto ovf = sTIM->SR & TIM_SR_UIF;
+    auto nextTick = nextWakeup_tick;
 
-//     decltype(cnt) preread_cnt;
-//     decltype(ticks) preread_ticks;
-//     decltype(ovf) preread_ovf;
-//     decltype(nextTick) preread_nextTick;
-//     do {
-//         preread_cnt = cnt;
-//         preread_ticks = ticks;
-//         preread_ovf = ovf;
-//         preread_nextTick = nextTick;
-//         cnt = sTIM->CNT;
-//         ticks = lastTick;
-//         ovf = sTIM->SR & TIM_SR_UIF;
-//         nextTick = nextWakeup_tick;
+    decltype(cnt) preread_cnt;
+    decltype(ticks) preread_ticks;
+    decltype(ovf) preread_ovf;
+    decltype(nextTick) preread_nextTick;
+    do {
+        preread_cnt = cnt;
+        preread_ticks = ticks;
+        preread_ovf = ovf;
+        preread_nextTick = nextTick;
+        cnt = sTIM->CNT;
+        ticks = lastTick;
+        ovf = sTIM->SR & TIM_SR_UIF;
+        nextTick = nextWakeup_tick;
 
-//     }while(preread_cnt > cnt || preread_ticks != ticks || preread_ovf != ovf || nextTick!= preread_nextTick);
-//     //TODO: is this contraption enough to have synced 3 variables?
+    }while(preread_cnt > cnt || preread_ticks != ticks || preread_ovf != ovf || nextTick!= preread_nextTick);
+    //TODO: is this contraption enough to have synced 3 variables?
 
-//     return static_cast<uint64_t>(ovf ? nextTick : ticks) * (kSchedulerQuanta_ms * 1000) + cnt;
-// }
+    return static_cast<uint64_t>(ovf ? nextTick : ticks) * (kSchedulerQuanta_ms * 1000) + cnt;
+}
 
 //TODO: is return type sufficient?
 uint32_t ar_port_get_time_absolute_ms()
@@ -406,19 +393,28 @@ bool ar_atomic_cas32(volatile int32_t * value, int32_t expectedValue, int32_t ne
 
 extern "C" void sTIM_IRQHandler(void)
 {
-    sTIM->SR &= ~TIM_SR_UIF;
-    lastTick = nextWakeup_tick + sTIM->CNT/(kSchedulerQuanta_ms * 1000);
+    bool ticked = sTIM->SR & TIM_SR_UIF;
+    if (ticked)
+    {
+        sTIM->SR &= ~TIM_SR_UIF;
+        // update lastTick only on interrupd due to overflow (non SW trigger)
+        lastTick = nextWakeup_tick + sTIM->CNT/(kSchedulerQuanta_ms * 1000);
+    }
+
     if (propagateTicksToArgon)
     {
         ar_kernel_periodic_timer_isr();
     }
-    if (nextWakeup_tick == lastTick)
+
+    if (ticked)
     {
-        //not updated next tick
-        if (targetedNextWakeup_tick > nextWakeup_tick) 
+        if (nextWakeup_tick == lastTick) //this is time when we scheduled next tick
         {
-            // and still not there
-            ar_port_set_time_delay(true, (targetedNextWakeup_tick - nextWakeup_tick) * kSchedulerQuanta_ms * 1000);
+            if (targetedNextWakeup_tick > nextWakeup_tick) //but it is not target wakeup time (limited by timer may delay capability)
+            {
+                // reconfigure delay again
+                ar_port_set_time_delay(true, (targetedNextWakeup_tick - nextWakeup_tick) * kSchedulerQuanta_ms * 1000);
+            }
         }
     }
 }

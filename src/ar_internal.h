@@ -173,11 +173,10 @@ extern ar_kernel_t g_ar;
 //@{
 void ar_port_init_system();
 void ar_port_init_tick_timer();
-uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us);
-uint16_t ar_port_get_time_since_alignment_us();
+void ar_port_set_time_delay(bool enable, uint32_t delay_us);
 uint32_t ar_port_get_time_absolute_ticks();
-uint64_t ar_port_get_time_absolute_us();
 uint32_t ar_port_get_time_absolute_ms();
+uint64_t ar_port_get_time_absolute_us();
 void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param);
 void ar_port_service_call();
 bool ar_port_get_irq_state();
@@ -291,6 +290,29 @@ public:
 
 typedef KernelGuard<true> KernelLock;       //!< Lock kernel.
 typedef KernelGuard<false> KernelUnlock;    //!< Unlock kernel.
+
+// when there is no other way and you really have to disable interrupt for short moment in some scope
+class IrqGuard
+{
+private:
+    // in fact we really need just one bit to store,
+    uint32_t cpuSR; // occupies 4B on stack but saves 3 masking instruction
+	// uint8_t cpuSR;  // occupies 1B on stack (depends on alignment of surrounding data), adds cca 2 masking instructions
+public:
+	IrqGuard(void)
+	{
+		asm (							\
+		"mrs   %[output], PRIMASK\n\t"	\
+		"cpsid I\n\t"					\
+		: [output] "=r" (cpuSR) ::);
+	}
+	~IrqGuard(void)
+	{
+		asm (							\
+		"msr PRIMASK, %[input];\n\t"	\
+		::[input] "r" (cpuSR) : );
+	};
+};
 
 #endif // _AR_INTERNAL_H_
 //------------------------------------------------------------------------------

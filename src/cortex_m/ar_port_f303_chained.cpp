@@ -33,6 +33,7 @@
 #include <string.h>
 #include <iterator>
 
+#include "clock.h"
 #include "ar_config.h"
 
 using namespace Ar;
@@ -59,7 +60,8 @@ enum _exception_priorities
 #define F_uTIM F_TIM3
 #define uTIM TIM3
 #define uTIM_IRQn TIM3_IRQn
-#define sTIM_MAX UINT16_MAX
+#define uTIM_MAX UINT16_MAX
+#define uTIM_CLK_EN() do{RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; (void)RCC->APB1ENR;}while(0)
 
 //sTIM counts system ticks
 #define F_sTIM F_TIM2
@@ -67,13 +69,12 @@ enum _exception_priorities
 #define sTIM_IRQn TIM2_IRQn
 #define sTIM_IRQHandler TIM2_IRQHandler
 #define sTIM_MAX UINT32_MAX
-
+#define sTIM_CLK_EN() do{RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; (void)RCC->APB1ENR;}while(0)
 
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-extern "C" void SysTick_Handler(void);
 extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
 
 //------------------------------------------------------------------------------
@@ -114,9 +115,9 @@ void ar_port_init_system()
 
 void ar_port_init_tick_timer()
 {
-    //DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM3_STOP; //stop timer in debug, useful for stepping
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    //se corresponding bits in DBGMCU->APBxFZ to stop timer in debug, useful for stepping
+    sTIM_CLK_EN();
+    uTIM_CLK_EN();
     // NVIC_ClearPendingIRQ
     uTIM->CR1 = 0;
     uTIM->CR2 = (2 << TIM_CR2_MMS_Pos); //UPDATE EVENT as TRGO
@@ -151,7 +152,7 @@ void ar_port_init_tick_timer()
 //! @return real value of delay, because clamping may occur
 //!     returns 0 when timer does not run or is delay:_us is 0
 //!     and interrupt is fired up immediately
-uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us)
+void ar_port_set_time_delay(bool enable, uint32_t delay_us)
 {
     if (enable)
     {
@@ -159,28 +160,19 @@ uint32_t ar_port_set_time_delay(bool enable, uint32_t delay_us)
         // If the delay is 0, just make the SysTick interrupt pending.
         if (delay_ticks == 0)
         {
-            //disable compare interrupts
-            sTIM->DIER &= ~TIM_DIER_CC1IE;
             NVIC_SetPendingIRQ(sTIM_IRQn);
-            return 0;
+            return;
         }
         
         sTIM->CCR1 = sTIM->CNT + delay_ticks;
         sTIM->DIER |= TIM_DIER_CC1IE;
-
-        return delay_ticks * (kSchedulerQuanta_ms * 1000);
     }
     else
     {
         sTIM->DIER &= ~TIM_DIER_CC1IE; //just don't fire interrupts on compare
-        return 0;
     }
 }
 
-uint16_t ar_port_get_time_since_alignment_us()
-{
-    return uTIM->CNT;
-}
 
 uint32_t ar_port_get_time_absolute_ticks()
 {

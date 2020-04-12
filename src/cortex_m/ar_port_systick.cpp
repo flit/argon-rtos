@@ -27,10 +27,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Due to systick limitation, it is not entirely possible to have true tickless mode.
+// Systick value cannot be preset thus period is always tied to configured delay.
+// Eg you can't let systick fire interrupt in 500us and then reload period back to
+// kSchedulerQuanta_ms. Systick version of tickless mode ticks periodically,
+// but calls kernel only when it is time to do so.
+// Configuring low kSchedulerQuanta_ms raises load caused by systick exception,
+// but 1kHz is still ok on device having clock of tens of MHz.
+
 #include "../ar_internal.h"
 #include "ar_port.h"
 #include <assert.h>
 #include <string.h>
+#include <iterator>
+
+#include "clock.h"
+#include "ar_config.h"
 
 using namespace Ar;
 
@@ -39,18 +51,17 @@ using namespace Ar;
 //------------------------------------------------------------------------------
 
 //! Initial thread register values.
-enum
-{
-    kInitialxPSR = 0x01000000u, //!< Set T bit.
-    kInitialLR = 0u //!< Set to 0 to stop stack crawl by debugger.
-};
+constexpr uint32_t kInitialxPSR = 0x01000000u; //!< Set T bit.
+constexpr uint32_t kInitialLR = 0u; //!< Set to 0 to stop stack crawl by debugger.
 
 //! @brief Priorities for kernel exceptions.
-enum _exception_priorities
-{
-    //! All handlers use the same, lowest priority.
-    kHandlerPriority = 0xff
-};
+//! All handlers use the same, lowest priority.
+constexpr uint8_t kHandlerPriority = 0xff;
+
+//! useful constants
+constexpr uint32_t kSchedulerQuanta_ticks = SystemCoreClock/1000*kSchedulerQuanta_ms;
+constexpr uint32_t kSchedulerQuanta_us = kSchedulerQuanta_ms * 1000;
+
 
 //------------------------------------------------------------------------------
 // Prototypes
@@ -65,6 +76,13 @@ extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFr
 
 //! @brief Global used solely to pass info back to asm PendSV handler code.
 bool g_ar_hasExtendedFrame = false;
+
+//! @brief variables holding data of ticks
+static bool hasSystickOverflow = false;
+static volatile int32_t lastTick = 0; // signed because we have atomics for signed only
+static volatile bool propagateTicksToArgon = false;
+static volatile uint32_t nextWakeup_tick = 0; //value for irq to know which value to put into lastTick
+static volatile uint32_t targetedNextWakeup_tick = 0; //value for irq to know which value to put into lastTick
 
 //------------------------------------------------------------------------------
 // Code
@@ -91,76 +109,139 @@ void ar_port_init_system()
     NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
 }
 
+
+
 void ar_port_init_tick_timer()
 {
-    // Set SysTick clock source to processor clock.
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
-
     // Clear any pending SysTick IRQ.
     SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+    SysTick->LOAD = kSchedulerQuanta_ticks - 1;
+    SysTick->VAL = 0;
 
 #if AR_ENABLE_TICKLESS_IDLE
-    ar_port_set_timer_delay(false, 0);
+    ar_port_set_time_delay(false, 0);
 #else // AR_ENABLE_TICKLESS_IDLE
-    ar_port_set_timer_delay(true, kSchedulerQuanta_ms * 1000);
+    ar_port_set_time_delay(true, kSchedulerQuanta_ms * 1000);
 #endif // AR_ENABLE_TICKLESS_IDLE
+
+    // Set SysTick clock source to processor clock, enable irq and start counting
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 }
 
-void ar_port_set_timer_delay(bool enable, uint32_t delay_us)
+
+// we have to buffer systick overglow flag info this way, because reading clears flag :/
+static inline bool ar_port_has_systick_overflow() 
 {
-    // Disable SysTick while we adjust it.
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk; //&= ~(SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk);
+    hasSystickOverflow |= SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
+    return hasSystickOverflow;
+}
+
+//! Schedules next interrupt from timer.
+//!
+//! @param enables/disables timer 
+//! @param configures delay of next interrupt from timer
+//! @return real value of delay, because clamping may occur
+//!     returns 0 when timer does not run or is delay:_us is 0
+//!     and interrupt is fired up immediately
+void ar_port_set_time_delay(bool enable, uint32_t delay_us)
+{
+    //self preemption never happen here (called only from scheduler[IRQ] or tick[IRQ] which share same priority)
+    propagateTicksToArgon = enable;
 
     if (enable)
     {
+        uint32_t delay_ticks = delay_us/1000/kSchedulerQuanta_ms;
         // If the delay is 0, just make the SysTick interrupt pending.
-        if (delay_us == 0)
+        if (delay_ticks == 0)
         {
-            // Clear reload and counter so the elapsed time reads as 0 in ar_port_get_timer_elapsed_us().
-            SysTick->LOAD = 0;
-            SysTick->VAL = 0;
-
-            // Pend SysTick.
-            SCB->ICSR = SCB_ICSR_PENDSTSET_Msk;
+            if (ar_port_has_systick_overflow())
+            {
+                return; // already pending interrupt, that is fine
+            }
+            assert(1);
             return;
         }
 
-        // Calculate SysTick reload value. If the desired delay overflows the SysTick counter,
-        // we just use the max delay (24 bits for SysTick).
-        uint32_t ticks = SystemCoreClock / 1000000 * delay_us - 1;
-        if (ticks > SysTick_LOAD_RELOAD_Msk)
-        {
-            ticks = SysTick_LOAD_RELOAD_Msk;
-        }
-
-        // Update SysTick reload value.
-        SysTick->LOAD = ticks;
-
-        // Reset the timer to count from the new load value. This also clears COUNTFLAG.
-        SysTick->VAL = 0;
-
-        // Enable SysTick and its IRQ.
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+        targetedNextWakeup_tick = lastTick + delay_ticks;
+        // as descrived above, we can't alter systick to preserve timing precission
+        nextWakeup_tick = lastTick + 1;
     }
     else
     {
-        // Enable SysTick for maximum count but disable IRQ.
-        SysTick->LOAD = SysTick_LOAD_RELOAD_Msk;
-        SysTick->VAL = 0;
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+        //we have to keep systick ticking (incl. irq), otherwise we loose time info
     }
 }
 
-uint32_t ar_port_get_timer_elapsed_us()
+uint32_t ar_port_get_time_absolute_ticks()
+{
+    return lastTick;
+}
+
+uint64_t ar_port_get_time_absolute_us()
 {
     uint32_t max = SysTick->LOAD;
-    uint32_t counter = max - SysTick->VAL;
-    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+
+    uint32_t val = SysTick->VAL;
+    uint32_t ticks = lastTick;
+    bool overflown = ar_port_has_systick_overflow();
+    decltype(val) preread_val;
+    decltype(overflown) preread_overflown;
+    decltype(ticks) preread_ticks;
+
+    //we have to read values with twice without change to be tore they are in sync
+    do {
+        preread_val = val;
+        preread_overflown = overflown;
+        preread_ticks = ticks;
+        val = SysTick->VAL;
+        overflown = ar_port_has_systick_overflow();
+        ticks = lastTick;
+    }while(val > preread_val || overflown != preread_overflown || ticks != preread_ticks);
+
+    // later here we work with buffered (synced) value
+    uint32_t counter = max - val;
+    if (overflown)
     {
         counter += max;
     }
-    return counter / (SystemCoreClock / 1000000);
+    return  static_cast<uint64_t>(ticks) * kSchedulerQuanta_ms * 1000 + counter / (SystemCoreClock / 1000000);
 }
+
+//TODO: is return type sufficient?
+uint32_t ar_port_get_time_absolute_ms()
+{
+    uint32_t max = SysTick->LOAD;
+
+
+    // we could just use ar_port_get_time_absolute_us()/1000 but calling tha fcn involves
+    // 64bit math *could* be slower
+    uint32_t val = SysTick->VAL;
+    uint32_t ticks = lastTick;
+    bool overflown = ar_port_has_systick_overflow();
+    decltype(val) preread_val;
+    decltype(overflown) preread_overflown;
+    decltype(ticks) preread_ticks;
+
+    //we have to read values with twice without change to be tore they are in sync
+    do {
+        preread_val = val;
+        preread_overflown = overflown;
+        preread_ticks = ticks;
+        val = SysTick->VAL;
+        overflown = ar_port_has_systick_overflow();
+        ticks = lastTick;
+    }while(val > preread_val || overflown != preread_overflown || ticks != preread_ticks);
+
+    // later here we work with buffered (synced) value
+    uint32_t counter = max - val;
+    if (overflown)
+    {
+        counter += max;
+    }
+    return  ticks * kSchedulerQuanta_ms  + counter / (SystemCoreClock / 1000);
+}
+
+
 
 
 //! A total of 64 bytes of stack space is required to hold the initial
@@ -305,9 +386,35 @@ bool ar_atomic_cas32(volatile int32_t * value, int32_t expectedValue, int32_t ne
 }
 #endif // (__CORTEX_M < 3)
 
-void SysTick_Handler(void)
+extern "C" void SysTick_Handler(void)
 {
-    ar_kernel_periodic_timer_isr();
+    bool overflown = ar_port_has_systick_overflow();
+    if (overflown)
+    {
+        // this tick was most probably caused by systick overflow,
+
+        // these two value should both change at same time :/
+        // solution would be disabling irqs for this moment
+        {
+            // IrqGuard guard; // comment out, if you are brave enough
+            hasSystickOverflow = false;
+            lastTick = nextWakeup_tick;
+        }
+
+        if (targetedNextWakeup_tick != nextWakeup_tick)
+        {
+            // not yet on targeted wakeup time
+            // in fact this cll will just add 1 to nextWakeup_tick, microoptimize?
+            // ar_port_set_time_delay(true, (targetedNextWakeup_tick - nextWakeup_tick) * kSchedulerQuanta_ms * 1000);
+            nextWakeup_tick += 1;
+            return;
+        }
+    }
+
+    if (propagateTicksToArgon)
+    {
+        ar_kernel_periodic_timer_isr();
+    }
 }
 
 uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame)
@@ -341,9 +448,10 @@ void ar_port_service_call()
 }
 #endif // DEBUG
 
+//TODO: move ar_get_microseconds() somewhere else and redirect to ar_port_get_time_absolute_us() ?
 WEAK uint64_t ar_get_microseconds()
 {
-    return static_cast<uint64_t>(ar_get_millisecond_count()) * 1000ull;
+    return ar_port_get_time_absolute_us();
 }
 
 #if AR_ENABLE_TRACE
