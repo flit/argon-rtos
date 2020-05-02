@@ -55,7 +55,30 @@ static void ar_kernel_update_thread_loads();
 //------------------------------------------------------------------------------
 
 //! Global kernel state.
-ar_kernel_t g_ar = {0};
+//!
+//! @internal
+//! The initializer for this struct sets the readyList and sleepingList sort
+//! predicates so that those lists will be properly sorted when populated by
+//! threads created through static initialization. Although static initialization
+//! order is not guaranteed, we can be sure that initialization of `g_ar` from
+//! .rodata will happen before static initializers are called.
+//!
+//! (Unfortunately we can't use C-style designated initializers until C++20.)
+ar_kernel_t g_ar = {
+        0,                                  // currentThread,
+        {                                   // readyList
+            0,                                  // m_head
+            ar_thread_sort_by_priority,         // m_predicate
+        },
+        { 0 },                              // suspendedList
+        {                                   // sleepingList
+            0,                                  // m_head
+            ar_thread_sort_by_wakeup,           // m_predicate
+        },
+        { 0 },                              // flags
+        AR_VERSION,                         // version
+        // the rest...
+    };
 
 #if AR_GLOBAL_OBJECT_LISTS
 //! Global list of kernel objects.
@@ -128,8 +151,9 @@ void ar_kernel_run(void)
     assert(g_ar.readyList.m_head);
 
     // Init some misc fields.
-    // Note that we do _not_ init threadIdCounter since it will already have been incremented
+    // Note: we do _not_ init threadIdCounter since it will already have been incremented
     // some for any statically-initialized threads.
+    // Note: list predicates were initialized by the g_ar initializer.
     g_ar.flags.needsReschedule = false;
     g_ar.flags.isRunningDeferred = false;
     g_ar.flags.needsRoundRobin = false;
@@ -143,11 +167,6 @@ void ar_kernel_run(void)
     g_ar.lastSwitchIn = 0;
     g_ar.systemLoad = 0;
 #endif // AR_ENABLE_SYSTEM_LOAD
-
-    // Init list predicates.
-    g_ar.readyList.m_predicate = ar_thread_sort_by_priority;
-    g_ar.suspendedList.m_predicate = NULL;
-    g_ar.sleepingList.m_predicate = ar_thread_sort_by_wakeup;
 
     // Create the idle thread. Priority 1 is passed to init function to pass the
     // assertion and then set to the correct 0 manually.
