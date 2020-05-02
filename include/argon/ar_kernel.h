@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 Immo Software
+ * Copyright (c) 2007-2020 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -42,8 +42,8 @@
 // Constants
 //------------------------------------------------------------------------------
 
-//! @brief Current version of Argon (v1.3.0).
-#define AR_VERSION (0x00010300)
+//! @brief Current version of Argon (v1.3.1).
+#define AR_VERSION (0x00010301)
 
 //! @brief Timeout constants.
 //!
