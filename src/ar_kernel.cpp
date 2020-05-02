@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 Immo Software
+ * Copyright (c) 2007-2020 Immo Software
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -726,8 +726,8 @@ void _ar_list::add(ar_list_node_t * item)
 #endif // AR_ENABLE_LIST_CHECKS
 }
 
-//! If the specified item is not on the list, nothing happens. In fact, the list may be empty,
-//! indicated by a NULL @a m_head. Items are compared only by pointer value.
+//! If the specified item is not on the list, nothing happens. Items are compared only by pointer
+//! value, *not* by using the predicate function.
 //!
 //! @param item The item to remove from the list.
 void _ar_list::remove(ar_list_node_t * item)
