@@ -31,6 +31,10 @@
 #include "ar_port.h"
 #include <assert.h>
 #include <string.h>
+#include <iterator>
+
+#include "clock.h"
+#include "ar_config.h"
 
 using namespace Ar;
 
@@ -52,11 +56,25 @@ enum _exception_priorities
     kHandlerPriority = 0xff
 };
 
+//uTIM counts microseconds between system ticks, overflow increments sTIM
+#define F_uTIM F_TIM3
+#define uTIM TIM3
+#define uTIM_IRQn TIM3_IRQn
+#define uTIM_MAX UINT16_MAX
+#define uTIM_CLK_EN() do{RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; (void)RCC->APB1ENR;}while(0)
+
+//sTIM counts system ticks
+#define F_sTIM F_TIM2
+#define sTIM TIM2
+#define sTIM_IRQn TIM2_IRQn
+#define sTIM_IRQHandler TIM2_IRQHandler
+#define sTIM_MAX UINT32_MAX
+#define sTIM_CLK_EN() do{RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; (void)RCC->APB1ENR;}while(0)
+
 //------------------------------------------------------------------------------
 // Prototypes
 //------------------------------------------------------------------------------
 
-extern "C" void SysTick_Handler(void);
 extern "C" uint32_t ar_port_yield_isr(uint32_t topOfStack, uint32_t isExtendedFrame);
 
 //------------------------------------------------------------------------------
@@ -88,80 +106,101 @@ void ar_port_init_system()
     // Set priorities for the exceptions we use in the kernel.
     NVIC_SetPriority(SVCall_IRQn, kHandlerPriority);
     NVIC_SetPriority(PendSV_IRQn, kHandlerPriority);
-    NVIC_SetPriority(SysTick_IRQn, kHandlerPriority);
+    //TODO: use uTIM overflow irq in tick mode
+    NVIC_EnableIRQ(sTIM_IRQn);
+    NVIC_SetPriority(sTIM_IRQn, kHandlerPriority);
 }
+
+
 
 void ar_port_init_tick_timer()
 {
-    // Set SysTick clock source to processor clock.
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;
+    //se corresponding bits in DBGMCU->APBxFZ to stop timer in debug, useful for stepping
+    sTIM_CLK_EN();
+    uTIM_CLK_EN();
+    // NVIC_ClearPendingIRQ
+    uTIM->CR1 = 0;
+    uTIM->CR2 = (2 << TIM_CR2_MMS_Pos); //UPDATE EVENT as TRGO
+    uTIM->PSC = (F_uTIM / 1000000UL)-1;//psc to have 1Mhz (1us) ticking
+    uTIM->ARR = (1000 * kSchedulerQuanta_ms) - 1;//kSchedulerQuanta_ms must be below 65ms!!!!
+    uTIM->EGR = TIM_EGR_UG;//apply config
+	uTIM->SR = ~TIM_SR_UIF;
+    
+    sTIM->CR1 = 0;
+    sTIM->CR2 = 0;
+    sTIM->SMCR = (TIM_SMCR_TS_1) | (TIM_SMCR_SMS_0 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_2);//count on TRGI, ITR2 (TIM3)
+    sTIM->PSC = 0;
+    sTIM->ARR = sTIM_MAX;
+    sTIM->EGR = TIM_EGR_UG;//apply config
+	sTIM->SR = ~TIM_SR_UIF;
 
-    // Clear any pending SysTick IRQ.
-    SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
 
 #if AR_ENABLE_TICKLESS_IDLE
-    ar_port_set_timer_delay(false, 0);
+    ar_port_set_time_delay(false, 0);
 #else // AR_ENABLE_TICKLESS_IDLE
     ar_port_set_timer_delay(true, kSchedulerQuanta_ms * 1000);
 #endif // AR_ENABLE_TICKLESS_IDLE
+
+    uTIM->CR1 |= TIM_CR1_CEN;
+    sTIM->CR1 |= TIM_CR1_CEN;
 }
 
-void ar_port_set_timer_delay(bool enable, uint32_t delay_us)
+//! Schedules next interrupt from timer.
+//!
+//! @param enables/disables timer 
+//! @param configures delay of next interrupt from timer
+//! @return real value of delay, because clamping may occur
+//!     returns 0 when timer does not run or is delay:_us is 0
+//!     and interrupt is fired up immediately
+void ar_port_set_time_delay(bool enable, uint32_t delay_us)
 {
-    // Disable SysTick while we adjust it.
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk; //&= ~(SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk);
-
     if (enable)
     {
+        uint32_t delay_ticks = delay_us/1000 / kSchedulerQuanta_ms;
         // If the delay is 0, just make the SysTick interrupt pending.
-        if (delay_us == 0)
+        if (delay_ticks == 0)
         {
-            // Clear reload and counter so the elapsed time reads as 0 in ar_port_get_timer_elapsed_us().
-            SysTick->LOAD = 0;
-            SysTick->VAL = 0;
-
-            // Pend SysTick.
-            SCB->ICSR = SCB_ICSR_PENDSTSET_Msk;
+            NVIC_SetPendingIRQ(sTIM_IRQn);
             return;
         }
-
-        // Calculate SysTick reload value. If the desired delay overflows the SysTick counter,
-        // we just use the max delay (24 bits for SysTick).
-        uint32_t ticks = SystemCoreClock / 1000000 * delay_us - 1;
-        if (ticks > SysTick_LOAD_RELOAD_Msk)
-        {
-            ticks = SysTick_LOAD_RELOAD_Msk;
-        }
-
-        // Update SysTick reload value.
-        SysTick->LOAD = ticks;
-
-        // Reset the timer to count from the new load value. This also clears COUNTFLAG.
-        SysTick->VAL = 0;
-
-        // Enable SysTick and its IRQ.
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+        
+        sTIM->CCR1 = sTIM->CNT + delay_ticks;
+        sTIM->DIER |= TIM_DIER_CC1IE;
     }
     else
     {
-        // Enable SysTick for maximum count but disable IRQ.
-        SysTick->LOAD = SysTick_LOAD_RELOAD_Msk;
-        SysTick->VAL = 0;
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+        sTIM->DIER &= ~TIM_DIER_CC1IE; //just don't fire interrupts on compare
     }
 }
 
-uint32_t ar_port_get_timer_elapsed_us()
+
+uint32_t ar_port_get_time_absolute_ticks()
 {
-    uint32_t max = SysTick->LOAD;
-    uint32_t counter = max - SysTick->VAL;
-    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
-    {
-        counter += max;
-    }
-    return counter / (SystemCoreClock / 1000000);
+    return sTIM->CNT;
 }
 
+uint64_t ar_port_get_time_absolute_us()
+{
+    uint16_t us_preread = uTIM->CNT;
+    uint32_t ticks = sTIM->CNT;
+    uint16_t us = uTIM->CNT;
+    if (us_preread > us) { //overflow occurred during reading
+        ticks = sTIM->CNT;
+    }
+    return static_cast<uint64_t>(ticks * (kSchedulerQuanta_ms * 1000)) + us;
+}
+
+//TODO: is return type sufficient?
+uint32_t ar_port_get_time_absolute_ms()
+{
+    uint16_t us_preread = uTIM->CNT;
+    uint32_t ticks = sTIM->CNT;
+    uint16_t us = uTIM->CNT;
+    if (us_preread > us) { //overflow occurred during reading
+        ticks = sTIM->CNT;
+    }
+    return static_cast<uint32_t>(ticks * kSchedulerQuanta_ms) + us/1000;
+}
 
 //! A total of 64 bytes of stack space is required to hold the initial
 //! thread context.
@@ -305,8 +344,9 @@ bool ar_atomic_cas32(volatile int32_t * value, int32_t expectedValue, int32_t ne
 }
 #endif // (__CORTEX_M < 3)
 
-void SysTick_Handler(void)
+extern "C" void sTIM_IRQHandler(void)
 {
+    sTIM->SR = 0;// clear all interrupt flags, we use CC1IF only
     ar_kernel_periodic_timer_isr();
 }
 
@@ -341,9 +381,10 @@ void ar_port_service_call()
 }
 #endif // DEBUG
 
+//TODO: move ar_get_microseconds() somewhere else and redirect to ar_port_get_time_absolute_us() ?
 WEAK uint64_t ar_get_microseconds()
 {
-    return static_cast<uint64_t>(ar_get_millisecond_count()) * 1000ull;
+    return ar_port_get_time_absolute_us();
 }
 
 #if AR_ENABLE_TRACE

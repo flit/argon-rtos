@@ -144,7 +144,7 @@ ar_status_t ar_timer_start(ar_timer_t * timer)
     // The callback should have been verified by the create function.
     assert(timer->m_callback);
 
-    uint32_t wakeupTime = g_ar.tickCount + timer->m_delay;
+    uint32_t wakeupTime = ar_get_tick_count() + timer->m_delay;
 
     // Handle irq state by deferring the operation.
     if (ar_port_get_irq_state())
@@ -243,7 +243,7 @@ void ar_kernel_run_timers(ar_list_t & timersList)
             assert(timer);
 
             // Exit loop if all remaining timers on the list wake up in the future.
-            if (timer->m_wakeupTime > g_ar.tickCount)
+            if (timer->m_wakeupTime > ar_get_tick_count())
             {
                 break;
             }
@@ -269,16 +269,16 @@ void ar_kernel_run_timers(ar_list_t & timersList)
                         // Restart a periodic timer without introducing (much) jitter. Also handle
                         // the cases where the timer callback ran longer than the next wakeup.
                         uint32_t wakeupTime = timer->m_wakeupTime + timer->m_delay;
-                        if (wakeupTime == g_ar.tickCount)
+                        if (wakeupTime == ar_get_tick_count())
                         {
                             // Push the wakeup out another period into the future.
                             wakeupTime += timer->m_delay;
                         }
-                        else if (wakeupTime < g_ar.tickCount)
+                        else if (wakeupTime < ar_get_tick_count())
                         {
                             // Compute the delay to the next wakeup in the future that is aligned
                             // to the timer's period.
-                            uint32_t delta = (g_ar.tickCount - timer->m_wakeupTime + timer->m_delay - 1)
+                            uint32_t delta = (ar_get_tick_count() - timer->m_wakeupTime + timer->m_delay - 1)
                                                 / timer->m_delay * timer->m_delay;
                             wakeupTime = timer->m_wakeupTime + delta;
                         }

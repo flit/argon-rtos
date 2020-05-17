@@ -138,8 +138,6 @@ typedef struct _ar_kernel {
     uint32_t version;               //!< Argon version in BCD, same as #AR_VERSION.
     ar_deferred_action_queue_t deferredActions; //!< Actions deferred from interrupt context.
     volatile int32_t lockCount;     //!< Whether the kernel is locked.
-    volatile uint32_t tickCount;    //!< Current tick count.
-    int32_t missedTickCount;        //!< Number of ticks that occurred while the kernel was locked.
     uint32_t nextWakeup;            //!< Time of the next wakeup event.
     uint32_t threadIdCounter;       //!< Counter for generating unique thread IDs.
 #if AR_ENABLE_SYSTEM_LOAD
@@ -175,8 +173,10 @@ extern ar_kernel_t g_ar;
 //@{
 void ar_port_init_system();
 void ar_port_init_tick_timer();
-void ar_port_set_timer_delay(bool enable, uint32_t delay_us);
-uint32_t ar_port_get_timer_elapsed_us();
+void ar_port_set_time_delay(bool enable, uint32_t delay_us);
+uint32_t ar_port_get_time_absolute_ticks();
+uint32_t ar_port_get_time_absolute_ms();
+uint64_t ar_port_get_time_absolute_us();
 void ar_port_prepare_stack(ar_thread_t * thread, uint32_t stackSize, void * param);
 void ar_port_service_call();
 bool ar_port_get_irq_state();
@@ -184,7 +184,7 @@ bool ar_port_get_irq_state();
 
 //! @name Kernel internals
 //@{
-bool ar_kernel_increment_tick_count(unsigned ticks);
+bool ar_kernel_process_ticks();
 void ar_kernel_enter_scheduler();
 void ar_kernel_run_deferred_actions();
 void ar_kernel_scheduler();
@@ -290,6 +290,29 @@ public:
 
 typedef KernelGuard<true> KernelLock;       //!< Lock kernel.
 typedef KernelGuard<false> KernelUnlock;    //!< Unlock kernel.
+
+// when there is no other way and you really have to disable interrupt for short moment in some scope
+class IrqGuard
+{
+private:
+    // in fact we really need just one bit to store,
+    uint32_t cpuSR; // occupies 4B on stack but saves 3 masking instruction
+	// uint8_t cpuSR;  // occupies 1B on stack (depends on alignment of surrounding data), adds cca 2 masking instructions
+public:
+	IrqGuard(void)
+	{
+		asm (							\
+		"mrs   %[output], PRIMASK\n\t"	\
+		"cpsid I\n\t"					\
+		: [output] "=r" (cpuSR) ::);
+	}
+	~IrqGuard(void)
+	{
+		asm (							\
+		"msr PRIMASK, %[input];\n\t"	\
+		::[input] "r" (cpuSR) : );
+	};
+};
 
 #endif // _AR_INTERNAL_H_
 //------------------------------------------------------------------------------
