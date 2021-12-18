@@ -33,18 +33,11 @@
 // EXC_RETURN value to return to Thread mode, while restoring state from PSP.
 _EQU(EXC_RETURN, 0xfffffffd)
 
-// Return to Thread mode, use PSP, unstack extended FP frame.
-_EQU(FP_EXC_RETURN, 0xffffffed)
-
-// Bit 4 of LR indicates whether the extended stack frame was used.
-_EQU(EXTENDED_FRAME, 0x10)
-
         /* specify the section where this code belongs */
         _CODE_SECTION(.text)
         _THUMB
 
         _IMPORT(ar_port_yield_isr)
-        _IMPORT(g_ar_hasExtendedFrame)
 
         _EXPORT(SVC_Handler)
         _EXPORT(PendSV_Handler)
