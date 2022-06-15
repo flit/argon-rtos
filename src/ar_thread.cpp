@@ -415,7 +415,7 @@ void ar_thread_sleep(uint32_t milliseconds)
     }
     else
     {
-        ar_thread_sleep_until(ar_ticks_to_milliseconds(g_ar.tickCount) + milliseconds);
+        ar_thread_sleep_until(ar_ticks_to_milliseconds(ar_get_tick_count()) + milliseconds);
     }
 }
 
@@ -541,7 +541,7 @@ void _ar_thread::block(ar_list_t & blockedList, uint32_t timeout)
     // If a valid timeout was given, put the thread on the sleeping list.
     if (timeout != kArInfiniteTimeout)
     {
-        m_wakeupTime = g_ar.tickCount + ar_milliseconds_to_ticks(timeout);
+        m_wakeupTime = ar_get_tick_count() + ar_milliseconds_to_ticks(timeout);
         g_ar.sleepingList.add(this);
     }
     else
